@@ -20,13 +20,9 @@ kubeadm 部署 k3s 集群
 ### 环境配置
 
 项目支持以下环境：
-- `dev` - 开发环境
-- `prod` - 生产环境
 - `staging` - 测试环境
 
 每个环境对应的配置文件：
-- `helm/values-dev.yaml` - 开发环境配置
-- `helm/values-prod.yaml` - 生产环境配置
 - `helm/values-staging.yaml` - 测试环境配置
 
 ### 部署命令
@@ -35,13 +31,13 @@ kubeadm 部署 k3s 集群
 
 ```bash
 # 基本部署
-helm install mcp-box ./helm -f ./helm/values-dev.yaml --namespace mcp-dev --create-namespace --timeout 600s --wait
+helm install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --create-namespace --timeout 600s --wait
 
 # 升级部署
-helm upgrade --install mcp-box ./helm -f ./helm/values-dev.yaml --namespace mcp-dev --timeout 600s --wait
+helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --timeout 600s --wait
 
 # 调试模式（不实际部署）
-helm install mcp-box ./helm -f ./helm/values-dev.yaml --namespace mcp-dev --dry-run --debug
+helm install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --dry-run --debug
 ```
 
 #### 2. 生产环境部署
@@ -174,23 +170,23 @@ kubectl port-forward svc/mcp-web-svc 80:80 -n mcp-box
 
 ```bash
 # 自定义镜像版本
-helm upgrade --install mcp-box ./helm -f ./helm/values-dev.yaml \
+helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml \
   --set global.version=v1.2.3 \
   --namespace mcp-dev
 
 # 自定义域名
-helm upgrade --install mcp-box ./helm -f ./helm/values-dev.yaml \
+helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml \
   --set global.domain=my-custom-domain.com \
   --namespace mcp-dev
 
 # 自定义资源限制
-helm upgrade --install mcp-box ./helm -f ./helm/values-dev.yaml \
+helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml \
   --set services.gateway.resources.limits.memory=512Mi \
   --set services.gateway.resources.limits.cpu=500m \
   --namespace mcp-dev
 
 # 禁用某个服务
-helm upgrade --install mcp-box ./helm -f ./helm/values-dev.yaml \
+helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml \
   --set services.market.enabled=false \
   --namespace mcp-dev
 ```
