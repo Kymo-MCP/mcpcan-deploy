@@ -1,0 +1,21 @@
+# values-cn.yaml
+controller:
+  # 替换 ingress-nginx-controller 镜像
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/google_containers/ingress-nginx-controller
+    # 镜像标签需与官方版本一致（可通过 helm show chart ingress-nginx/ingress-nginx 查看默认标签）
+    tag: "v1.9.5"  # 请替换为最新版本，与官方保持一致
+    pullPolicy: IfNotPresent
+
+  # 替换 admission-webhook 镜像（若启用）
+  admissionWebhooks:
+    patch:
+      image:
+        repository: registry.cn-hangzhou.aliyuncs.com/google_containers/ingress-nginx-kube-webhook-certgen
+        tag: "v20231011-8b53cabe0"  # 与官方标签一致
+
+# 替换默认后端镜像（可选，若启用 defaultBackend）
+defaultBackend:
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/google_containers/defaultbackend-amd64
+    tag: "1.5"

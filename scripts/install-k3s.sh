@@ -103,105 +103,28 @@ uninstall_kubernetes() {
 # Check if helm is installed
 check_helm_installed() {
   if command -v helm >/dev/null 2>&1; then
-    info "helm is installed, version: $(helm version --short 2>/dev/null || echo "Unable to get version")"
+    local version=$(helm version --short 2>/dev/null | cut -d'+' -f1)
+    echo "Helm is already installed: $version"
     return 0
   else
-    return 1
-  fi
-}
-
-# Install helm
-install_helm() {
-  log "Starting helm installation..."
-  
-  # Download and install helm
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-  else
-    error "curl command is required to install helm"
-    return 1
-  fi
-  
-  # Verify installation
-  if check_helm_installed; then
-    info "helm installed successfully"
-  else
-    error "helm installation failed"
+    echo "Helm is not installed"
     return 1
   fi
 }
 
 # Check if ingress-nginx is installed
 check_ingress_nginx_installed() {
-  if ! command -v kubectl >/dev/null 2>&1; then
-    return 1
-  fi
-  
-  # Check if ingress-nginx namespace exists
   if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
-    # Check if ingress-nginx controller is running
+    echo "Ingress-nginx namespace exists"
     if kubectl get deployment -n ingress-nginx ingress-nginx-controller >/dev/null 2>&1; then
-      local ready_replicas
-      ready_replicas=$(kubectl get deployment -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-      # Ensure ready_replicas is a valid integer
-      ready_replicas=${ready_replicas:-0}
-      if [[ "$ready_replicas" =~ ^[0-9]+$ ]] && [ "$ready_replicas" -gt 0 ]; then
-        info "ingress-nginx controller is installed and running"
-        return 0
-      fi
-    fi
-  fi
-  
-  return 1
-}
-
-# Install ingress-nginx controller
-install_ingress_nginx() {
-  log "Starting ingress-nginx controller installation..."
-  
-  if ! command -v kubectl >/dev/null 2>&1; then
-    error "kubectl command is required to install ingress-nginx"
-    return 1
-  fi
-  
-  # Create ingress-nginx namespace
-  kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
-  
-  # Get the directory where this script is located
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local nginx_template="${script_dir}/nginx-ingress-controller.yaml"
-  
-  # Try to use local template first
-  if [ -f "$nginx_template" ]; then
-    log "Using local ingress-nginx-controller template: $nginx_template"
-    if ! kubectl apply -f "$nginx_template"; then
-      error "Failed to apply local ingress-nginx-controller template"
+      echo "Ingress-nginx controller is installed"
+      return 0
+    else
+      echo "Ingress-nginx namespace exists but controller not found"
       return 1
     fi
-  fi
-  
-  # Wait for ingress-nginx controller to be ready
-  log "Waiting for ingress-nginx controller to be ready..."
-  if ! kubectl wait --namespace ingress-nginx \
-    --for=condition=ready pod \
-    --selector=app.kubernetes.io/component=controller \
-    --timeout=30s; then
-    error "Timeout waiting for ingress-nginx controller to be ready"
-    
-    # Show pod status for debugging
-    log "Checking ingress-nginx pod status..."
-    kubectl get pods -n ingress-nginx
-    kubectl describe pods -n ingress-nginx
-    
-    return 1
-  fi
-  
-  # Verify installation
-  if check_ingress_nginx_installed; then
-    info "ingress-nginx controller installed successfully"
   else
-    error "ingress-nginx controller installation failed"
+    echo "Ingress-nginx is not installed"
     return 1
   fi
 }
@@ -231,8 +154,6 @@ Options:
 
 Features:
   - Auto-detect public IP address, use private IP if no public IP
-  - Auto-detect and install Helm tool
-  - Auto-detect and install Ingress-Nginx controller
   - Support single-node and multi-node cluster deployment
   - Built-in default configuration, no dependency on environment variable files
 
@@ -299,26 +220,6 @@ if existing_k8s=$(check_existing_k8s); then
     uninstall_kubernetes "$existing_k8s" || exit 1
   else
     warn "$existing_k8s is already installed, use --force parameter to reinstall"
-    
-    # If it's k3s environment, continue checking other components
-    if [ "$existing_k8s" = "k3s" ]; then
-      log "Checking other components..."
-      
-      # Check and install helm
-      if ! check_helm_installed; then
-        log "helm not installed, starting installation..."
-        install_helm || exit 1
-      fi
-      
-      # Check and install ingress-nginx
-      if ! check_ingress_nginx_installed; then
-        log "ingress-nginx controller not installed, starting installation..."
-        install_ingress_nginx || exit 1
-      fi
-      
-      info "All components check completed"
-    fi
-    
     exit 0
   fi
 fi
@@ -517,48 +418,19 @@ if [ "$node_type" = "master" ]; then
   # Set KUBECONFIG environment variable
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   
-  # Install helm (if not installed)
-  if ! check_helm_installed; then
-    log "helm not installed, starting installation..."
-    install_helm || error "helm installation failed"
-  fi
+
   
-  # Install ingress-nginx controller (if not installed)
-  if ! check_ingress_nginx_installed; then
-    log "ingress-nginx controller not installed, starting installation..."
-    install_ingress_nginx || error "ingress-nginx controller installation failed"
-  fi
+  # Generate kubeconfig for external access
+  generate_external_kubeconfig
   
-  # Generate external access kubeconfig
-  log "Generating external access kubeconfig configuration file"
-  if [ -f /etc/rancher/k3s/k3s.yaml ]; then
-
-    # Generate external access kubeconfig based on public IP
-    public_ip=$(auto_detect_node_ips | head -n1)
-    if [ -n "$public_ip" ]; then
-      # Create external access configuration directory
-      sudo mkdir -p /etc/rancher/k3s/external
-      sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/external-access.yaml
-      sudo sed -i "s|https://127.0.0.1:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
-      sudo sed -i "s|https://localhost:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
-      info "External access kubeconfig generated: /etc/rancher/k3s/external-access.yaml (using $public_ip:6443)"
-    fi
-
-    # Generate container internal https://kubernetes.default.svc:443 configuration file, kubernetes-internal.yaml
-    sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/kubernetes-internal.yaml
-    sudo sed -i "s|https://127.0.0.1:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
-    sudo sed -i "s|https://localhost:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
-    info "Container internal kubeconfig generated: /etc/rancher/k3s/kubernetes-internal.yaml"
-
-    # Copy kubeconfig to user's home directory
-    mkdir -p ~/.kube
-    sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-    sudo chown $(id -u):$(id -g) ~/.kube/config
-    info "Kubeconfig copied to ~/.kube/config"
-    export KUBECONFIG=~/.kube/config
-  else
-    error "Cannot find default kubeconfig file, external access configuration generation failed"
-  fi
+  # Generate kubeconfig for container internal access
+  generate_internal_kubeconfig
+  
+  # Copy kubeconfig to user home directory
+  copy_kubeconfig_to_home
+  
+  info "K3s installation completed successfully!"
+  info "You can now use kubectl to manage your cluster"
 
 else
   info "Check service status: systemctl status k3s-agent"
