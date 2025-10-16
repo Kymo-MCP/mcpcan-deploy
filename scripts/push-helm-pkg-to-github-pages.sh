@@ -5,23 +5,25 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # 配置参数
 CHART_NAME="mcp-box"
 # 获取版本号
 if [ -n "$1" ]; then
     CHART_VERSION="$1"
-elif [ -f "../../backend/VERSION" ]; then
-    CHART_VERSION=$(cat ../../backend/VERSION)
-elif [ -f "../VSESION" ]; then
-    CHART_VERSION=$(cat ../VSESION)
+elif [ -f "$SCRIPT_DIR/../VERSION" ]; then
+    CHART_VERSION=$(cat "$SCRIPT_DIR/../VERSION")
+elif [ -f "VERSION" ]; then
+    CHART_VERSION=$(cat VERSION)
 else
-    echo "❌ 错误：未找到版本文件，请手动指定版本号"
+    echo "❌ error: 未找到版本文件，请手动指定版本号"
     echo "用法: $0 [版本号] [GitHub仓库地址]"
     exit 1
 fi
 GITHUB_REPO=${2:-"https://github.com/Kymo-MCP/mcp-box-deploy.git"}
 TEMP_DIR="/tmp/helm-publish-$$"
-CHART_DIR="$(dirname "$0")/.."
+CHART_DIR="$(dirname "$0")/../helm"
 
 echo "🚀 开始发布 Helm Chart 到 GitHub Pages..."
 
@@ -46,11 +48,11 @@ rm -rf "$TEMP_DIR"
 git clone "$GITHUB_REPO" "$TEMP_DIR"
 cd "$TEMP_DIR"
 
-# 创建或切换到 gh-pages 分支
-if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-    git checkout gh-pages
+# 创建或切换到 github-pages 分支
+if git show-ref --verify --quiet refs/remotes/origin/github-pages; then
+    git checkout github-pages
 else
-    git checkout --orphan gh-pages
+    git checkout --orphan github-pages
     git rm -rf .
 fi
 
@@ -113,7 +115,7 @@ git add .
 git config user.name "opensource"
 git config user.email "actions@github.com"
 git commit -m "发布 $CHART_NAME $CHART_VERSION"
-git push origin gh-pages
+git push origin github-pages
 
 # 清理
 echo "🧹 清理临时文件..."

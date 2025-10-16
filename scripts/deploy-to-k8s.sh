@@ -13,7 +13,7 @@ VALUES_FILE=${3:-"values-${ENVIRONMENT}.yaml"}
 CHART_NAME="mcp-box"
 RELEASE_NAME="mcp-box"
 HELM_REPO_NAME="mcp-box"
-HELM_REPO_URL="https://YOUR_USERNAME.github.io/mcp-box-helm-charts/"
+HELM_REPO_URL="https://kymo-mcp.github.io/mcp-box-helm-charts/"
 
 # 颜色输出
 RED='\033[0;31m'
