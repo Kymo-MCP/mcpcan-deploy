@@ -2,11 +2,9 @@ name: 发布 Helm Chart 到 GitHub Pages
 
 on:
   push:
-    tags:
-      - 'v*'
     branches:
       - 'main'
-      - 'v1.0.0-dev'
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
