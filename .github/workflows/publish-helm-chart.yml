@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - 'v*'
+      - 'v1.0.0-dev'
   workflow_dispatch:
     inputs:
       version:
