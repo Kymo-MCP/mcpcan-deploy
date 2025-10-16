@@ -2,7 +2,7 @@ apiVersion: v2
 name: mcp-box
 description: A Helm chart for MCP Box - Microservices Container Platform
 type: application
-version: 0.1.0
+version: "v1.0.0"
 appVersion: "v1.0.0"
 keywords:
   - mcp-box

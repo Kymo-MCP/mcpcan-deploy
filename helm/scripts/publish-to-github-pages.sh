@@ -7,7 +7,7 @@ set -e
 
 # 配置参数
 CHART_NAME="mcp-box"
-CHART_VERSION=${1:-"1.0.0"}
+CHART_VERSION=$(cat ../../VERSION)
 GITHUB_REPO=${2:-"https://github.com/Kymo-MCP/mcp-box-deploy.git"}
 TEMP_DIR="/tmp/helm-publish-$$"
 CHART_DIR="$(dirname "$0")/.."
