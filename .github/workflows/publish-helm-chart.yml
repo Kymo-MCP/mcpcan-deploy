@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - 'main'
+      - 'v1.0.0-dev'
   workflow_dispatch:
     inputs:
       version:
@@ -39,7 +42,19 @@ jobs:
       id: get_version
       run: |
         if [ "${{ github.event_name }}" == "push" ]; then
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # 标签推送
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            # 分支推送
+            if [ -f VERSION ]; then
+              VERSION=$(cat VERSION)
+            elif [ -f VSESION ]; then
+              VERSION=$(cat VSESION)
+            else
+              VERSION="dev-$(date +%Y%m%d-%H%M%S)"
+            fi
+          fi
         else
           VERSION=${{ github.event.inputs.version }}
         fi
