@@ -7,7 +7,18 @@ set -e
 
 # 配置参数
 CHART_NAME="mcp-box"
-CHART_VERSION=$(cat ../../VERSION)
+# 获取版本号
+if [ -n "$1" ]; then
+    CHART_VERSION="$1"
+elif [ -f "../../backend/VERSION" ]; then
+    CHART_VERSION=$(cat ../../backend/VERSION)
+elif [ -f "../VSESION" ]; then
+    CHART_VERSION=$(cat ../VSESION)
+else
+    echo "❌ 错误：未找到版本文件，请手动指定版本号"
+    echo "用法: $0 [版本号] [GitHub仓库地址]"
+    exit 1
+fi
 GITHUB_REPO=${2:-"https://github.com/Kymo-MCP/mcp-box-deploy.git"}
 TEMP_DIR="/tmp/helm-publish-$$"
 CHART_DIR="$(dirname "$0")/.."
@@ -50,9 +61,9 @@ cp "/tmp/${CHART_NAME}-${CHART_VERSION}.tgz" ./
 # 生成或更新 index.yaml
 echo "🔄 更新 Helm 仓库索引..."
 if [ -f index.yaml ]; then
-    helm repo index . --merge index.yaml --url "https://$(echo $GITHUB_REPO | sed 's|https://github.com/||' | sed 's|\.git||')/github.io/"
+    helm repo index . --merge index.yaml --url "https://kymo-mcp.github.io/mcp-box-deploy/"
 else
-    helm repo index . --url "https://$(echo $GITHUB_REPO | sed 's|https://github.com/||' | sed 's|\.git||')/github.io/"
+    helm repo index . --url "https://kymo-mcp.github.io/mcp-box-deploy/"
 fi
 
 # 创建 README.md
@@ -66,7 +77,7 @@ cat > README.md << EOF
 ### 添加 Helm 仓库
 
 \`\`\`bash
-helm repo add mcp-box https://$(echo $GITHUB_REPO | sed 's|https://github.com/||' | sed 's|\.git||').github.io/
+helm repo add mcp-box https://kymo-mcp.github.io/mcp-box-deploy/
 helm repo update
 \`\`\`
 
@@ -93,7 +104,7 @@ helm upgrade mcp-box mcp-box/mcp-box
 
 ## 支持
 
-如有问题，请访问 [GitHub Issues](https://github.com/YOUR_USERNAME/qm-mcp/issues)
+如有问题，请访问 [GitHub Issues](https://github.com/Kymo-MCP/mcp-box-deploy/issues)
 EOF
 
 # 提交更改
@@ -101,7 +112,7 @@ echo "💾 提交更改到 GitHub..."
 git add .
 git config user.name "opensource"
 git config user.email "actions@github.com"
-git commit -m "发布 $CHART_NAME v$CHART_VERSION"
+git commit -m "发布 $CHART_NAME $CHART_VERSION"
 git push origin gh-pages
 
 # 清理
@@ -110,5 +121,5 @@ rm -rf "$TEMP_DIR"
 rm "/tmp/${CHART_NAME}-${CHART_VERSION}.tgz"
 
 echo "✅ Helm Chart 已成功发布到 GitHub Pages!"
-echo "🌐 仓库地址: https://$(echo $GITHUB_REPO | sed 's|https://github.com/||' | sed 's|\.git||').github.io/"
+echo "🌐 仓库地址: https://kymo-mcp.github.io/mcp-box-deploy/"
 echo "📦 Chart 版本: $CHART_VERSION"
