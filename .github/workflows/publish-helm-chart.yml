@@ -1,4 +1,4 @@
-name: 发布 Helm Chart 到 GitHub Pages
+name: Publish-Helm-Chart
 
 on:
   push:
