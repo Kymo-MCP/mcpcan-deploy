@@ -113,7 +113,7 @@ EOF
 echo "💾 提交更改到 GitHub..."
 git add .
 git config user.name "opensource"
-git config user.email "actions@github.com"
+git config user.email "opensource@kymo-mcp.com"
 git commit -m "发布 $CHART_NAME $CHART_VERSION"
 git push origin github-pages
 
