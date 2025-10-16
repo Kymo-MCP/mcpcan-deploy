@@ -27,33 +27,7 @@ kubeadm 部署 k3s 集群
 
 ### 部署命令
 
-#### 1. 开发环境部署
-
-```bash
-# 基本部署
-helm install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --create-namespace --timeout 600s --wait
-
-# 升级部署
-helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --timeout 600s --wait
-
-# 调试模式（不实际部署）
-helm install mcp-box ./helm -f ./helm/values-staging.yaml --namespace mcp-dev --dry-run --debug
-```
-
-#### 2. 生产环境部署
-
-```bash
-# 基本部署
-helm install mcp-box ./helm -f ./helm/values-prod.yaml --namespace mcp-box --create-namespace --timeout 600s --wait
-
-# 升级部署
-helm upgrade --install mcp-box ./helm -f ./helm/values-prod.yaml --namespace mcp-box --timeout 600s --wait
-
-# 指定版本部署
-helm upgrade --install mcp-box ./helm -f ./helm/values-prod.yaml --namespace mcp-box --set global.version=v1.2.3 --timeout 600s --wait
-```
-
-#### 3. 测试环境部署
+#### 1. 测试环境部署
 
 ```bash
 # 基本部署
