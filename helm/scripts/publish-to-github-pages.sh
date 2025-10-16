@@ -8,7 +8,7 @@ set -e
 # 配置参数
 CHART_NAME="mcp-box"
 CHART_VERSION=${1:-"1.0.0"}
-GITHUB_REPO=${2:-"https://github.com/YOUR_USERNAME/mcp-box-helm-charts.git"}
+GITHUB_REPO=${2:-"https://github.com/Kymo-MCP/mcp-box-deploy.git"}
 TEMP_DIR="/tmp/helm-publish-$$"
 CHART_DIR="$(dirname "$0")/.."
 
@@ -99,7 +99,7 @@ EOF
 # 提交更改
 echo "💾 提交更改到 GitHub..."
 git add .
-git config user.name "GitHub Actions"
+git config user.name "opensource"
 git config user.email "actions@github.com"
 git commit -m "发布 $CHART_NAME v$CHART_VERSION"
 git push origin gh-pages
