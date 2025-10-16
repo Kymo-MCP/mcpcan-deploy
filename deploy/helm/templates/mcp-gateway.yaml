@@ -1,0 +1,113 @@
+{{- if .Values.services.gateway.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.gateway.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+        image: {{ .Values.global.registry }}/{{ .Values.services.gateway.name | default "mcp-gateway" }}:{{ .Values.global.version }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        {{- if .Values.services.gateway.service.port }}
+        ports:
+        - containerPort: {{ .Values.services.gateway.service.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.services.gateway.resources }}
+        resources:
+          {{- toYaml .Values.services.gateway.resources | nindent 10 }}
+        {{- end }}
+        {{- if .Values.services.gateway.config }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: {{ .Values.services.gateway.config.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        {{- if .Values.services.gateway.env }}
+        env:
+        {{- range $key, $value := .Values.services.gateway.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      {{- if .Values.services.gateway.config }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mcp-config
+          items:
+          - key: {{ .Values.services.gateway.config.configMapKey | default "gateway.yaml" }}
+            path: {{ .Values.services.gateway.config.configMapKey | default "gateway.yaml" }}
+      {{- end }}
+---
+{{- if .Values.services.gateway.service.port }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.gateway.service.name | default "mcp-gateway-svc" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.gateway.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.services.gateway.service.port }}
+    targetPort: {{ .Values.services.gateway.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+{{- end }}
+---
+{{- if and .Values.ingress.enabled .Values.services.gateway.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.services.gateway.name | default "mcp-gateway" }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.services.gateway.ingress.host | default .Values.global.domain }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.global.domain }}
+    http:
+      paths:
+      - path: {{ .Values.services.gateway.ingress.path | default "/" }}
+        pathType: {{ .Values.services.gateway.ingress.pathType | default "Prefix" }}
+        backend:
+          service:
+            name: {{ .Values.services.gateway.service.name | default "mcp-gateway-svc" }}
+            port:
+              number: {{ .Values.services.gateway.service.port }}
+{{- end }}
+{{- end }}

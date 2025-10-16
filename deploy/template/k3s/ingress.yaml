@@ -1,0 +1,81 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-gateway-ingress
+  namespace: ${PROJECT_NAMESPACE}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /mcp-gateway
+        pathType: Prefix
+        backend:
+          service:
+            name: mcp-gateway-svc
+            port:
+              number: 8083
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-authz-ingress
+  namespace: ${PROJECT_NAMESPACE}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /authz/$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api/authz(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: mcp-authz-svc
+            port:
+              number: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-market-ingress
+  namespace: ${PROJECT_NAMESPACE}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /market/$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api/market(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: mcp-market-svc
+            port:
+              number: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-web-ingress
+  namespace: ${PROJECT_NAMESPACE}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mcp-web-svc
+            port:
+              number: 3000

@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mcp-box.labels" . | nindent 4 }}
+data:
+{{- if .Values.services.gateway.enabled }}
+  gateway.yaml: |-
+    server:
+      port: {{ .Values.services.gateway.service.port }}
+      host: 0.0.0.0
+    database:
+      mysql:
+        host: {{ .Values.infrastructure.mysql.service.name }}
+        port: {{ .Values.infrastructure.mysql.service.port }}
+        database: {{ .Values.infrastructure.mysql.auth.database }}
+        username: {{ .Values.infrastructure.mysql.auth.username }}
+        password: {{ .Values.infrastructure.mysql.auth.password }}
+      redis:
+        host: {{ .Values.infrastructure.redis.service.name }}
+        port: {{ .Values.infrastructure.redis.service.port }}
+        password: {{ .Values.infrastructure.redis.auth.password }}
+        db: {{ .Values.infrastructure.redis.auth.db }}
+    log:
+      level: debug
+      format: json
+{{- end }}
+{{- if .Values.services.authz.enabled }}
+  authz.yaml: |-
+    server:
+      httpPort: {{ .Values.services.authz.service.port }}
+    secret: {{ .Values.services.authz.config.secret }}
+    database:
+      mysql:
+        host: {{ .Values.infrastructure.mysql.service.name }}
+        port: {{ .Values.infrastructure.mysql.service.port }}
+        database: {{ .Values.infrastructure.mysql.auth.database }}
+        username: {{ .Values.infrastructure.mysql.auth.username }}
+        password: {{ .Values.infrastructure.mysql.auth.password }}
+      redis:
+        host: {{ .Values.infrastructure.redis.service.name }}
+        port: {{ .Values.infrastructure.redis.service.port }}
+        password: {{ .Values.infrastructure.redis.auth.password }}
+        db: {{ .Values.infrastructure.redis.auth.db }}
+    log:
+      level: debug
+      format: json
+    storage:
+      rootPath: {{ .Values.global.mountStorage.rootPath }}
+      codePath: {{ .Values.global.mountStorage.codePackagePath }}
+      staticPath: {{ .Values.global.mountStorage.staticPath }}
+{{- end }}
+{{- if .Values.services.market.enabled }}
+  market.yaml: |-
+    server:
+      httpPort: {{ .Values.services.market.service.port }}
+    secret: {{ .Values.services.market.config.secret }}
+    services:
+      mcpMarket:
+        host: {{ .Values.services.market.name | default "mcp-market" }}-svc
+        port: {{ .Values.services.market.service.port }}
+      mcpAuthz:
+        host: {{ .Values.services.authz.name | default "mcp-authz" }}-svc
+        port: {{ .Values.services.authz.service.port }}
+    database:
+      mysql:
+        host: {{ .Values.infrastructure.mysql.service.name }}
+        port: {{ .Values.infrastructure.mysql.service.port }}
+        database: {{ .Values.infrastructure.mysql.auth.database }}
+        username: {{ .Values.infrastructure.mysql.auth.username }}
+        password: {{ .Values.infrastructure.mysql.auth.password }}
+      redis:
+        host: {{ .Values.infrastructure.redis.service.name }}
+        port: {{ .Values.infrastructure.redis.service.port }}
+        password: {{ .Values.infrastructure.redis.auth.password }}
+    log:
+      level: debug
+      format: json
+    code:
+      upload:
+        maxFileSize: 100
+        allowedExtensions: [".zip", ".tar.gz", ".tar", ".dxt", ".mcpb"]
+    storage:
+      rootPath: {{ .Values.global.mountStorage.rootPath }}
+      codePath: {{ .Values.global.mountStorage.codePackagePath }}
+      staticPath: {{ .Values.global.mountStorage.staticPath }}
+{{- end }}
+{{- if .Values.services.init.enabled }}
+  init.yaml: |-
+    init:
+      admin_username: admin
+      admin_password: admin123
+      admin_nickname: admin
+      admin_role_name: admin
+      admin_role_description: admin role
+      admin_role_level: 1
+      admin_data_scope: all
+    database:
+      mysql:
+        host: {{ .Values.infrastructure.mysql.service.name }}
+        port: {{ .Values.infrastructure.mysql.service.port }}
+        database: {{ .Values.infrastructure.mysql.auth.database }}
+        username: {{ .Values.infrastructure.mysql.auth.username }}
+        password: {{ .Values.infrastructure.mysql.auth.password }}
+      redis:
+        host: {{ .Values.infrastructure.redis.service.name }}
+        port: {{ .Values.infrastructure.redis.service.port }}
+        password: {{ .Values.infrastructure.redis.auth.password }}
+        db: {{ .Values.infrastructure.redis.auth.db }}
+    log:
+      level: debug
+      format: json
+{{- end }}

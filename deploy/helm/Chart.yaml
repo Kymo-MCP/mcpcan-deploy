@@ -1,0 +1,17 @@
+apiVersion: v2
+name: mcp-box
+description: A Helm chart for MCP Box - Microservices Container Platform
+type: application
+version: 0.1.0
+appVersion: "v1.0.0"
+keywords:
+  - mcp-box
+  - microservices
+  - platform
+  - kubernetes
+home: https://github.com/Kymo-MCP/MCPbox
+sources:
+  - https://github.com/Kymo-MCP/MCPbox
+maintainers:
+  - name: MCP Box Team
+    email: opensource@kymo.cn

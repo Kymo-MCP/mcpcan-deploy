@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Job
+metadata:
+  name: mcp-init
+  labels:
+    k8s-app: mcp-init
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: mcp-init
+    spec:
+      containers:
+        - name: mcp-init
+          image: ccr.ccs.tencentyun.com/itqm-private/mcp-init:${VERSION}
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              readOnly: true
+              mountPath: /app/config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: config
+          configMap:
+            name: mcp-cmp
+            items:
+              - key: init.yaml
+                path: init.yaml
+      restartPolicy: OnFailure
+  backoffLimit: 3

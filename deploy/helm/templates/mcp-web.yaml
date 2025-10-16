@@ -1,0 +1,119 @@
+{{- if .Values.services.web.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.web.name | default "mcp-web" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.web.name | default "mcp-web" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.web.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.web.name | default "mcp-web" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.web.name | default "mcp-web" }}
+        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.services.web.name | default "mcp-web" }}
+        image: {{ .Values.global.registry }}/mcp-web:{{ .Values.global.version }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        {{- if .Values.services.web.service.port }}
+        ports:
+        - containerPort: {{ .Values.services.web.service.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.services.web.resources }}
+        resources:
+          {{- toYaml .Values.services.web.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.services.web.config }}
+        - name: config-volume
+          mountPath: {{ .Values.services.web.config.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        - name: data-volume
+          mountPath: {{ .Values.global.mountStorage.staticPath | default "/data/static" }}
+        {{- if .Values.services.web.env }}
+        env:
+        {{- range $key, $value := .Values.services.web.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.services.web.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.services.web.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.services.web.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.services.web.readinessProbe | nindent 10 }}
+        {{- end }}
+      volumes:
+      - name: data-volume
+        hostPath:
+          path: {{ .Values.global.hostStorage.staticPath | default "/data/static" }}
+          type: DirectoryOrCreate
+---
+{{- if .Values.services.web.service.port }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.web.service.name | default "mcp-web-svc" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.web.name | default "mcp-web" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.web.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.services.web.service.port }}
+    targetPort: {{ .Values.services.web.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.services.web.name | default "mcp-web" }}
+{{- end }}
+---
+{{- if and .Values.ingress.enabled .Values.services.web.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.services.web.name | default "mcp-web" }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.web.name | default "mcp-web" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.services.web.ingress.host | default .Values.global.domain }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.global.domain }}
+    http:
+      paths:
+      - path: {{ .Values.services.web.ingress.path | default "/" }}
+        pathType: {{ .Values.services.web.ingress.pathType | default "Prefix" }}
+        backend:
+          service:
+            name: {{ .Values.services.web.service.name | default "mcp-web-svc" }}
+            port:
+              number: {{ .Values.services.web.service.port }}
+{{- end }}
+{{- end }}

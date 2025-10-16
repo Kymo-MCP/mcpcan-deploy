@@ -1,0 +1,49 @@
+{{- if .Values.services.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.services.init.name | default "mcp-init" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.init.name | default "mcp-init" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.init.name | default "mcp-init" }}
+        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.services.init.name | default "mcp-init" }}
+        image: {{ .Values.global.registry }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        {{- if .Values.services.init.resources }}
+        resources:
+          {{- toYaml .Values.services.init.resources | nindent 10 }}
+        {{- end }}
+        {{- if .Values.services.init.config }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        {{- if .Values.services.init.env }}
+        env:
+        {{- range $key, $value := .Values.services.init.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      {{- if .Values.services.init.config }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mcp-config
+          items:
+          - key: init.yaml
+            path: init.yaml
+      {{- end }}
+      restartPolicy: OnFailure
+  backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
+{{- end }}

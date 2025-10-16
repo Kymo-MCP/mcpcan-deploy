@@ -1,0 +1,16 @@
+server:
+  httpPort: 8083
+
+database:
+  mysql:
+    host: ${MYSQL_SERVICE_NAME}
+    port: ${MYSQL_SERVICE_PORT}
+    username: ${MCP_DB_USER}
+    password: ${MCP_DB_PASSWORD}
+    database: ${MCP_DB_NAME}
+
+log:
+  level: debug
+  format: text
+
+

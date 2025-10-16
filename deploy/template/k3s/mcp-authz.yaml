@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: mcp-authz
+  name: mcp-authz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: mcp-authz
+  template:
+    metadata:
+      labels:
+        k8s-app: mcp-authz
+    spec:
+      containers:
+        - name: mcp-authz
+          image: ccr.ccs.tencentyun.com/itqm-private/mcp-authz:${VERSION}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          volumeMounts:
+            - name: config
+              readOnly: true
+              mountPath: /app/config
+            - name: data-storage
+              mountPath: /data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: config
+          configMap:
+            name: mcp-cmp
+            items:
+                - key: authz.yaml
+                  path: authz.yaml
+        - name: data-storage
+          hostPath:
+            path: ${DATA_DIR}
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-authz-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+  selector:
+    k8s-app: mcp-authz
+

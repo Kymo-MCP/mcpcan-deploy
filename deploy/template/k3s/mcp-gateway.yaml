@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: mcp-gateway
+  name: mcp-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: mcp-gateway
+  template:
+    metadata:
+      labels:
+        k8s-app: mcp-gateway
+    spec:
+      containers:
+        - name: mcp-gateway
+          image: ccr.ccs.tencentyun.com/itqm-private/mcp-gateway:${VERSION}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          volumeMounts:
+            - name: config
+              readOnly:  true
+              mountPath: /app/config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: config
+          configMap:
+            name: mcp-cmp
+            items:
+              - key: gateway.yaml
+                path: gateway.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-gateway-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8083
+      protocol: TCP
+      targetPort: 8083
+  selector:
+    k8s-app: mcp-gateway
+

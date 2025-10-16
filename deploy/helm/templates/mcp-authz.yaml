@@ -1,0 +1,119 @@
+{{- if .Values.services.authz.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.authz.name | default "mcp-authz" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.authz.name | default "mcp-authz" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.authz.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.authz.name | default "mcp-authz" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.authz.name | default "mcp-authz" }}
+        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.services.authz.name | default "mcp-authz" }}
+        image: {{ .Values.global.registry }}/{{ .Values.services.authz.name | default "mcp-authz" }}:{{ .Values.global.version }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        {{- if .Values.services.authz.service.port }}
+        ports:
+        - containerPort: {{ .Values.services.authz.service.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.services.authz.resources }}
+        resources:
+          {{- toYaml .Values.services.authz.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.services.authz.config.enabled }}
+        - name: config-volume
+          mountPath: {{ .Values.services.authz.config.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        - name: data-volume
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
+        {{- if .Values.services.authz.env }}
+        env:
+        {{- range $key, $value := .Values.services.authz.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      {{- if .Values.services.authz.config.enabled }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mcp-config
+          items:
+          - key: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
+            path: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
+      {{- end }}
+      - name: data-volume
+        hostPath:
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
+          type: DirectoryOrCreate
+---
+{{- if .Values.services.authz.service.port }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.authz.service.name | default "mcp-authz-svc" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.authz.name | default "mcp-authz" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.authz.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.services.authz.service.port }}
+    targetPort: {{ .Values.services.authz.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.services.authz.name | default "mcp-authz" }}
+{{- end }}
+---
+{{- if and .Values.ingress.enabled .Values.services.authz.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.services.authz.name | default "mcp-authz" }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.authz.name | default "mcp-authz" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.services.authz.ingress.host | default .Values.global.domain }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.global.domain }}
+    http:
+      paths:
+      - path: {{ .Values.services.authz.ingress.path | default "/" }}
+        pathType: {{ .Values.services.authz.ingress.pathType | default "Prefix" }}
+        backend:
+          service:
+            name: {{ .Values.services.authz.service.name | default "mcp-authz-svc" }}
+            port:
+              number: {{ .Values.services.authz.service.port }}
+{{- end }}
+{{- end }}

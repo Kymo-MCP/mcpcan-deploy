@@ -1,0 +1,120 @@
+{{- if .Values.services.market.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.market.name | default "mcp-market" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.market.name | default "mcp-market" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.market.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.market.name | default "mcp-market" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.market.name | default "mcp-market" }}
+        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.services.market.name | default "mcp-market" }}
+        image: {{ .Values.global.registry }}/{{ .Values.services.market.name | default "mcp-market" }}:{{ .Values.global.version }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        {{- if .Values.services.market.service.port }}
+        ports:
+        - containerPort: {{ .Values.services.market.service.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.services.market.resources }}
+        resources:
+          {{- toYaml .Values.services.market.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.services.market.config.enabled }}
+        - name: config-volume
+          mountPath: {{ .Values.services.market.config.mountPath | default "/app/config" }}
+          readOnly: true
+        {{- end }}
+        - name: data-volume
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
+        {{- if .Values.services.market.env }}
+        env:
+        {{- range $key, $value := .Values.services.market.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      volumes:
+      {{- if .Values.services.market.config.enabled }}
+      - name: config-volume
+        configMap:
+          name: mcp-config
+          items:
+          - key: {{ .Values.services.market.config.configMapKey | default "market.yaml" }}
+            path: {{ .Values.services.market.config.configMapKey | default "market.yaml" }}
+      {{- end }}
+      - name: data-volume
+        hostPath:
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
+          type: DirectoryOrCreate
+---
+{{- if .Values.services.market.service.port }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.market.service.name | default "mcp-market-svc" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.market.name | default "mcp-market" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.market.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.services.market.service.port }}
+    targetPort: {{ .Values.services.market.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.services.market.name | default "mcp-market" }}
+{{- end }}
+---
+{{- if and .Values.ingress.enabled .Values.services.market.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.services.market.name | default "mcp-market" }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.market.name | default "mcp-market" }}
+    {{- include "mcp-box.labels" . | nindent 4 }}
+  {{- with .Values.services.market.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.services.market.ingress.host | default .Values.global.domain }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.services.market.ingress.host | default .Values.global.domain }}
+    http:
+      paths:
+      - path: {{ .Values.services.market.ingress.path | default "/" }}
+        pathType: {{ .Values.services.market.ingress.pathType | default "Prefix" }}
+        backend:
+          service:
+            name: {{ .Values.services.market.service.name | default "mcp-market-svc" }}
+            port:
+              number: {{ .Values.services.market.service.port }}
+{{- end }}
+{{- end }}

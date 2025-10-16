@@ -1,0 +1,221 @@
+# Global configuration
+global:
+  # namespace: mcp-market  # 使用命令行 --namespace 参数指定命名空间
+  domain: mcp-market.com
+  version: v1.0.0
+  registry: ccr.ccs.tencentyun.com/itqm-private
+  imagePullPolicy: Always
+  hostStorage:
+    rootPath: /data/mcp-box
+    staticPath: /data/mcp-box/static
+    codePackagePath: /data/mcp-box/code-package
+    mysqlPath: /data/mcp-box/mysql
+    redisPath: /data/mcp-box/redis
+  mountStorage:
+    rootPath: /data/mcp-box
+    staticPath: /data/mcp-box/static
+    codePackagePath: /data/mcp-box/code-package
+    mysqlPath: /var/lib/mysql
+    redisPath: /data/redis
+
+# Infrastructure configuration
+infrastructure:
+  mysql:
+    enabled: true
+    name: mysql
+    image:
+      repository: mysql
+      tag: "8.0"
+    service:
+      name: mysql-svc
+      port: 3306
+      type: ClusterIP
+    auth:
+      rootPassword: dev-root-password
+      database: mcp_dev
+      username: mcp_user
+      password: dev-password
+    persistence:
+      enabled: false
+      size: 100Gi
+      storageClass: local-storage
+      mountPath: /var/lib/mysql
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  redis:
+    enabled: true
+    name: redis
+    image:
+      repository: redis
+      tag: "7.0"
+    service:
+      name: redis-svc
+      port: 6379
+      type: ClusterIP
+    auth:
+      password: dev-redis-password
+    persistence:
+      enabled: false
+      size: 50Gi
+      storageClass: local-storage
+      mountPath: /data/redis
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+# Services configuration
+services:
+  web:
+    enabled: true
+    name: mcp-web
+    replicas: 1
+    service:
+      name: mcp-web-svc
+      port: 3000
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /
+      pathType: Prefix
+    config:
+      enabled: false
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+  market:
+    enabled: true
+    name: mcp-market
+    replicas: 1
+    service:
+      name: mcp-market-svc
+      port: 8080
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /api/market
+      pathType: Prefix
+    config:
+      enabled: false
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  authz:
+    enabled: true
+    name: mcp-authz
+    replicas: 1
+    service:
+      name: mcp-authz-svc
+      port: 8081
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /api/authz
+      pathType: Prefix
+    config:
+      enabled: false
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  gateway:
+    enabled: true
+    name: mcp-gateway
+    replicas: 1
+    service:
+      name: mcp-gateway-svc
+      port: 8082
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /api/gateway
+      pathType: Prefix
+    config:
+      enabled: false
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  init:
+    enabled: true
+    name: mcp-init
+    replicas: 1
+    service:
+      name: mcp-init-svc
+      port: 8083
+      type: ClusterIP
+    config:
+      enabled: false
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  tls:
+    enabled: false
+    secretName: "domain-tls"
+    hosts:
+      - demo-mcp-box.itqm.cn
+    crt: ""
+    key: ""
+
+
+# Monitoring and observability
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+# Security
+security:
+  podSecurityPolicy:
+    enabled: false
+  networkPolicy:
+    enabled: false
