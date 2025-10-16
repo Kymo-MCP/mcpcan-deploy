@@ -48,7 +48,7 @@ mcp-box-deploy/helm/
 │   ├── mcp-init.yaml
 │   └── mcp-redis.yaml
 └── scripts/
-    └── publish-to-github-pages.sh
+    └── publish-to-gh-pages.sh
 ```
 
 ### 2.2 检查 Chart.yaml
@@ -68,7 +68,7 @@ appVersion: "v1.0.0"
 
 ### 3.1 脚本功能说明
 
-<mcfile name="publish-to-github-pages.sh" path="/Users/nolan/go/src/qm-mcp/mcp-box-deploy/helm/scripts/publish-to-github-pages.sh"></mcfile> 脚本会自动完成以下操作：
+<mcfile name="publish-to-gh-pages.sh" path="/Users/nolan/go/src/qm-mcp/mcp-box-deploy/helm/scripts/publish-to-gh-pages.sh"></mcfile> 脚本会自动完成以下操作：
 
 1. **验证 Chart**: 运行 `helm lint` 和 `helm template` 检查
 2. **更新版本**: 自动更新 Chart.yaml 中的版本号
@@ -85,16 +85,16 @@ appVersion: "v1.0.0"
 cd /Users/nolan/go/src/qm-mcp/mcp-box-deploy/helm
 
 # 给脚本执行权限
-chmod +x scripts/publish-to-github-pages.sh
+chmod +x scripts/publish-to-gh-pages.sh
 
 # 方式一：使用默认版本（从 backend/VERSION 文件读取）
-./scripts/publish-to-github-pages.sh
+./scripts/publish-to-gh-pages.sh
 
 # 方式二：指定版本号
-./scripts/publish-to-github-pages.sh "1.0.1"
+./scripts/publish-to-gh-pages.sh "1.0.1"
 
 # 方式三：指定版本号和仓库地址
-./scripts/publish-to-github-pages.sh "1.0.1" "https://github.com/YOUR_ORG/your-repo.git"
+./scripts/publish-to-gh-pages.sh "1.0.1" "https://github.com/YOUR_ORG/your-repo.git"
 ```
 
 ### 3.3 脚本执行过程
@@ -169,7 +169,7 @@ helm install my-mcp-box mcp-box/mcp-box -n mcp-system --create-namespace
 
 ```bash
 # 更新版本号并发布
-./scripts/publish-to-github-pages.sh "1.0.2"
+./scripts/publish-to-gh-pages.sh "1.0.2"
 ```
 
 ### 6.2 升级已安装的 Chart
@@ -231,7 +231,7 @@ jobs:
     - name: Publish Chart
       run: |
         cd helm
-        ./scripts/publish-to-github-pages.sh ${{ github.ref_name }}
+        ./scripts/publish-to-gh-pages.sh ${{ github.ref_name }}
 ```
 
 这样，每次推送新的 tag 时，就会自动发布新版本的 Helm Chart。

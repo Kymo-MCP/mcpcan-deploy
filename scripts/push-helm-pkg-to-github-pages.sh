@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MCP-Box Helm Chart 发布到 GitHub Pages 脚本
-# Usage: ./publish-to-github-pages.sh [chart-version] [github-repo-url]
+# Usage: ./publish-to-gh-pages.sh [chart-version] [github-repo-url]
 
 set -e
 
@@ -48,11 +48,11 @@ rm -rf "$TEMP_DIR"
 git clone "$GITHUB_REPO" "$TEMP_DIR"
 cd "$TEMP_DIR"
 
-# 创建或切换到 github-pages 分支
-if git show-ref --verify --quiet refs/remotes/origin/github-pages; then
-    git checkout github-pages
+# 创建或切换到 gh-pages 分支
+if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+    git checkout gh-pages
 else
-    git checkout --orphan github-pages
+    git checkout --orphan gh-pages
     git rm -rf .
 fi
 
@@ -115,7 +115,7 @@ git add .
 git config user.name "opensource"
 git config user.email "opensource@kymo-mcp.com"
 git commit -m "发布 $CHART_NAME $CHART_VERSION"
-git push origin github-pages
+git push origin gh-pages
 
 # 清理
 echo "🧹 清理临时文件..."

@@ -79,26 +79,26 @@ jobs:
         helm package . --destination /tmp/
         echo "📦 Helm Chart 打包完成"
 
-    - name: 检出 github-pages 分支
+    - name: 检出 gh-pages 分支
       uses: actions/checkout@v4
       with:
-        ref: github-pages
-        path: github-pages
+        ref: gh-pages
+        path: gh-pages
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 设置 github-pages 分支
+    - name: 设置 gh-pages 分支
       run: |
-        if [ ! -d "github-pages" ]; then
-          mkdir github-pages
-          cd github-pages
+        if [ ! -d "gh-pages" ]; then
+          mkdir gh-pages
+          cd gh-pages
           git init
           git remote add origin https://github.com/${{ github.repository }}.git
-          git checkout -b github-pages
+          git checkout -b gh-pages
         fi
 
     - name: 复制 Chart 包并更新索引
       run: |
-        cd github-pages
+        cd gh-pages
         cp /tmp/mcp-box-${{ steps.get_version.outputs.version }}.tgz ./
         
         # 生成或更新 index.yaml
@@ -110,7 +110,7 @@ jobs:
 
     - name: 创建 README
       run: |
-        cd github-pages
+        cd gh-pages
         cat > README.md << EOF
         # MCP-Box Helm Charts
 
@@ -204,12 +204,12 @@ jobs:
         本项目采用 MIT 许可证，详情请查看 [LICENSE](https://github.com/${{ github.repository }}/blob/main/LICENSE) 文件。
         EOF
 
-    - name: 提交并推送到 github-pages
+    - name: 提交并推送到 gh-pages
       run: |
-        cd github-pages
+        cd gh-pages
         git add .
         git commit -m "发布 mcp-box v${{ steps.get_version.outputs.version }}" || exit 0
-        git push origin github-pages
+        git push origin gh-pages
 
     - name: 输出发布信息
       run: |
