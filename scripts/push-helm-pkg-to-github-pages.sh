@@ -23,7 +23,7 @@ else
 fi
 GITHUB_REPO=${2:-"https://github.com/Kymo-MCP/mcp-box-deploy.git"}
 TEMP_DIR="/tmp/helm-publish-$$"
-CHART_DIR="$(dirname "$0")/../helm"
+CHART_DIR="$SCRIPT_DIR/../helm"
 
 echo "🚀 开始发布 Helm Chart 到 GitHub Pages..."
 
