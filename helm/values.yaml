@@ -5,6 +5,7 @@ global:
   version: v1.0.0
   registry: ccr.ccs.tencentyun.com/itqm-private
   imagePullPolicy: Always
+  appSecret: dev-app-secret
   hostStorage:
     rootPath: /data/mcp-box
     staticPath: /data/mcp-box/static
@@ -60,6 +61,7 @@ infrastructure:
       type: ClusterIP
     auth:
       password: dev-redis-password
+      db: 0
     persistence:
       enabled: false
       size: 50Gi

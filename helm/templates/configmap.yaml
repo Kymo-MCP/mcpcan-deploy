@@ -31,7 +31,7 @@ data:
   authz.yaml: |-
     server:
       httpPort: {{ .Values.services.authz.service.port }}
-    secret: {{ .Values.services.authz.config.secret }}
+    secret: {{ .Values.global.appSecret }}
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}
@@ -56,7 +56,7 @@ data:
   market.yaml: |-
     server:
       httpPort: {{ .Values.services.market.service.port }}
-    secret: {{ .Values.services.market.config.secret }}
+    secret: {{ .Values.global.appSecret }}
     services:
       mcpMarket:
         host: {{ .Values.services.market.name | default "mcp-market" }}-svc
