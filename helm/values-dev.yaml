@@ -1,0 +1,264 @@
+# Development Environment Configuration
+global:
+  registry: ccr.ccs.tencentyun.com/itqm-private
+  version: "v1.0.0"
+  domain: demo-mcp-box.itqm.cn
+  imagePullPolicy: Always
+  hostStorage:
+    rootPath: /home/ubuntu/mcp-market/data
+    staticPath: /home/ubuntu/mcp-market/data/static
+    codePackagePath: /home/ubuntu/mcp-market/data/code-package
+    mysqlPath: /home/ubuntu/mcp-market/data/mysql
+    redisPath: /home/ubuntu/mcp-market/data/redis
+  mountStorage:
+    rootPath: /data/mcp-box
+    staticPath: /data/mcp-box/static
+    codePackagePath: /data/mcp-box/code-package
+    mysqlPath: /var/lib/mysql
+    redisPath: /data/redis
+
+# Hooks Configuration
+hooks:
+  preUpgrade:
+    enabled: true
+
+# Infrastructure
+infrastructure:
+  mysql:
+    enabled: true
+    name: mysql
+    image:
+      repository: mysql
+      tag: "8.0.25"
+    service:
+      name: mysql-svc
+      port: 3306
+      type: ClusterIP
+    auth:
+      rootPassword: dev-root-password
+      database: mcp_dev
+      username: mcp_user
+      password: dev-password
+    persistence:
+      enabled: false
+      size: 100Gi
+      storageClass: local-storage
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  redis:
+    enabled: true
+    name: redis
+    image:
+      repository: redis
+      tag: "7.0"
+    service:
+      name: redis-svc
+      port: 6379
+      type: ClusterIP
+    auth:
+      password: "dev-password"
+    persistence:
+      enabled: false
+      size: 50Gi
+      storageClass: local-storage
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+# Services
+services:
+  init:
+    enabled: true
+    name: mcp-init
+    replicas: 1
+    ingress:
+      enabled: false
+    config:
+      enabled: true
+      mountPath: /app/config
+      configMapKey: init.yaml
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+  gateway:
+    enabled: true
+    name: mcp-gateway
+    replicas: 1
+    service:
+      name: mcp-gateway-svc
+      port: 8083
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /mcp-gateway
+      pathType: Prefix
+    config:
+      enabled: true
+      mountPath: /app/config
+      configMapKey: gateway.yaml
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  authz:
+    enabled: true
+    name: mcp-authz
+    replicas: 1
+    service:
+      name: mcp-authz-svc
+      port: 8082
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /api/authz/(.*)
+      pathType: Prefix
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /authz/$1
+    config:
+      enabled: true
+      mountPath: /app/config
+      configMapKey: authz.yaml
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  market:
+    enabled: true
+    name: mcp-market
+    replicas: 1
+    service:
+      name: mcp-market-svc
+      port: 8081
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /api/market/(.*)
+      pathType: Prefix
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /market/$1
+    config:
+      enabled: true
+      mountPath: /app/config
+      configMapKey: market.yaml
+    persistence:
+      enabled: false
+      mountPath: /data/mcp-box
+      hostPath: /data/mcp-box
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+  web:
+    enabled: true
+    name: mcp-web
+    replicas: 1
+    service:
+      name: mcp-web-svc
+      port: 3000
+      type: ClusterIP
+    ingress:
+      enabled: true
+      path: /
+      pathType: Prefix
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+# Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  tls:
+    enabled: true
+    secretName: "mcp-box-domain-secret"
+    hosts:
+      - demo-mcp-box.itqm.cn
+    crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIDuTCCAqGgAwIBAgIUYrfVmePN/mFvdHAWqLPe8S2AmN8wDQYJKoZIhvcNAQEL
+      BQAwbDELMAkGA1UEBhMCQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0Jl
+      aWppbmcxDDAKBgNVBAoMA01DUDEMMAoGA1UECwwDRGV2MR0wGwYDVQQDDBRkZW1v
+      LW1jcC1ib3guaXRxbS5jbjAeFw0yNTEwMTEwOTQwNTRaFw0zNTEwMDkwOTQwNTRa
+      MGwxCzAJBgNVBAYTAkNOMRAwDgYDVQQIDAdCZWlqaW5nMRAwDgYDVQQHDAdCZWlq
+      aW5nMQwwCgYDVQQKDANNQ1AxDDAKBgNVBAsMA0RldjEdMBsGA1UEAwwUZGVtby1t
+      Y3AtYm94Lml0cW0uY24wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDc
+      Kcf291dLC7oBMQPba2297u+3394TYLviPnBGpH+tA6+UORhNXYSCLp4FAU5na+Nn
+      04xxP7l939O/TzdKwesGi2YRPYBN2CITxZoIgMaOl51wx3xnqWbb4DIu32e8ZVib
+      S37OuEEVV9m9NYE3+G36LX9JSmi0CWNMqNxnW2EzZm78z+Aa0LA7E0/ywLorNZkZ
+      Sw3N6McMT2+qLMOo7IIOZTSMZyjBvvMBhU/qZxLU79t7Q8vGs5IO1HYuPEyfte18
+      8KmD31vQIc9wvCwkF9I0OuKT924jdXKKKd8TBQvxz86CosCQqwxWdWQkcutafiM4
+      i/IYR/bOEEfAO4CqruhNAgMBAAGjUzBRMB0GA1UdDgQWBBQE+EUsHjFmad6yrtxN
+      pMaEM4yTTjAfBgNVHSMEGDAWgBQE+EUsHjFmad6yrtxNpMaEM4yTTjAPBgNVHRMB
+      Af8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBcz5NalmIzremlCPgDyIQ9KG6o
+      iYpZ/q/1UUM9dIyBq8FBJojOnzrW5BPqtVcDtUqvkunI7E3zc7Kt7HaKldsxN124
+      MY0kqcFMQs6qB54i+unQjyA21wnFXFxG1YVRO7SUgddIx5VRaMxAAh9FUNELYKko
+      h0Fhoi0Fb/WfDEz2jD7Mdz+YvC3vQS3WaNcMaC5kkyM/MElmq+G/OWwqK6cEsE/6
+      qYba87UA39BKrC2xZmSaTf3a7NvR04IsN+KnRA8FqoVaH0l5MznosG4q5lujlU+M
+      u5X8Dikgq1EouSx+S8AkWIozukBG/it7Kdkwo5Teo35CaRaGh+XWVpEgPeaf
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDcKcf291dLC7oB
+      MQPba2297u+3394TYLviPnBGpH+tA6+UORhNXYSCLp4FAU5na+Nn04xxP7l939O/
+      TzdKwesGi2YRPYBN2CITxZoIgMaOl51wx3xnqWbb4DIu32e8ZVibS37OuEEVV9m9
+      NYE3+G36LX9JSmi0CWNMqNxnW2EzZm78z+Aa0LA7E0/ywLorNZkZSw3N6McMT2+q
+      LMOo7IIOZTSMZyjBvvMBhU/qZxLU79t7Q8vGs5IO1HYuPEyfte188KmD31vQIc9w
+      vCwkF9I0OuKT924jdXKKKd8TBQvxz86CosCQqwxWdWQkcutafiM4i/IYR/bOEEfA
+      O4CqruhNAgMBAAECggEAJwwz/o3UyiccyMxQMlDl6Fth4dtPMGGmQRSw5h6T1HRE
+      ZkYQFNyivVIWTa3zIW2lqgr/rDBQrk4N6K7ckCI/lGwR4LnnMSdFt/sCfEKWtMCY
+      OGHxIxOM/i9PxzdxVx0kb3qe1Xwhcu8fW6sLLYmeu9Ho8u9DDbdiiLykRqKS5UIP
+      we1MS4XoMtBSmBye8UjPc+5627jGrkiGGlK8ddmMsgzHMnAQYhFjop/+lTuY2Q35
+      P5aMka9phQRXDY/Lf0spguQum7n6pcv3fOjqKyQt+rcVUFKuYf/NJ6QrrhIaOgwZ
+      mYicrbvn5XJkMm/dUxCtvYVfbSWj52psFKtYVYR0IQKBgQD+GR3QJvnbCNys/lfE
+      FVuu79dHZ5rBrjTVWU1o98CucFwnralJQGEZyR/KYBPPdt2OAXYbjERlVT3Ncim8
+      2BMOCfqO+yPtacOoaYr5h4ObtbAvq6CDp3lmeW4N2qvMJRddehiPd9pK7SVUP+x8
+      CC3Q5G0SQ+UbBaRp49OWctqPfQKBgQDdz6QjVn4oa9nF3WD563ASS8SFWKWPEtH4
+      EN+OqBjRkR5gGznO2h5kU2VDh0KIrLxCAsFcwDXoKitHIswjMqYl06IJZrPeYGhd
+      kCcZCkZJvvNboI0f1ZYouzeLAE0sXvR3NU+Gd3lncfZEAY1HVn+Rb1npaOfoD2uw
+      xm1gexi1EQKBgQDN7ZsMy9moWwlFJigI4OpZ30SQOPXhy4ZD9cjXrho5BRSaj5Jn
+      rEZFeItMHwtPEt1BrguDDe2MVkXtD32l71OaCBpI8F3QleucvFSGH/5YHio4qBZB
+      PGQV2YmIrtSWcOT7u+zVsON337NmERxd9N70sXt31xCBEtSJgLtE7bYVnQKBgH3X
+      1mnuInlQZydpKCHiv5zBu+djmdqIdPPmrs9C84HCcZdZGv0OpvuIjQU48jiUt+JD
+      qeyzaGIlupQLXAIENFt1rJLk39ukmtGqfWQpfiNM4Mj1V9vd0+mb/jEwpJgt70jK
+      yCmkEw7riyqeLsdwfcPHhx1z1U7FoPWUPm3kqOnhAoGBAKuVMc/n2MReqFuIJ2qc
+      vS8njIJsbD+5YkSpiXBsKzjO2ZJmRbn1tJAAG/rzyH8AyvXx51lKFhItJrBwmgNe
+      tca9faZLJraWzgJKVM+0W2IW1Ht+dLh3qZrW93VvuBXH86iRoWtaWC7pscRzar7z
+      OKGq3nXK0C1wPXGDPLzwu4ya
+      -----END PRIVATE KEY-----
+    
