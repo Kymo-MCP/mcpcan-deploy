@@ -18,7 +18,6 @@ spec:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
         image: {{ .Values.global.registry }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-        command: ["tail", "-f", "/dev/null"]
         {{- if .Values.services.init.resources }}
         resources:
           {{- toYaml .Values.services.init.resources | nindent 10 }}
