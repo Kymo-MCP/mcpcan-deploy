@@ -1,0 +1,26 @@
+# Chart Releaser 配置文件
+# 用于配置 helm/chart-releaser-action 的行为
+
+# 指定 charts 目录
+charts-dir: helm
+
+# 指定 GitHub Pages 分支
+pages-branch: gh-pages
+
+# 指定 GitHub Pages 索引路径
+pages-index-path: index.yaml
+
+# 跳过现有的 releases
+skip-existing: true
+
+# 生成 release notes
+generate-release-notes: true
+
+# 标记为 pre-release 的条件（可选）
+# mark-as-latest: false
+
+# 包含的 chart 路径模式
+# include-filter: "mcp-box"
+
+# 排除的 chart 路径模式
+# exclude-filter: ""

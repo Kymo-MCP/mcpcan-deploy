@@ -1,10 +1,12 @@
-name: Publish-Helm-Chart
+name: Release Helm Chart
 
 on:
   push:
     branches:
       - 'main'
       - 'v1.0.0-dev'
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -13,7 +15,7 @@ on:
         default: '1.0.0'
 
 jobs:
-  publish-helm-chart:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -26,34 +28,33 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: 配置 Git
+      run: |
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
     - name: 安装 Helm
       uses: azure/setup-helm@v3
       with:
         version: '3.12.0'
-
-    - name: 配置 Git
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
 
     - name: 获取版本号
       id: get_version
       run: |
         if [ "${{ github.event_name }}" == "push" ]; then
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # 标签推送
+            # 标签推送，提取版本号
             VERSION=${GITHUB_REF#refs/tags/v}
           else
-            # 分支推送
+            # 分支推送，从 VERSION 文件读取或生成开发版本
             if [ -f VERSION ]; then
               VERSION=$(cat VERSION)
-            elif [ -f VSESION ]; then
-              VERSION=$(cat VSESION)
             else
               VERSION="dev-$(date +%Y%m%d-%H%M%S)"
             fi
           fi
         else
+          # 手动触发
           VERSION=${{ github.event.inputs.version }}
         fi
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -73,149 +74,20 @@ jobs:
         sed -i "s/^appVersion:.*/appVersion: ${{ steps.get_version.outputs.version }}/" Chart.yaml
         echo "📝 Chart 版本已更新到 ${{ steps.get_version.outputs.version }}"
 
-    - name: 打包 Helm Chart
-      run: |
-        cd helm
-        helm package . --destination /tmp/
-        echo "📦 Helm Chart 打包完成"
-
-    - name: 检出 gh-pages 分支
-      uses: actions/checkout@v4
+    - name: 运行 chart-releaser
+      uses: helm/chart-releaser-action@v1.6.0
       with:
-        ref: gh-pages
-        path: gh-pages
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: 设置 gh-pages 分支
-      run: |
-        if [ ! -d "gh-pages" ]; then
-          mkdir gh-pages
-          cd gh-pages
-          git init
-          git remote add origin https://github.com/${{ github.repository }}.git
-          git checkout -b gh-pages
-        fi
-
-    - name: 复制 Chart 包并更新索引
-      run: |
-        cd gh-pages
-        cp /tmp/mcp-box-${{ steps.get_version.outputs.version }}.tgz ./
-        
-        # 生成或更新 index.yaml
-        if [ -f index.yaml ]; then
-          helm repo index . --merge index.yaml --url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-        else
-          helm repo index . --url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-        fi
-
-    - name: 创建 README
-      run: |
-        cd gh-pages
-        cat > README.md << EOF
-        # MCP-Box Helm Charts
-
-        这是 MCP-Box 项目的官方 Helm Charts 仓库。
-
-        ## 快速开始
-
-        ### 添加 Helm 仓库
-
-        \`\`\`bash
-        helm repo add mcp-box https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
-        helm repo update
-        \`\`\`
-
-        ### 安装 MCP-Box
-
-        \`\`\`bash
-        # 使用默认配置安装
-        helm install mcp-box mcp-box/mcp-box
-
-        # 使用自定义配置安装
-        helm install mcp-box mcp-box/mcp-box -f values-custom.yaml
-
-        # 指定命名空间安装
-        helm install mcp-box mcp-box/mcp-box -n mcp-system --create-namespace
-        \`\`\`
-
-        ### 升级 MCP-Box
-
-        \`\`\`bash
-        helm upgrade mcp-box mcp-box/mcp-box
-        \`\`\`
-
-        ### 卸载 MCP-Box
-
-        \`\`\`bash
-        helm uninstall mcp-box
-        \`\`\`
-
-        ## 配置说明
-
-        ### 基本配置
-
-        \`\`\`yaml
-        global:
-          domain: "your-domain.com"
-          version: "${{ steps.get_version.outputs.version }}"
-          registry: "your-registry.com"
-
-        services:
-          web:
-            enabled: true
-            replicas: 2
-          market:
-            enabled: true
-            replicas: 1
-          authz:
-            enabled: true
-            replicas: 1
-        \`\`\`
-
-        ### 持久化存储
-
-        \`\`\`yaml
-        infrastructure:
-          mysql:
-            persistence:
-              enabled: true
-              size: 100Gi
-              storageClass: "fast-ssd"
-          redis:
-            persistence:
-              enabled: true
-              size: 50Gi
-        \`\`\`
-
-        ## 版本信息
-
-        - 当前版本: ${{ steps.get_version.outputs.version }}
-        - 发布时间: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        - 构建号: ${{ github.run_number }}
-
-        ## 支持与反馈
-
-        - 🐛 [报告问题](https://github.com/${{ github.repository }}/issues)
-        - 📖 [查看文档](https://github.com/${{ github.repository }}/blob/main/README.md)
-        - 💬 [讨论交流](https://github.com/${{ github.repository }}/discussions)
-
-        ## 许可证
-
-        本项目采用 MIT 许可证，详情请查看 [LICENSE](https://github.com/${{ github.repository }}/blob/main/LICENSE) 文件。
-        EOF
-
-    - name: 提交并推送到 gh-pages
-      run: |
-        cd gh-pages
-        git add .
-        git commit -m "发布 mcp-box v${{ steps.get_version.outputs.version }}" || exit 0
-        git push origin gh-pages
+        charts_dir: .
+        config: cr.yaml
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: 输出发布信息
       run: |
         echo "🎉 Helm Chart 发布成功!"
         echo "📦 版本: ${{ steps.get_version.outputs.version }}"
         echo "🌐 仓库地址: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+        echo "📋 Releases: https://github.com/${{ github.repository }}/releases"
         echo ""
         echo "使用以下命令添加仓库:"
         echo "helm repo add mcp-box https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
