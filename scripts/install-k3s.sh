@@ -310,6 +310,12 @@ if [ "$node_type" = "master" ]; then
       info "外部访问 kubeconfig 已生成: /etc/rancher/k3s/$K3S_API_URL.yaml"
     fi
 
+    # 生成容器内部使用的 https://kubernetes.default.svc:443 配置文件, kubernetes-internal.yaml
+    sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/kubernetes-internal.yaml
+    sudo sed -i "s|https://127.0.0.1:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
+    sudo sed -i "s|https://localhost:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
+    info "容器内部 kubeconfig 已生成: /etc/rancher/k3s/kubernetes-internal.yaml"
+
   else
     error "无法找到默认 kubeconfig 文件，外部访问配置生成失败"
   fi
