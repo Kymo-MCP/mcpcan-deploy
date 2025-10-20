@@ -17,7 +17,6 @@ global:
     codePackagePath: /data/mcp-box/code-package
     mysqlPath: /var/lib/mysql
     redisPath: /data/redis
-  defaultKubernetesConfigPath: /Users/nolan/.kube/config
 
 # Hooks Configuration
 hooks:
@@ -90,6 +89,8 @@ services:
       enabled: true
       mountPath: /app/config
       configMapKey: init.yaml
+      k8sConfigPath: /Users/nolan/.kube/config
+      k8sConfigMountPath: /app/config/kubernetes-internal.yaml
     resources:
       requests:
         memory: "64Mi"

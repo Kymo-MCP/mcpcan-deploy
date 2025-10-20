@@ -18,7 +18,6 @@ global:
     codePackagePath: /data/mcp-box/code-package
     mysqlPath: /var/lib/mysql
     redisPath: /data/redis
-  defaultKubernetesConfigPath: /etc/rancher/k3s/kubernetes-internal.yaml
 
 # Infrastructure configuration
 infrastructure:
