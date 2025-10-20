@@ -30,7 +30,6 @@ spec:
           readOnly: true
         - name: k8s-config-volume
           mountPath: {{ .Values.services.init.config.k8sConfigMountPath | default "/app/config/kube" }}
-          subPath: {{ .Values.services.init.config.k8sConfigHostFile | default "kubernetes-internal.yaml" }}
           readOnly: true
         {{- end }}
       {{- if .Values.services.init.config }}
