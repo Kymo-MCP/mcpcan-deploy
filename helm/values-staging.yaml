@@ -89,8 +89,9 @@ services:
       enabled: true
       mountPath: /app/config
       configMapKey: init.yaml
-      k8sConfigDir: /Users/nolan/.kube/kubernetes-internal.yaml
-      k8sConfigMountPath: /app/config/kubernetes-internal.yaml
+      k8sConfigHostPath: /Users/nolan/.kube
+      k8sConfigHostFile: kubernetes-internal.yaml
+      k8sConfigMountPath: /app/config/kube
     resources:
       requests:
         memory: "64Mi"
