@@ -89,7 +89,7 @@ services:
       enabled: true
       mountPath: /app/config
       configMapKey: init.yaml
-      k8sConfigPath: /Users/nolan/.kube/config
+      k8sConfigDir: /Users/nolan/.kube/kubernetes-internal.yaml
       k8sConfigMountPath: /app/config/kubernetes-internal.yaml
     resources:
       requests:
