@@ -30,6 +30,8 @@ spec:
         - name: k8s-config-volume
           mountPath: {{ .Values.services.init.config.k8sConfigMountPath | default "/app/config/kube" }}
           readOnly: true
+        - name: data-volume
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
         {{- end }}
       {{- if .Values.services.init.config }}
       volumes:
@@ -42,6 +44,10 @@ spec:
       - name: k8s-config-volume
         hostPath:
           path: {{ .Values.services.init.config.k8sConfigHostPath | default "/etc/rancher/k3s" }}
+          type: DirectoryOrCreate
+      - name: data-volume
+        hostPath:
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
           type: DirectoryOrCreate
       {{- end }}
       restartPolicy: OnFailure
