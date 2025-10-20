@@ -107,6 +107,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /mcp-gateway
       pathType: Prefix
     config:
@@ -131,6 +132,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /api/authz/(.*)
       pathType: Prefix
       annotations:
@@ -159,6 +161,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /api/market/(.*)
       pathType: Prefix
       annotations:
@@ -189,6 +192,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /
       pathType: Prefix
     resources:

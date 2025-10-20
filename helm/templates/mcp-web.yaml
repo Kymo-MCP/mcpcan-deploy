@@ -70,9 +70,10 @@ metadata:
   labels:
     app: {{ .Values.services.web.name | default "mcp-web" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- $ann := (merge (.Values.ingress.annotations | default dict) (.Values.services.web.ingress.annotations | default dict)) }}
+  {{- if gt (len $ann) 0 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- toYaml $ann | nindent 4 }}
   {{- end }}
 spec:
   {{- if .Values.ingress.className }}
@@ -85,7 +86,7 @@ spec:
     secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-  - host: {{ .Values.global.domain }}
+  - host: {{ .Values.services.web.ingress.host | default .Values.global.domain }}
     http:
       paths:
       - path: {{ .Values.services.web.ingress.path | default "/" }}

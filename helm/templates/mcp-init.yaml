@@ -28,13 +28,6 @@ spec:
           mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
           readOnly: true
         {{- end }}
-        {{- if .Values.services.init.env }}
-        env:
-        {{- range $key, $value := .Values.services.init.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
       {{- if .Values.services.init.config }}
       volumes:
       - name: config-volume

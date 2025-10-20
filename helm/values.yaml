@@ -87,6 +87,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /
       pathType: Prefix
     config:
@@ -111,6 +112,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /api/market
       pathType: Prefix
     config:
@@ -135,6 +137,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /api/authz
       pathType: Prefix
     config:
@@ -159,6 +162,7 @@ services:
       type: ClusterIP
     ingress:
       enabled: true
+      host: ""
       path: /api/gateway
       pathType: Prefix
     config:
@@ -202,7 +206,7 @@ ingress:
     enabled: false
     secretName: "domain-tls"
     hosts:
-      - demo-mcp-box.itqm.cn
+      - example.mcp-box.com
     crt: ""
     key: ""
 

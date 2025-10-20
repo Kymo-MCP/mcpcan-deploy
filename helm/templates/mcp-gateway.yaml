@@ -38,13 +38,6 @@ spec:
           mountPath: {{ .Values.services.gateway.config.mountPath | default "/app/config" }}
           readOnly: true
         {{- end }}
-        {{- if .Values.services.gateway.env }}
-        env:
-        {{- range $key, $value := .Values.services.gateway.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
       {{- if .Values.services.gateway.config }}
       volumes:
       - name: config-volume
@@ -84,9 +77,10 @@ metadata:
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- $ann := (merge (.Values.ingress.annotations | default dict) (.Values.services.gateway.ingress.annotations | default dict)) }}
+  {{- if gt (len $ann) 0 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- toYaml $ann | nindent 4 }}
   {{- end }}
 spec:
   {{- if .Values.ingress.className }}
@@ -99,7 +93,7 @@ spec:
     secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-  - host: {{ .Values.global.domain }}
+  - host: {{ .Values.services.gateway.ingress.host | default .Values.global.domain }}
     http:
       paths:
       - path: {{ .Values.services.gateway.ingress.path | default "/" }}

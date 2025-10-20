@@ -40,13 +40,6 @@ spec:
         {{- end }}
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
-        {{- if .Values.services.market.env }}
-        env:
-        {{- range $key, $value := .Values.services.market.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
       volumes:
       {{- if .Values.services.market.config.enabled }}
       - name: config-volume
@@ -91,9 +84,10 @@ metadata:
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- with .Values.services.market.ingress.annotations }}
+  {{- $ann := (merge (.Values.ingress.annotations | default dict) (.Values.services.market.ingress.annotations | default dict)) }}
+  {{- if gt (len $ann) 0 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- toYaml $ann | nindent 4 }}
   {{- end }}
 spec:
   {{- if .Values.ingress.className }}
