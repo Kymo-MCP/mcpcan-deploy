@@ -97,6 +97,9 @@ data:
       admin_role_description: admin role
       admin_role_level: 1
       admin_data_scope: all
+    kubernetes:
+      namespace: {{ .Release.Namespace }}
+      defaultConfigFilePath: "/etc/rancher/k3s/kubernetes-internal.yaml"
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}
@@ -109,6 +112,10 @@ data:
         port: {{ .Values.infrastructure.redis.service.port }}
         password: {{ .Values.infrastructure.redis.auth.password }}
         db: {{ .Values.infrastructure.redis.auth.db }}
+    storage:
+      rootPath: {{ .Values.global.mountStorage.rootPath }}
+      codePath: {{ .Values.global.mountStorage.codePackagePath }}
+      staticPath: {{ .Values.global.mountStorage.staticPath }}
     log:
       level: debug
       format: json
