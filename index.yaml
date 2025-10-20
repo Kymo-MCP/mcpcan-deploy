@@ -22,4 +22,25 @@ entries:
     urls:
     - https://kymo-mcp.github.io/mcp-box-deploy/mcp-box-v1.0.0-dev.tgz
     version: v1.0.0-dev
-generated: "2025-10-16T18:50:55.340751+08:00"
+  - apiVersion: v2
+    appVersion: v1.0.0-dev
+    created: "2025-10-20T03:57:55.146084234Z"
+    description: A Helm chart for MCP Box - Microservices Container Platform
+    digest: bf7e0a22735949b9f3f5bb96bfb1c15af1c9056e68934112372341ad677c5c45
+    home: https://github.com/Kymo-MCP/MCPbox
+    keywords:
+    - mcp-box
+    - microservices
+    - platform
+    - kubernetes
+    maintainers:
+    - email: opensource@kymo.cn
+      name: MCP Box Team
+    name: mcp-box
+    sources:
+    - https://github.com/Kymo-MCP/MCPbox
+    type: application
+    urls:
+    - https://github.com/Kymo-MCP/mcp-box-deploy/releases/download/mcp-box-v1.0.0-dev/mcp-box-v1.0.0-dev.tgz
+    version: v1.0.0-dev
+generated: "2025-10-20T03:57:55.146110432Z"
