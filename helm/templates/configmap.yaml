@@ -99,7 +99,7 @@ data:
       admin_data_scope: all
     kubernetes:
       namespace: {{ .Release.Namespace }}
-      defaultConfigFilePath: "/etc/rancher/k3s/kubernetes-internal.yaml"
+      defaultConfigFilePath: {{ .Values.global.defaultKubernetesConfigPath }}
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}
