@@ -43,7 +43,7 @@ spec:
             path: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
       - name: k8s-config-volume
         hostPath:
-          path: {{ .Values.services.init.config.k8sConfigHostPath | default "/app/config/kube" }}
+          path: {{ .Values.services.init.config.k8sConfigHostPath | default "/etc/rancher/k3s" }}
           type: DirectoryOrCreate
       {{- end }}
       restartPolicy: OnFailure
