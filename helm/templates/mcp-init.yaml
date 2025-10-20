@@ -34,8 +34,8 @@ spec:
         configMap:
           name: mcp-config
           items:
-          - key: init.yaml
-            path: init.yaml
+          - key: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
+            path: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
       {{- end }}
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
