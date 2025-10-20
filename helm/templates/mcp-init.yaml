@@ -2,11 +2,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.services.init.name | default "mcp-init" }}
+  name: {{ .Values.services.init.name | default "mcp-init" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.init.name | default "mcp-init" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
     metadata:
@@ -28,7 +32,8 @@ spec:
           mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
           readOnly: true
         - name: k8s-file
-          mountPath: {{ .Values.global.defaultKubernetesConfigPath }}
+          mountPath: {{ .Values.services.init.config.k8sConfigMountPath | default "/app/config/kubernetes-internal.yaml" }}
+          subPath: config
           readOnly: true
         {{- end }}
       {{- if .Values.services.init.config }}
@@ -41,8 +46,8 @@ spec:
             path: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
       - name: k8s-file
         hostPath:
-          path: {{ .Values.global.defaultKubernetesConfigPath }}
-          type: FileOrCreate
+          path: {{ .Values.services.init.config.k8sConfigPath | default "/etc/rancher/k3s/kubernetes-internal.yaml" }}
+          type: File
       {{- end }}
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
