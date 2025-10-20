@@ -27,6 +27,9 @@ spec:
         - name: config-volume
           mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
           readOnly: true
+        - name: k8s-file
+          mountPath: {{ .Values.global.defaultKubernetesConfigPath }}
+          readOnly: true
         {{- end }}
       {{- if .Values.services.init.config }}
       volumes:
@@ -36,6 +39,10 @@ spec:
           items:
           - key: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
             path: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
+      - name: k8s-file
+        hostPath:
+          path: {{ .Values.global.defaultKubernetesConfigPath }}
+          type: FileOrCreate
       {{- end }}
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
