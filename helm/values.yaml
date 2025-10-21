@@ -230,11 +230,11 @@ ingressController:
     httpsNodePort: 30443
   resources:
     requests:
-      cpu: 100m
-      memory: 90Mi
+      cpu: 200m
+      memory: 256Mi
     limits:
       cpu: 500m
-      memory: 256Mi
+      memory: 1024Mi
   # 节点选择器
   nodeSelector:
     kubernetes.io/os: linux

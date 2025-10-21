@@ -116,6 +116,26 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -250,7 +270,7 @@ spec:
   ports:
   - appProtocol: http
     name: http
-    port: {{ .Values.ingressController.service.httpPort }}
+    port: 80
     protocol: TCP
     targetPort: http
     {{- if eq .Values.ingressController.service.type "NodePort" }}
@@ -258,12 +278,16 @@ spec:
     {{- end }}
   - appProtocol: https
     name: https
-    port: {{ .Values.ingressController.service.httpsPort }}
+    port: 443
     protocol: TCP
     targetPort: https
     {{- if eq .Values.ingressController.service.type "NodePort" }}
     nodePort: {{ .Values.ingressController.service.httpsNodePort }}
     {{- end }}
+  - name: webhook
+    port: 8443
+    protocol: TCP
+    targetPort: webhook
   selector:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
@@ -299,13 +323,14 @@ spec:
       containers:
       - args:
         - /nginx-ingress-controller
-        - --election-id=ingress-controller-leader
+        - --publish-service=$(POD_NAMESPACE)/ingress-nginx-controller
+        - --election-id=ingress-nginx-leader
         - --controller-class=k8s.io/ingress-nginx
         - --ingress-class=nginx
         - --configmap=$(POD_NAMESPACE)/ingress-nginx-controller
-        - --http-port={{ .Values.ingressController.service.httpPort }}
-        - --https-port={{ .Values.ingressController.service.httpsPort }}
-        - --healthz-port=10254
+        - --validating-webhook=:8443
+        - --validating-webhook-certificate=/usr/local/certificates/cert
+        - --validating-webhook-key=/usr/local/certificates/key
         env:
         - name: POD_NAME
           valueFrom:
@@ -315,8 +340,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: LD_PRELOAD
-          value: /usr/local/lib/libmimalloc.so
         image: {{ .Values.ingressController.image.repository }}:{{ .Values.ingressController.image.tag }}
         imagePullPolicy: {{ .Values.ingressController.image.pullPolicy }}
         lifecycle:
@@ -336,17 +359,23 @@ spec:
           timeoutSeconds: 1
         name: controller
         ports:
-        - containerPort: {{ .Values.ingressController.service.httpPort }}
+        - containerPort: 80
           name: http
           protocol: TCP
           {{- if .Values.ingressController.hostNetwork }}
-          hostPort: {{ .Values.ingressController.service.httpPort }}
+          hostPort: 80
           {{- end }}
-        - containerPort: {{ .Values.ingressController.service.httpsPort }}
+        - containerPort: 443
           name: https
           protocol: TCP
           {{- if .Values.ingressController.hostNetwork }}
-          hostPort: {{ .Values.ingressController.service.httpsPort }}
+          hostPort: 443
+          {{- end }}
+        - containerPort: 8443
+          name: webhook
+          protocol: TCP
+          {{- if .Values.ingressController.hostNetwork }}
+          hostPort: 8443
           {{- end }}
         - containerPort: 10254
           name: healthz
@@ -367,13 +396,14 @@ spec:
         resources:
           {{- toYaml .Values.ingressController.resources | nindent 10 }}
         securityContext:
-          allowPrivilegeEscalation: true
+          allowPrivilegeEscalation: false
           capabilities:
             add:
             - NET_BIND_SERVICE
             drop:
             - ALL
           runAsUser: 101
+          runAsNonRoot: true
       {{- with .Values.ingressController.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
