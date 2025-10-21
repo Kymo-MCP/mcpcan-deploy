@@ -34,7 +34,7 @@ spec:
         {{- end }}
         volumeMounts:
         - name: data-volume
-          mountPath: {{ .Values.global.mountStorage.staticPath | default "/data/static" }}
+          mountPath: "/app/static"
       volumes:
       - name: data-volume
         hostPath:
