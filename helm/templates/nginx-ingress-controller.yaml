@@ -1,0 +1,403 @@
+{{- if .Values.ingressController.enabled }}
+{{- $shouldInstall := true }}
+{{- if .Values.ingressController.autoDetect }}
+{{- if not .Values.ingressController.forceInstall }}
+# 检查是否存在跳过安装的标记
+{{- $skipConfigMap := (lookup "v1" "ConfigMap" .Release.Namespace "ingress-controller-skip-install") }}
+{{- if $skipConfigMap }}
+{{- if eq ($skipConfigMap.data.skip | default "false") "true" }}
+{{- $shouldInstall = false }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if $shouldInstall }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  name: {{ .Values.ingressController.namespace }}
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx
+  namespace: {{ .Values.ingressController.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx
+  namespace: {{ .Values.ingressController.namespace }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses/status
+  verbs:
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingressclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resourceNames:
+  - ingress-controller-leader
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - nodes
+  - pods
+  - secrets
+  - namespaces
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses/status
+  verbs:
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingressclasses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx
+  namespace: {{ .Values.ingressController.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ingress-nginx
+subjects:
+- kind: ServiceAccount
+  name: ingress-nginx
+  namespace: {{ .Values.ingressController.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-nginx
+subjects:
+- kind: ServiceAccount
+  name: ingress-nginx
+  namespace: {{ .Values.ingressController.namespace }}
+---
+apiVersion: v1
+data:
+  allow-snippet-annotations: "true"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx-controller
+  namespace: {{ .Values.ingressController.namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx-controller
+  namespace: {{ .Values.ingressController.namespace }}
+spec:
+  ports:
+  - appProtocol: http
+    name: http
+    port: {{ .Values.ingressController.service.httpPort }}
+    protocol: TCP
+    targetPort: http
+    {{- if eq .Values.ingressController.service.type "NodePort" }}
+    nodePort: {{ .Values.ingressController.service.httpNodePort }}
+    {{- end }}
+  - appProtocol: https
+    name: https
+    port: {{ .Values.ingressController.service.httpsPort }}
+    protocol: TCP
+    targetPort: https
+    {{- if eq .Values.ingressController.service.type "NodePort" }}
+    nodePort: {{ .Values.ingressController.service.httpsNodePort }}
+    {{- end }}
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  type: {{ .Values.ingressController.service.type }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: ingress-nginx-controller
+  namespace: {{ .Values.ingressController.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: ingress-nginx
+      app.kubernetes.io/name: ingress-nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+    spec:
+      hostNetwork: {{ .Values.ingressController.hostNetwork }}
+      dnsPolicy: {{ .Values.ingressController.dnsPolicy }}
+      containers:
+      - args:
+        - /nginx-ingress-controller
+        - --election-id=ingress-controller-leader
+        - --controller-class=k8s.io/ingress-nginx
+        - --ingress-class=nginx
+        - --configmap=$(POD_NAMESPACE)/ingress-nginx-controller
+        - --http-port={{ .Values.ingressController.service.httpPort }}
+        - --https-port={{ .Values.ingressController.service.httpsPort }}
+        - --healthz-port=10254
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: LD_PRELOAD
+          value: /usr/local/lib/libmimalloc.so
+        image: {{ .Values.ingressController.image.repository }}:{{ .Values.ingressController.image.tag }}
+        imagePullPolicy: {{ .Values.ingressController.image.pullPolicy }}
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /wait-shutdown
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: controller
+        ports:
+        - containerPort: {{ .Values.ingressController.service.httpPort }}
+          name: http
+          protocol: TCP
+          {{- if .Values.ingressController.hostNetwork }}
+          hostPort: {{ .Values.ingressController.service.httpPort }}
+          {{- end }}
+        - containerPort: {{ .Values.ingressController.service.httpsPort }}
+          name: https
+          protocol: TCP
+          {{- if .Values.ingressController.hostNetwork }}
+          hostPort: {{ .Values.ingressController.service.httpsPort }}
+          {{- end }}
+        - containerPort: 10254
+          name: healthz
+          protocol: TCP
+          {{- if .Values.ingressController.hostNetwork }}
+          hostPort: 10254
+          {{- end }}
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          {{- toYaml .Values.ingressController.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          runAsUser: 101
+      {{- with .Values.ingressController.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: ingress-nginx
+      terminationGracePeriodSeconds: 300
+      {{- with .Values.ingressController.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: {{ .Values.ingressController.image.tag }}
+  name: nginx
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: k8s.io/ingress-nginx
+{{- end }}
+{{- end }}

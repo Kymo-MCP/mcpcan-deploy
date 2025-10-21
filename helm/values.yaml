@@ -200,7 +200,7 @@ ingress:
   enabled: true
   className: nginx
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
   tls:
     enabled: false
@@ -209,6 +209,47 @@ ingress:
       - example.mcp-box.com
     crt: ""
     key: ""
+
+# Nginx Ingress Controller configuration
+ingressController:
+  enabled: true
+  # 是否自动检测其他命名空间中已存在的 Ingress Controller
+  autoDetect: true
+  # 强制安装，即使检测到其他命名空间中已存在
+  forceInstall: false
+  namespace: ingress-nginx
+  image:
+    repository: registry.k8s.io/ingress-nginx/controller
+    tag: v1.8.4
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    httpPort: 80
+    httpsPort: 443
+    httpNodePort: 30080
+    httpsNodePort: 30443
+  resources:
+    requests:
+      cpu: 100m
+      memory: 90Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # 节点选择器
+  nodeSelector:
+    kubernetes.io/os: linux
+  # 容忍度配置
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Equal
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Equal
+      effect: NoSchedule
+  # 是否使用主机网络
+  hostNetwork: true
+  # DNS 策略
+  dnsPolicy: ClusterFirstWithHostNet
 
 
 # Monitoring and observability
