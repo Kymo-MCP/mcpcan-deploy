@@ -83,7 +83,7 @@ metadata:
   labels:
     app: {{ .Values.services.authz.name | default "mcp-authz" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- $ann := (merge (.Values.ingress.annotations | default dict) (.Values.services.authz.ingress.annotations | default dict)) }}
+  {{- $ann := (merge (.Values.services.authz.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
   {{- if gt (len $ann) 0 }}
   annotations:
     {{- toYaml $ann | nindent 4 }}
