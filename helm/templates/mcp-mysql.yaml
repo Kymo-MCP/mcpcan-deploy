@@ -185,3 +185,27 @@ spec:
   selector:
     app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
 {{- end }}
+---
+{{- if .Values.infrastructure.mysql.service.enabledNodePort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.infrastructure.mysql.service.name | default "mysql" }}-nodeport
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+  labels:
+    app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
+    service-type: nodeport
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
+    targetPort: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
+    nodePort: {{ .Values.infrastructure.mysql.service.nodePort | default 30306 }}
+    name: {{ .Values.infrastructure.mysql.service.name | default "mysql" }}
+    protocol: TCP
+  selector:
+    app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
+{{- end }}

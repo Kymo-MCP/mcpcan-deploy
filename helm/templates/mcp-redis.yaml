@@ -198,11 +198,35 @@ metadata:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
 spec:
-  clusterIP: {{ .Values.infrastructure.redis.service.clusterIP | default "None" }}
+  type: {{ .Values.infrastructure.redis.service.type | default "ClusterIP" }}
   ports:
   - port: {{ .Values.infrastructure.redis.service.port | default 6379 }}
     targetPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
     name: {{ .Values.infrastructure.redis.service.name | default "redis" }}
+  selector:
+    app: {{ .Values.infrastructure.redis.name | default "redis" }}
+{{- end }}
+---
+{{- if .Values.infrastructure.redis.service.enabledNodePort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.infrastructure.redis.service.name | default "redis" }}-nodeport
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+  labels:
+    app: {{ .Values.infrastructure.redis.name | default "redis" }}
+    service-type: nodeport
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.infrastructure.redis.service.port | default 6379 }}
+    targetPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
+    nodePort: {{ .Values.infrastructure.redis.service.nodePort | default 30379 }}
+    name: {{ .Values.infrastructure.redis.service.name | default "redis" }}
+    protocol: TCP
   selector:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
 {{- end }}
