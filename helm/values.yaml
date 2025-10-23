@@ -320,6 +320,22 @@ monitoring:
   grafana:
     enabled: false
 
+
+# Image Pre-Pull configuration (Simple)
+imagePull:
+  enabled: false
+  importerImage: "alpine:3.18"
+  imagesPath: "/opt/mcp-box/images"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+
 # Security
 security:
   podSecurityPolicy:
