@@ -281,10 +281,35 @@ if [ "$uninstall" = true ]; then
   exit 0
 fi
 
-# 检查是否已安装
-if check_k3s_installed; then
-  warn "k3s 已安装，如需重新安装请先卸载"
-  exit 0
+# 检查现有 Kubernetes 环境
+if existing_k8s=$(check_kubernetes_installed); then
+  if [ "$force_install" = true ]; then
+    log "检测到现有 $existing_k8s 环境，强制重新安装..."
+    uninstall_kubernetes "$existing_k8s" || exit 1
+  else
+    warn "$existing_k8s 已安装，如需重新安装请使用 --force 参数"
+    
+    # 如果是 k3s 环境，继续检查其他组件
+    if [ "$existing_k8s" = "k3s" ]; then
+      log "检查其他组件..."
+      
+      # 检查并安装 helm
+      if ! check_helm_installed; then
+        log "helm 未安装，开始安装..."
+        install_helm || exit 1
+      fi
+      
+      # 检查并安装 ingress-nginx
+      if ! check_ingress_nginx_installed; then
+        log "ingress-nginx controller 未安装，开始安装..."
+        install_ingress_nginx || exit 1
+      fi
+      
+      info "所有组件检查完成"
+    fi
+    
+    exit 0
+  fi
 fi
 
 # 安装依赖
@@ -456,6 +481,25 @@ if [ "$node_type" = "master" ]; then
   info "使用 kubectl: sudo kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get nodes"
   info "或者: export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
   info "检查服务状态: systemctl status k3s"
+  
+  # 等待 k3s 完全启动
+  log "等待 k3s 完全启动..."
+  sleep 10
+  
+  # 设置 KUBECONFIG 环境变量
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+  
+  # 安装 helm（如果未安装）
+  if ! check_helm_installed; then
+    log "helm 未安装，开始安装..."
+    install_helm || error "helm 安装失败"
+  fi
+  
+  # 安装 ingress-nginx controller（如果未安装）
+  if ! check_ingress_nginx_installed; then
+    log "ingress-nginx controller 未安装，开始安装..."
+    install_ingress_nginx || error "ingress-nginx controller 安装失败"
+  fi
   
   # 生成外部访问 kubeconfig
   log "生成外部访问 kubeconfig 配置文件"
