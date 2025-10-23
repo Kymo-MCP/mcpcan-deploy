@@ -173,3 +173,11 @@ helm upgrade --install mcp-box ./helm -f ./helm/values-staging.yaml \
 4. **版本管理**：建议使用具体的版本标签而不是 `latest`
 5. **安全配置**：生产环境请确保 TLS 证书和密钥配置正确
 
+
+# shell 脚本
+
+## 生成自签名证书
+
+```bash
+./scripts/generate-simple-cert.sh test.mcp-box.com 3650
+```
