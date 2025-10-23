@@ -9,18 +9,16 @@ set -euo pipefail
 # ==============================================
 
 # 加载公共函数库
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/bash.sh"
+source "$(dirname "$0")/bash.sh"
 
-# --- 默认值（从环境变量读取，如未设置则使用默认值）---
-k3s_version="${K3S_VERSION:-}"                           # 留空使用官方最新稳定版
+# --- 默认值（从 bash.sh 中的默认配置读取）---
+k3s_version="${K3S_VERSION}"                             # k3s 版本
 k3s_token="${K3S_TOKEN:-}"                               # 为空时脚本将自动生成
-k3s_data_dir="${K3S_DATA_DIR:-/var/lib/rancher/k3s}"     # k3s 数据目录
-k3s_kubeconfig_mode="${K3S_KUBECONFIG_MODE:-644}"        # kubeconfig 权限
-# 修改默认禁用组件，添加 rancher
-k3s_disable_components="${K3S_DISABLE_COMPONENTS:-traefik,rancher}"  # 禁用组件
-k3s_mirror="${K3S_MIRROR:-cn}"                           # 镜像源
-k3s_install_url="${K3S_INSTALL_URL:-https://rancher-mirror.rancher.cn/k3s/k3s-install.sh}"  # 安装脚本 URL
+k3s_data_dir="${K3S_DATA_DIR}"                           # k3s 数据目录
+k3s_kubeconfig_mode="${K3S_KUBECONFIG_MODE}"             # kubeconfig 权限
+k3s_disable_components="${K3S_DISABLE_COMPONENTS}"       # 禁用组件
+k3s_mirror="${K3S_MIRROR}"                               # 镜像源
+k3s_install_url="${K3S_INSTALL_URL}"                     # 安装脚本 URL
 tls_sans="${TLS_SANS:-}"                                 # 可选，逗号分隔: my.domain.com,10.0.0.10
 extra_args="${K3S_EXTRA_ARGS:-}"                         # 透传给 k3s 的额外参数
 
@@ -203,7 +201,7 @@ usage() {
 
 选项：
   --token TOKEN                  集群 token，不提供时自动生成（master）
-  --version VERSION              指定 k3s 版本，如 v1.32.1+k3s1（默认使用环境变量）
+  --version VERSION              指定 k3s 版本，如 v1.32.1+k3s1
   --data-dir PATH                k3s 数据目录（默认: /var/lib/rancher/k3s）
   --kubeconfig-mode MODE         kubeconfig 权限
   --mirror [cn|global]           镜像源（默认: cn）
@@ -214,26 +212,22 @@ usage() {
   --uninstall                    卸载 k3s
   -h, --help                     显示帮助
 
-环境变量（../env/dev.env）：
-  K3S_INSTALL_NODE_IP_LIST       节点 IP 列表，空格分隔（必需）
-  K3S_VERSION                    k3s 版本（默认: v1.32.1+k3s1）
-  K3S_MIRROR                     镜像源（默认: cn）
-  K3S_INSTALL_URL                安装脚本 URL
-  K3S_DATA_DIR                   数据目录
-  K3S_KUBECONFIG_MODE            kubeconfig 权限
-  K3S_DISABLE_COMPONENTS         禁用组件
-  K3S_EXTRA_ARGS                 额外参数
-  INSTALL_DOMAIN                 安装域名（默认: mcp.qm.com）
+特性：
+  - 自动检测公网 IP 地址，无公网 IP 时使用内网 IP
+  - 自动检测并安装 Helm 工具
+  - 自动检测并安装 Ingress-Nginx 控制器
+  - 支持单节点和多节点集群部署
+  - 内置默认配置，无需依赖环境变量文件
 
 示例：
-  自动安装（根据当前服务器 IP 判断节点类型）
+  自动安装（自动检测 IP 和节点类型）
     sudo ./install-k3s.sh
 
   强制重新安装
     sudo ./install-k3s.sh --force
 
   使用自定义版本
-    sudo K3S_VERSION=v1.30.4+k3s1 ./install-k3s.sh
+    sudo ./install-k3s.sh --version v1.30.4+k3s1
 
   指定 token（用于 worker 节点）
     sudo ./install-k3s.sh --token mytoken
@@ -328,6 +322,13 @@ fi
 
 # 解析节点信息：类型:IP:索引
 IFS=':' read -r node_type node_ip node_index <<< "$node_info"
+
+# 验证解析结果
+if [ -z "$node_type" ] || [ -z "$node_ip" ]; then
+  error "节点信息解析失败: $node_info"
+  exit 1
+fi
+
 info "检测到节点类型: $node_type，IP: $node_ip，索引: $node_index"
 
 # 构建通用安装参数的函数
@@ -374,11 +375,6 @@ build_install_args() {
     # 添加K3S_API_URL到TLS SANs中
     if [ -n "$K3S_API_URL" ]; then
       args+=("--tls-san" "$K3S_API_URL")
-    fi
-
-    # 添加域名到TLS SANs中
-    if [ -n "$INSTALL_DOMAIN" ]; then
-      args+=("--tls-san" "$INSTALL_DOMAIN")
     fi
   fi
   

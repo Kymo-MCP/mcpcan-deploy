@@ -5,6 +5,15 @@
 # 包含环境变量加载、颜色定义、日志函数等公共逻辑
 # ==============================================
 
+# --- k3s 安装默认参数 ---
+# K3S 安装默认参数
+K3S_VERSION=${K3S_VERSION:-"v1.32.1+k3s1"}
+K3S_MIRROR=${K3S_MIRROR:-"cn"}
+K3S_INSTALL_URL=${K3S_INSTALL_URL:-"https://rancher-mirror.rancher.cn/k3s/k3s-install.sh"}
+K3S_DATA_DIR=${K3S_DATA_DIR:-"/var/lib/rancher/k3s"}
+K3S_KUBECONFIG_MODE=${K3S_KUBECONFIG_MODE:-"644"}
+K3S_DISABLE_COMPONENTS=${K3S_DISABLE_COMPONENTS:-"traefik,rancher"}
+
 # --- 颜色定义 ---
 GREEN="✅ "
 YELLOW="💡️ "
@@ -22,36 +31,6 @@ err() { echo "[$(basename "$0")][ERROR] $*" >&2; }
 info() { echo "${GREEN}$*"; }
 warn() { echo "${YELLOW}$*"; }
 error() { echo "${RED}$*" >&2; }
-
-# 从 .env 文件加载环境变量（忽略注释和空行）
-load_env_file() {
-  local env_file="${1:-$script_dir/../env/def.env}"
-  [ -f "$env_file" ] || return 0
-  
-  log "加载环境变量文件: $env_file"
-  
-  while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in
-      ''|'#'*) continue ;;
-      *)
-        if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-          export "$line"
-        fi
-      ;;
-    esac
-  done < "$env_file"
-}
-
-# 自动加载项目根目录下的 dev.env 文件
-load_project_env() {
-  local env_file="$(script_dir)/../env/def.env"
-  
-  if [ -f "$env_file" ]; then
-    load_env_file "$env_file"
-  else
-    warn "未找到环境变量文件: $env_file"
-  fi
-}
 
 # 生成随机 token（当未提供时）
 random_token() {
@@ -218,8 +197,8 @@ get_server_ips() {
   local public_ip
   if command -v curl >/dev/null 2>&1; then
     # 尝试多个服务获取公网 IP
-    for service in "http://ipinfo.io/ip" "http://icanhazip.com" "http://ifconfig.me/ip"; do
-      public_ip=$(curl -s --connect-timeout 5 "$service" 2>/dev/null | tr -d '\n\r')
+    for service in "http://ipinfo.io/ip" "http://icanhazip.com" "http://ifconfig.me/ip" "http://checkip.amazonaws.com" "http://ip.42.pl/raw"; do
+      public_ip=$(curl -s --connect-timeout 5 --max-time 10 "$service" 2>/dev/null | tr -d '\n\r\t ')
       if [[ "$public_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         # 检查是否已存在于本地 IP 列表中
         local found=false
@@ -231,34 +210,105 @@ get_server_ips() {
         done
         if [ "$found" = false ]; then
           ips+=("$public_ip")
+          # 只在调试模式下输出详细信息
+          [ "${DEBUG:-}" = "1" ] && info "检测到公网 IP: $public_ip"
         fi
         break
       fi
     done
   fi
   
+  # 如果没有获取到公网 IP，记录日志
+  if [ -z "$public_ip" ] || ! [[ "$public_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    [ "${DEBUG:-}" = "1" ] && warn "无法获取公网 IP，将使用内网 IP"
+  fi
+  
   printf '%s\n' "${ips[@]}"
+}
+
+# 自动获取节点 IP 列表（优先使用公网 IP，没有则使用内网 IP）
+auto_detect_node_ips() {
+  local server_ips_str
+  server_ips_str=$(get_server_ips)
+  
+  local primary_ip=""
+  local public_ip=""
+  local private_ip=""
+  
+  # 分析获取到的 IP 地址
+  while IFS= read -r ip; do
+    [ -z "$ip" ] && continue
+    
+    # 判断是否为公网 IP（排除私有网段）
+    if [[ "$ip" =~ ^10\. ]] || [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\. ]] || [[ "$ip" =~ ^192\.168\. ]]; then
+      # 私有 IP
+      if [ -z "$private_ip" ]; then
+        private_ip="$ip"
+      fi
+    else
+      # 公网 IP
+      if [ -z "$public_ip" ]; then
+        public_ip="$ip"
+      fi
+    fi
+  done <<< "$server_ips_str"
+  
+  # 优先使用公网 IP，没有则使用私有 IP
+  if [ -n "$public_ip" ]; then
+    primary_ip="$public_ip"
+    # 只在调试模式下输出详细信息
+    [ "${DEBUG:-}" = "1" ] && info "使用公网 IP 作为节点 IP: $primary_ip"
+  elif [ -n "$private_ip" ]; then
+    primary_ip="$private_ip"
+    # 只在调试模式下输出详细信息
+    [ "${DEBUG:-}" = "1" ] && info "使用内网 IP 作为节点 IP: $primary_ip"
+  else
+    error "无法获取有效的 IP 地址"
+    return 1
+  fi
+  
+  # 设置 K3S_API_URL 为主 IP
+  export K3S_API_URL="$primary_ip"
+  
+  # 返回主 IP（用作单节点安装）
+  echo "$primary_ip"
 }
 
 # 检查当前服务器 IP 是否在节点列表中，并返回节点类型和位置
 check_node_in_list() {
-    # 检查变量是否已定义
-    if [ -z "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
-        error "K3S_INSTALL_NODE_IP_LIST 环境变量未定义"
-        error "请确保已正确加载环境变量文件"
-        return 1
+  # 如果没有配置节点列表，自动检测并设置为单节点
+  if [ -z "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
+    local auto_ip
+    auto_ip=$(auto_detect_node_ips)
+    if [ $? -eq 0 ] && [ -n "$auto_ip" ]; then
+      export K3S_INSTALL_NODE_IP_LIST="$auto_ip"
+      info "自动检测节点 IP 列表: $K3S_INSTALL_NODE_IP_LIST"
+      # 直接返回 master 节点信息，不再输出额外的 info 信息
+      echo "master:$auto_ip:0"
+      return 0
+    else
+      error "自动检测节点 IP 失败"
+      return 1
     fi
-    
-    local node_list="${K3S_INSTALL_NODE_IP_LIST}"
+  fi
+  
+  local node_list="${K3S_INSTALL_NODE_IP_LIST}"
   
   if [ -z "$node_list" ]; then
     error "K3S_INSTALL_NODE_IP_LIST 未配置"
     return 1
   fi
   
-  # 将节点列表转换为数组
-  local -a configured_nodes
-  read -ra configured_nodes <<< "$node_list"
+  # 将节点列表转换为数组（兼容 bash 和 zsh）
+  local configured_nodes
+  if [ -n "$ZSH_VERSION" ]; then
+    # zsh 环境，使用 word splitting
+    setopt sh_word_split 2>/dev/null || true
+    configured_nodes=($node_list)
+  else
+    # bash 环境
+    IFS=' ' read -ra configured_nodes <<< "$node_list"
+  fi
   
   if [ ${#configured_nodes[@]} -eq 0 ]; then
     error "节点 IP 列表为空"
@@ -270,15 +320,20 @@ check_node_in_list() {
   server_ips_str=$(get_server_ips)
   
   # 检查匹配
-  for i in "${!configured_nodes[@]}"; do
-    local config_ip="${configured_nodes[$i]}"
+  local i=0
+  for config_ip in "${configured_nodes[@]}"; do
     while IFS= read -r server_ip; do
       [ -z "$server_ip" ] && continue
       if [ "$server_ip" = "$config_ip" ]; then
-        echo "$([ $i -eq 0 ] && echo "master" || echo "worker"):$config_ip:$i"
+        if [ $i -eq 0 ]; then
+          echo "master:$config_ip:$i"
+        else
+          echo "worker:$config_ip:$i"
+        fi
         return 0
       fi
     done <<< "$server_ips_str"
+    i=$((i + 1))
   done
   
   # 未找到匹配
@@ -312,32 +367,39 @@ wait_for_service() {
   return 1
 }
 
-# 显示使用帮助
+# 显示脚本使用帮助
 show_usage() {
-  local script_name="$(basename "$0")"
   cat <<EOF
-用法: ./$script_name [选项]
+用法: $0 [选项]
 
-该脚本使用项目环境变量文件 ../env/dev.env 中的配置。
+该脚本提供 k3s 安装的公共函数库。
 
-环境变量说明:
+环境变量:
   K3S_VERSION              k3s 版本 (默认: v1.32.1+k3s1)
   K3S_MIRROR              镜像源 (默认: cn)
   K3S_INSTALL_URL         安装脚本 URL
   K3S_DATA_DIR            数据目录 (默认: /var/lib/rancher/k3s)
   K3S_KUBECONFIG_MODE     kubeconfig 权限 (默认: 644)
-  K3S_DISABLE_COMPONENTS  禁用组件 (默认: traefik)
-  INSTALL_DOMAIN          安装域名 (默认: mcp.qm.com)
-  DB_PASSWORD             数据库密码
-
-选项:
-  -h, --help              显示此帮助信息
-
+  K3S_DISABLE_COMPONENTS  禁用组件 (默认: traefik,rancher)
+示例:
+  source bash.sh          # 加载公共函数库
 EOF
 }
 
-# 自动加载项目环境变量（当脚本被 source 时执行）
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-  # 脚本被 source，自动加载环境变量
-  load_project_env
+# 处理命令行参数（当脚本直接执行时）
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  case "${1:-}" in
+    -h|--help)
+      show_usage
+      exit 0
+      ;;
+    *)
+      echo "这是一个公共函数库，请使用 source 命令加载："
+      echo "  source bash.sh"
+      echo ""
+      echo "或查看帮助："
+      echo "  bash bash.sh --help"
+      exit 1
+      ;;
+  esac
 fi
