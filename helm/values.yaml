@@ -30,7 +30,7 @@ infrastructure:
     name: mysql
     image:
       repository: mysql
-      tag: "8.0"
+      tag: "8.0.30"
     service:
       name: mysql-svc
       port: 3306
@@ -59,7 +59,7 @@ infrastructure:
     name: redis
     image:
       repository: redis
-      tag: "7.0"
+      tag: "6-alpine"
     service:
       name: redis-svc
       port: 6379
