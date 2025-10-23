@@ -104,7 +104,8 @@ spec:
     spec:
       containers:
       - name: {{ .Values.infrastructure.redis.name | default "redis" }}
-        image: {{ .Values.infrastructure.redis.image.repository }}:{{ .Values.infrastructure.redis.image.tag }}
+        image: {{ .Values.global.registry }}/{{ .Values.infrastructure.redis.image.repository | default "redis" }}:{{ .Values.infrastructure.redis.image.tag | default "6-alpine" }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
           name: {{ .Values.infrastructure.redis.name | default "redis" }}

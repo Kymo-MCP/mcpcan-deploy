@@ -61,7 +61,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.infrastructure.mysql.name | default "mysql" }}
-        image: {{ .Values.infrastructure.mysql.image.repository }}:{{ .Values.infrastructure.mysql.image.tag }}
+        image: {{ .Values.global.registry }}/{{ .Values.infrastructure.mysql.image.repository | default "mysql" }}:{{ .Values.infrastructure.mysql.image.tag | default "8.0.30" }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: 3306
