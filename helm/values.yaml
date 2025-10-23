@@ -83,7 +83,7 @@ infrastructure:
 # Services configuration
 services:
   web:
-    enabled: true
+    enabled: false
     name: mcp-web
     replicas: 1
     service:
@@ -108,7 +108,7 @@ services:
         cpu: "200m"
 
   market:
-    enabled: true
+    enabled: false
     name: mcp-market
     replicas: 1
     service:
@@ -133,7 +133,7 @@ services:
         cpu: "500m"
 
   authz:
-    enabled: true
+    enabled: false
     name: mcp-authz
     replicas: 1
     service:
@@ -158,7 +158,7 @@ services:
         cpu: "500m"
 
   gateway:
-    enabled: true
+    enabled: false
     name: mcp-gateway
     replicas: 1
     service:
