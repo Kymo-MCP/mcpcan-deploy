@@ -203,7 +203,7 @@ ingress:
   className: nginx
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     # CORS configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
@@ -212,10 +212,10 @@ ingress:
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
   tls:
-    enabled: false
+    enabled: true
     secretName: "domain-tls"
     hosts:
-      - example.mcp-box.com
+      - demo.mcp-box.com
     crt: |
       -----BEGIN CERTIFICATE-----
       MIIDfzCCAmegAwIBAgIUE/ET0vWsRcvYR3FuQM7gVDc2z4QwDQYJKoZIhvcNAQEL
@@ -267,47 +267,6 @@ ingress:
       9Cz6pyOxQlXuNJD9DMLVhfY9+nLr4HSGYZxmaz2+19wiDDas2D77Fh/GUi/yBN40
       qv7Rm7K0MWJ3lqtWlg3L2BrM
       -----END PRIVATE KEY-----
-# Nginx Ingress Controller configuration
-ingressController:
-  enabled: false
-  # 是否自动检测其他命名空间中已存在的 Ingress Controller
-  autoDetect: true
-  # 强制安装，即使检测到其他命名空间中已存在
-  forceInstall: false
-  namespace: ingress-nginx
-  image:
-    repository: registry.k8s.io/ingress-nginx/controller
-    tag: v1.8.4
-    pullPolicy: IfNotPresent
-  service:
-    type: NodePort
-    httpPort: 80
-    httpsPort: 443
-    httpNodePort: 30080
-    httpsNodePort: 30443
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 1024Mi
-  # 节点选择器
-  nodeSelector:
-    kubernetes.io/os: linux
-  # 容忍度配置
-  tolerations:
-    - key: node-role.kubernetes.io/master
-      operator: Equal
-      effect: NoSchedule
-    - key: node-role.kubernetes.io/control-plane
-      operator: Equal
-      effect: NoSchedule
-  # 是否使用主机网络
-  hostNetwork: true
-  # DNS 策略
-  dnsPolicy: ClusterFirstWithHostNet
-
 
 # Monitoring and observability
 monitoring:
