@@ -272,7 +272,7 @@ ingress:
       -----END PRIVATE KEY-----
 # Nginx Ingress Controller configuration
 ingressController:
-  enabled: true
+  enabled: false
   # 是否自动检测其他命名空间中已存在的 Ingress Controller
   autoDetect: true
   # 强制安装，即使检测到其他命名空间中已存在

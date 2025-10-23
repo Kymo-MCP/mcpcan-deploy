@@ -1,150 +1,298 @@
-# {{- if and .Values.ingressController.enabled .Values.ingressController.autoDetect (not .Values.ingressController.forceInstall) }}
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: ingress-controller-check-script
-#   namespace: {{ .Release.Namespace }}
-#   annotations:
-#     "helm.sh/hook": pre-install,pre-upgrade
-#     "helm.sh/hook-weight": "-10"
-#     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-# data:
-#   check-ingress-controller.sh: |
-#     #!/bin/bash
-#     set -e
+{{- if .Values.ingressController.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-controller-manager-script
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+data:
+  manage-ingress-controller.sh: |
+    #!/bin/bash
+    set -e
     
-#     echo "检查集群中是否已存在 Nginx Ingress Controller..."
+    # Configuration
+    INGRESS_NAMESPACE="{{ .Values.ingressController.namespace }}"
+    INGRESS_IMAGE="{{ .Values.ingressController.image.repository }}:{{ .Values.ingressController.image.tag }}"
+    FORCE_INSTALL="{{ .Values.ingressController.forceInstall }}"
+    AUTO_DETECT="{{ .Values.ingressController.autoDetect }}"
+    MAX_RETRIES=3
+    RETRY_DELAY=10
     
-#     # 检查是否存在 nginx IngressClass
-#     if kubectl get ingressclass nginx >/dev/null 2>&1; then
-#       echo "发现已存在的 nginx IngressClass"
-      
-#       # 检查 IngressClass 是否为默认类
-#       IS_DEFAULT=$(kubectl get ingressclass nginx -o jsonpath='{.metadata.annotations.ingressclass\.kubernetes\.io/is-default-class}' 2>/dev/null || echo "false")
-      
-#       if [ "$IS_DEFAULT" = "true" ]; then
-#         echo "已存在默认的 nginx IngressClass，跳过 Ingress Controller 安装"
-#         # 创建一个标记文件，告诉 Helm 跳过安装
-#         kubectl create configmap ingress-controller-skip-install \
-#           --from-literal=skip="true" \
-#           --from-literal=reason="existing-default-ingressclass" \
-#           -n {{ .Release.Namespace }} \
-#           --dry-run=client -o yaml | kubectl apply -f -
-#         exit 0
-#       fi
-#     fi
+    # Logging functions
+    log_info() {
+        echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+    }
     
-#     # 检查是否存在 ingress-nginx 命名空间中的控制器
-#     if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
-#       echo "发现 ingress-nginx 命名空间"
-      
-#       # 检查是否存在运行中的 ingress-nginx-controller
-#       if kubectl get daemonset ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1; then
-#         READY_REPLICAS=$(kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.numberReady}' 2>/dev/null || echo "0")
-#         DESIRED_REPLICAS=$(kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.desiredNumberScheduled}' 2>/dev/null || echo "0")
+    log_warn() {
+        echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+    }
+    
+    log_error() {
+        echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+    }
+    
+    # Check if ingress controller exists and is healthy
+    check_existing_ingress() {
+        log_info "检查集群中是否已存在 Ingress Controller..."
         
-#         if [ "$READY_REPLICAS" -gt 0 ] && [ "$READY_REPLICAS" -eq "$DESIRED_REPLICAS" ]; then
-#           echo "发现运行中的 Ingress Controller (Ready: $READY_REPLICAS/$DESIRED_REPLICAS)，跳过安装"
-#           kubectl create configmap ingress-controller-skip-install \
-#             --from-literal=skip="true" \
-#             --from-literal=reason="existing-running-controller" \
-#             --from-literal=namespace="ingress-nginx" \
-#             -n {{ .Release.Namespace }} \
-#             --dry-run=client -o yaml | kubectl apply -f -
-#           exit 0
-#         fi
-#       fi
-#     fi
+        # Check for nginx IngressClass
+        if kubectl get ingressclass nginx >/dev/null 2>&1; then
+            log_info "发现已存在的 nginx IngressClass"
+            
+            # Check if it's the default class
+            IS_DEFAULT=$(kubectl get ingressclass nginx -o jsonpath='{.metadata.annotations.ingressclass\.kubernetes\.io/is-default-class}' 2>/dev/null || echo "false")
+            
+            if [ "$IS_DEFAULT" = "true" ]; then
+                log_info "已存在默认的 nginx IngressClass"
+                return 0
+            fi
+        fi
+        
+        # Check for running ingress controllers in any namespace
+        RUNNING_CONTROLLERS=$(kubectl get pods --all-namespaces -l app.kubernetes.io/name=ingress-nginx,app.kubernetes.io/component=controller --field-selector=status.phase=Running 2>/dev/null | grep -v NAME | wc -l || echo "0")
+        
+        if [ "$RUNNING_CONTROLLERS" -gt 0 ]; then
+            log_info "发现 $RUNNING_CONTROLLERS 个运行中的 Ingress Controller"
+            
+            # Check health of existing controllers
+            kubectl get pods --all-namespaces -l app.kubernetes.io/name=ingress-nginx,app.kubernetes.io/component=controller --field-selector=status.phase=Running 2>/dev/null | grep -v NAME | while read namespace name ready status restarts age; do
+                if [[ "$ready" == *"1/1"* ]]; then
+                    log_info "发现健康的 Ingress Controller: $name (命名空间: $namespace)"
+                    return 0
+                fi
+            done
+            
+            return 0
+        fi
+        
+        # Check for other ingress controllers (Traefik, HAProxy, etc.)
+        OTHER_INGRESS=$(kubectl get pods --all-namespaces -l app.kubernetes.io/name=traefik 2>/dev/null | grep -v NAME | wc -l || echo "0")
+        if [ "$OTHER_INGRESS" -gt 0 ]; then
+            log_info "发现其他类型的 Ingress Controller (Traefik)"
+            return 0
+        fi
+        
+        OTHER_INGRESS=$(kubectl get pods --all-namespaces -l app=haproxy-ingress 2>/dev/null | grep -v NAME | wc -l || echo "0")
+        if [ "$OTHER_INGRESS" -gt 0 ]; then
+            log_info "发现其他类型的 Ingress Controller (HAProxy)"
+            return 0
+        fi
+        
+        log_info "未发现任何运行中的 Ingress Controller"
+        return 1
+    }
     
-#     # 检查其他命名空间中是否存在 Ingress Controller
-#     echo "检查其他命名空间中的 Ingress Controller..."
-#     INGRESS_CONTROLLERS=$(kubectl get pods --all-namespaces -l app.kubernetes.io/name=ingress-nginx,app.kubernetes.io/component=controller --field-selector=status.phase=Running 2>/dev/null | wc -l)
+    # Pre-pull image with retry mechanism
+    pre_pull_image() {
+        local image="$1"
+        local retry_count=0
+        
+        log_info "预拉取镜像: $image"
+        
+        while [ $retry_count -lt $MAX_RETRIES ]; do
+            if kubectl run temp-image-puller --image="$image" --restart=Never --rm -i --quiet --command -- /bin/sh -c "echo 'Image pulled successfully'" >/dev/null 2>&1; then
+                log_info "镜像拉取成功: $image"
+                return 0
+            else
+                retry_count=$((retry_count + 1))
+                log_warn "镜像拉取失败 (尝试 $retry_count/$MAX_RETRIES): $image"
+                
+                if [ $retry_count -lt $MAX_RETRIES ]; then
+                    log_info "等待 $RETRY_DELAY 秒后重试..."
+                    sleep $RETRY_DELAY
+                fi
+            fi
+        done
+        
+        log_error "镜像拉取失败，已达到最大重试次数: $image"
+        return 1
+    }
     
-#     if [ "$INGRESS_CONTROLLERS" -gt 1 ]; then  # 大于1是因为wc -l会包含标题行
-#       echo "发现其他命名空间中运行的 Ingress Controller，跳过安装"
-#       kubectl create configmap ingress-controller-skip-install \
-#         --from-literal=skip="true" \
-#         --from-literal=reason="existing-controller-other-namespace" \
-#         -n {{ .Release.Namespace }} \
-#         --dry-run=client -o yaml | kubectl apply -f -
-#       exit 0
-#     fi
+    # Install ingress controller
+    install_ingress_controller() {
+        log_info "开始安装 Nginx Ingress Controller..."
+        
+        # Pre-pull image to avoid timeout issues
+        if ! pre_pull_image "$INGRESS_IMAGE"; then
+            log_error "无法拉取 Ingress Controller 镜像，安装失败"
+            create_skip_marker "image-pull-failed" "Failed to pull ingress controller image: $INGRESS_IMAGE"
+            return 1
+        fi
+        
+        # Create namespace if it doesn't exist
+        if ! kubectl get namespace "$INGRESS_NAMESPACE" >/dev/null 2>&1; then
+            log_info "创建命名空间: $INGRESS_NAMESPACE"
+            kubectl create namespace "$INGRESS_NAMESPACE"
+            
+            # Add Helm management labels and annotations
+            kubectl label namespace "$INGRESS_NAMESPACE" app.kubernetes.io/managed-by=Helm
+            kubectl annotate namespace "$INGRESS_NAMESPACE" meta.helm.sh/release-name={{ .Release.Name }}
+            kubectl annotate namespace "$INGRESS_NAMESPACE" meta.helm.sh/release-namespace={{ .Release.Namespace }}
+        fi
+        
+        # Mark that we should proceed with installation
+        create_install_marker "auto-install" "Automatically installing ingress controller"
+        
+        log_info "Ingress Controller 将通过 Helm 模板自动安装"
+        return 0
+    }
     
-#     echo "未发现已存在的 Ingress Controller，继续安装"
-#     # 清理可能存在的跳过标记
-#     kubectl delete configmap ingress-controller-skip-install -n {{ .Release.Namespace }} >/dev/null 2>&1 || true
-# ---
-# apiVersion: batch/v1
-# kind: Job
-# metadata:
-#   name: ingress-controller-pre-check
-#   namespace: {{ .Release.Namespace }}
-#   annotations:
-#     "helm.sh/hook": pre-install,pre-upgrade
-#     "helm.sh/hook-weight": "-5"
-#     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-# spec:
-#   template:
-#     spec:
-#       serviceAccountName: ingress-controller-checker
-#       restartPolicy: Never
-#       containers:
-#       - name: checker
-#         image: bitnami/kubectl:latest
-#         command: ["/bin/bash"]
-#         args: ["/scripts/check-ingress-controller.sh"]
-#         volumeMounts:
-#         - name: check-script
-#           mountPath: /scripts
-#       volumes:
-#       - name: check-script
-#         configMap:
-#           name: ingress-controller-check-script
-#           defaultMode: 0755
-# ---
-# apiVersion: v1
-# kind: ServiceAccount
-# metadata:
-#   name: ingress-controller-checker
-#   namespace: {{ .Release.Namespace }}
-#   annotations:
-#     "helm.sh/hook": pre-install,pre-upgrade
-#     "helm.sh/hook-weight": "-15"
-#     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: ClusterRole
-# metadata:
-#   name: ingress-controller-checker
-#   annotations:
-#     "helm.sh/hook": pre-install,pre-upgrade
-#     "helm.sh/hook-weight": "-15"
-#     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-# rules:
-# - apiGroups: [""]
-#   resources: ["namespaces", "pods", "configmaps"]
-#   verbs: ["get", "list", "create", "delete"]
-# - apiGroups: ["apps"]
-#   resources: ["daemonsets"]
-#   verbs: ["get", "list"]
-# - apiGroups: ["networking.k8s.io"]
-#   resources: ["ingressclasses"]
-#   verbs: ["get", "list"]
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: ClusterRoleBinding
-# metadata:
-#   name: ingress-controller-checker
-#   annotations:
-#     "helm.sh/hook": pre-install,pre-upgrade
-#     "helm.sh/hook-weight": "-15"
-#     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-# roleRef:
-#   apiGroup: rbac.authorization.k8s.io
-#   kind: ClusterRole
-#   name: ingress-controller-checker
-# subjects:
-# - kind: ServiceAccount
-#   name: ingress-controller-checker
-#   namespace: {{ .Release.Namespace }}
-# {{- end }}
+    # Create skip installation marker
+    create_skip_marker() {
+        local reason="$1"
+        local message="$2"
+        
+        log_info "创建跳过安装标记: $reason"
+        kubectl create configmap ingress-controller-skip-install \
+            --from-literal=skip="true" \
+            --from-literal=reason="$reason" \
+            --from-literal=message="$message" \
+            --from-literal=timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -n {{ .Release.Namespace }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+    }
+    
+    # Create install marker
+    create_install_marker() {
+        local reason="$1"
+        local message="$2"
+        
+        log_info "创建安装标记: $reason"
+        kubectl create configmap ingress-controller-install-proceed \
+            --from-literal=install="true" \
+            --from-literal=reason="$reason" \
+            --from-literal=message="$message" \
+            --from-literal=timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -n {{ .Release.Namespace }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+    }
+    
+    # Main logic
+    main() {
+        log_info "开始 Ingress Controller 管理流程..."
+        log_info "配置 - 强制安装: $FORCE_INSTALL, 自动检测: $AUTO_DETECT"
+        
+        # Clean up any existing markers
+        kubectl delete configmap ingress-controller-skip-install -n {{ .Release.Namespace }} >/dev/null 2>&1 || true
+        kubectl delete configmap ingress-controller-install-proceed -n {{ .Release.Namespace }} >/dev/null 2>&1 || true
+        
+        # If force install is enabled, skip detection
+        if [ "$FORCE_INSTALL" = "true" ]; then
+            log_info "强制安装模式已启用，跳过检测直接安装"
+            install_ingress_controller
+            return $?
+        fi
+        
+        # If auto detect is disabled, proceed with installation
+        if [ "$AUTO_DETECT" = "false" ]; then
+            log_info "自动检测已禁用，直接安装"
+            install_ingress_controller
+            return $?
+        fi
+        
+        # Check for existing ingress controllers
+        if check_existing_ingress; then
+            create_skip_marker "existing-controller" "Found existing healthy ingress controller in cluster"
+            log_info "发现已存在的 Ingress Controller，跳过安装"
+            return 0
+        else
+            # No existing controller found, proceed with installation
+            install_ingress_controller
+            return $?
+        fi
+    }
+    
+    # Execute main function
+    main
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ingress-controller-manager
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: ingress-controller-manager
+      restartPolicy: Never
+      containers:
+      - name: manager
+        image: bitnami/kubectl:latest
+        command: ["/bin/bash"]
+        args: ["/scripts/manage-ingress-controller.sh"]
+        env:
+        - name: KUBECTL_TIMEOUT
+          value: "300s"
+        - name: KUBECTL_RETRY_DELAY
+          value: "5"
+        volumeMounts:
+        - name: manager-script
+          mountPath: /scripts
+      volumes:
+      - name: manager-script
+        configMap:
+          name: ingress-controller-manager-script
+          defaultMode: 0755
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ingress-controller-manager
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ingress-controller-manager
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+- apiGroups: [""]
+  resources: ["namespaces", "pods", "configmaps"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["daemonsets", "deployments"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingressclasses", "ingresses"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services", "endpoints", "serviceaccounts"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingadmissionwebhooks"]
+  verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ingress-controller-manager
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: ingress-controller-manager
+  namespace: {{ .Release.Namespace }}
+{{- end }}
