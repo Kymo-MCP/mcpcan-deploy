@@ -83,7 +83,7 @@ infrastructure:
 # Services configuration
 services:
   web:
-    enabled: false
+    enabled: true
     name: mcp-web
     replicas: 1
     service:
@@ -158,7 +158,7 @@ services:
         cpu: "500m"
 
   gateway:
-    enabled: false
+    enabled: true
     name: mcp-gateway
     replicas: 1
     service:
@@ -168,7 +168,7 @@ services:
     ingress:
       enabled: true
       host: ""
-      path: /api/gateway
+      path: /api/mcp-gateway
       pathType: Prefix
     config:
       enabled: false
