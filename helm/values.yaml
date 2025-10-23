@@ -1,6 +1,6 @@
 # Global configuration
 global:
-  domain: mcp-market.com
+  domain: demo.mcp-box.com
   version: v1.0.0
   registry: ccr.ccs.tencentyun.com/itqm-private
   imagePullPolicy: Always
@@ -22,6 +22,11 @@ global:
 infrastructure:
   mysql:
     enabled: true
+    auth:
+      rootPassword: dev-root-password
+      database: mcp_dev
+      username: mcp_user
+      password: dev-password
     name: mysql
     image:
       repository: mysql
@@ -30,15 +35,13 @@ infrastructure:
       name: mysql-svc
       port: 3306
       type: ClusterIP
-    auth:
-      rootPassword: dev-root-password
-      database: mcp_dev
-      username: mcp_user
-      password: dev-password
-    persistence:
-      enabled: false
-      size: 100Gi
-      storageClass: local-storage
+      enabledNodePort: true
+      nodePort: 31306
+    hostPath:
+      enabled: true
+      name: mysql-hostpath
+      path: /data/mcp-box/mysql
+      type: DirectoryOrCreate
       mountPath: /var/lib/mysql
     resources:
       requests:
@@ -50,6 +53,9 @@ infrastructure:
 
   redis:
     enabled: true
+    auth:
+      password: dev-redis-password
+      db: 0
     name: redis
     image:
       repository: redis
@@ -58,13 +64,13 @@ infrastructure:
       name: redis-svc
       port: 6379
       type: ClusterIP
-    auth:
-      password: dev-redis-password
-      db: 0
-    persistence:
-      enabled: false
-      size: 50Gi
-      storageClass: local-storage
+      enabledNodePort: true
+      nodePort: 31379
+    hostPath:
+      enabled: true
+      name: redis-hostpath
+      path: /data/mcp-box/redis
+      type: DirectoryOrCreate
       mountPath: /data/redis
     resources:
       requests:
@@ -213,9 +219,57 @@ ingress:
     secretName: "domain-tls"
     hosts:
       - example.mcp-box.com
-    crt: ""
-    key: ""
-
+    crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIDfzCCAmegAwIBAgIUE/ET0vWsRcvYR3FuQM7gVDc2z4QwDQYJKoZIhvcNAQEL
+      BQAwaDELMAkGA1UEBhMCQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0Jl
+      aWppbmcxDDAKBgNVBAoMA01DUDEMMAoGA1UECwwDRGV2MRkwFwYDVQQDDBBkZW1v
+      Lm1jcC1ib3guY29tMB4XDTI1MTAyMzAzMTAwOFoXDTM1MTAyMTAzMTAwOFowaDEL
+      MAkGA1UEBhMCQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0JlaWppbmcx
+      DDAKBgNVBAoMA01DUDEMMAoGA1UECwwDRGV2MRkwFwYDVQQDDBBkZW1vLm1jcC1i
+      b3guY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5IiiehARrysp
+      cbX2pcOUoXOB19CbGCHTH8HExfbUN1xuewuBi3vGH8oRjmGNCse0D9F/BcENkHKh
+      rZ10BG7hr+QuZ2XEz1aCDsMrFv23Dwl7ibiuHr97Xn4J8erw78CmvxBfPSIR0wig
+      pn5BFlJnwqQT5gvK0bazEFiZV6ksw+uFqec/aiT8I3PuGGUFhZnH9CTqTpOVFSFF
+      WJd4dpUUAh/zaivlX0eRC3JsBEzVb9TKRBfI7ciriCtHa4essMHEB1QxdFt81tHJ
+      7AIoOh3ryZST8yi6vSUynrpqD+pNKmvXAIwtkA3wEetgWUQhgQeJD0Mw9112deD3
+      cMDHSOI6QwIDAQABoyEwHzAdBgNVHQ4EFgQU1Rbjq2PXM4SJCx34ZXoxQUqsy7ww
+      DQYJKoZIhvcNAQELBQADggEBAHNZ6C1mYwwg/sQT9PUC5jcG3Wl89WvyaJ+2Cxyi
+      sBl1as4/FwTg8Fl4LNAgIMNroekq5G0Aobdaj6nGcj4SXg8/WSCbwgnGj77IUogy
+      cKr3jBSi/cBMyWPsEx7oyCmlQqkoZLj4aOIMkT67u9Jc17hRG94kJA/4BYQsugza
+      dHbuS95w7cFiy+9KicFA1ceJTgrmG051EdldXgXSzlQIuUHvv063B4Jscjf8ofZw
+      U88p7Nu2Gk6WRoj4geFOtfeJe7aVMB0j7BFUYlyNTA4wnyDQdwFGGt5sCzcCQ1kr
+      Nnc8yZra9irkKN2S1QnbL6lnfMnLtaijTv80axue7zqzqhQ=
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDkiKJ6EBGvKylx
+      tfalw5Shc4HX0JsYIdMfwcTF9tQ3XG57C4GLe8YfyhGOYY0Kx7QP0X8FwQ2QcqGt
+      nXQEbuGv5C5nZcTPVoIOwysW/bcPCXuJuK4ev3tefgnx6vDvwKa/EF89IhHTCKCm
+      fkEWUmfCpBPmC8rRtrMQWJlXqSzD64Wp5z9qJPwjc+4YZQWFmcf0JOpOk5UVIUVY
+      l3h2lRQCH/NqK+VfR5ELcmwETNVv1MpEF8jtyKuIK0drh6ywwcQHVDF0W3zW0cns
+      Aig6HevJlJPzKLq9JTKeumoP6k0qa9cAjC2QDfAR62BZRCGBB4kPQzD3XXZ14Pdw
+      wMdI4jpDAgMBAAECggEAESrkeGKZpCeMEE3jjpXv0JBn73RCb7XRcYAcYzoEvM3q
+      7L+zW8I7YsBKwP/krlZ3Ln2whZhNh7gyG2PfHHAkmxJ7RpWCCzNL8jDzcowyWA+r
+      IfA81Z7RH+A8U1nbVJ9hHKxDA0l6aPiBHPtnXKEUc1jhDSB9/B1gkTieov5YmF+w
+      w1dg1+zHs7i0OUr3K+amsEPS34EFOkiirxFkbUmhdpgxgnDk1ochd8UayNOxaZk2
+      djoeMas+pPIat7Yg4hOq8LWA+amu4ivEXXuQXKXk3n+E2k1uaMHeE+9e0OF0J3H0
+      ta3StlE1H/ap21IkI3WoDUapCXmaMfJhp5GqG7gZTQKBgQD+BNg+V7oekf0+uXhj
+      CF7tI98QFdonuXoNUoK29ict5nH2WS1CZQse49H23d6HX9IUJj8MxVkwwNhauNAi
+      yCfpVCqR6t+rWzmN68zNHSgsZ1tmv6QTCqo42No7q5nCjxn3g1gadd59em7hfec7
+      esv28NXpR/B+okXEkiUNLyGGhQKBgQDmUOh7CYuQ+TlUOaytgKmSymM99vfoybdf
+      +XVsIJDoPK6mhAEXknTQKCtEKXKvuAw07ZZcwDKouin1S9PWruWQZBVnP4G8MCdO
+      0fV96CRATbllivc//ht2RNn2g7VAzKBkZnpme/Bm22h3ySwHu1jurAkG4yy/wqjD
+      44pQvT6MJwKBgANHcLstSrvGSqyanFE69G6/PcvpXE2S+V5eqE1QVCUlimcRs6Hd
+      yAz4B+fV6V95/y4/aCT0Dziv5JsXM6ifSNScP4hurcB6hv2sA5LKQ5B/LRDgfG+6
+      fYQKWJbYmj2Gt2EYkvSUfPDFudSzWV7NMQDZDwnZ4eLgmWH2OQA4kYg5AoGBAJY2
+      GJn+TLddxEUpZHS4YGBrfTRxuZhqzx1aPnop9zhwM1xI5clw7JzCRg2rlrACMnvm
+      pNWTSLcAy9K/BMeUxAZbMBZptfx9z3U5vInEeLgzuQIAE2f6HAETwLBlkDZV/xnc
+      OGJU3SLIYKcXXo8gYk0viKekTJA4rgcshQ5JjtyrAoGBAMPxclYzKIRvtLUCMNxw
+      szI+5zrGuZZBYu+gITjtKEmuh0cpbHzm6Cy0yoNADTR+cMdrrAByWepC9m2T3ULe
+      9Cz6pyOxQlXuNJD9DMLVhfY9+nLr4HSGYZxmaz2+19wiDDas2D77Fh/GUi/yBN40
+      qv7Rm7K0MWJ3lqtWlg3L2BrM
+      -----END PRIVATE KEY-----
 # Nginx Ingress Controller configuration
 ingressController:
   enabled: true
