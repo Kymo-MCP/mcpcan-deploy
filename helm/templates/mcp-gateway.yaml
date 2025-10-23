@@ -73,7 +73,7 @@ metadata:
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- $ann := (merge (.Values.services.gateway.ingress.annotations) )}}
+  {{- $ann := (merge (.Values.services.gateway.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
   {{- if gt (len $ann) 0 }}
   annotations:
     {{- toYaml $ann | nindent 4 }}
