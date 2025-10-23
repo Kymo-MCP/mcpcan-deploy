@@ -1,6 +1,5 @@
 # Global configuration
 global:
-  # namespace: mcp-market  # 使用命令行 --namespace 参数指定命名空间
   domain: mcp-market.com
   version: v1.0.0
   registry: ccr.ccs.tencentyun.com/itqm-private
