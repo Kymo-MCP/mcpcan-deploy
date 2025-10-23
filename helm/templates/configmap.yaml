@@ -9,8 +9,7 @@ data:
 {{- if .Values.services.gateway.enabled }}
   gateway.yaml: |-
     server:
-      port: {{ .Values.services.gateway.service.port }}
-      host: 0.0.0.0
+      httpPort: {{ .Values.services.gateway.service.port }}
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}
