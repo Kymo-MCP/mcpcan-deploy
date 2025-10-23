@@ -36,6 +36,161 @@ get_all_node_ips() {
   printf '%s\n' "${ips[@]}"
 }
 
+# 检查 Kubernetes 环境是否已安装（k3s 或其他 k8s 发行版）
+check_kubernetes_installed() {
+  local k8s_found=false
+  local k8s_type=""
+  
+  # 检查 k3s
+  if command -v k3s >/dev/null 2>&1; then
+    k8s_found=true
+    k8s_type="k3s"
+    info "检测到 k3s，版本: $(k3s --version | head -n1)"
+  fi
+  
+  # 检查 kubectl
+  if command -v kubectl >/dev/null 2>&1; then
+    k8s_found=true
+    if [ -z "$k8s_type" ]; then
+      k8s_type="kubernetes"
+    fi
+    info "检测到 kubectl，版本: $(kubectl version --client --short 2>/dev/null || echo "无法获取版本")"
+  fi
+  
+  # 检查 systemd 服务
+  if systemctl is-active --quiet k3s 2>/dev/null; then
+    k8s_found=true
+    k8s_type="k3s"
+    info "检测到 k3s 服务正在运行"
+  elif systemctl is-active --quiet k3s-agent 2>/dev/null; then
+    k8s_found=true
+    k8s_type="k3s"
+    info "检测到 k3s-agent 服务正在运行"
+  elif systemctl is-active --quiet kubelet 2>/dev/null; then
+    k8s_found=true
+    if [ -z "$k8s_type" ]; then
+      k8s_type="kubernetes"
+    fi
+    info "检测到 kubelet 服务正在运行"
+  fi
+  
+  if [ "$k8s_found" = true ]; then
+    echo "$k8s_type"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# 卸载现有 Kubernetes 环境
+uninstall_kubernetes() {
+  local k8s_type="$1"
+  
+  log "卸载现有 $k8s_type 环境..."
+  
+  if [ "$k8s_type" = "k3s" ]; then
+    # 卸载 k3s server
+    if command -v /usr/local/bin/k3s-uninstall.sh >/dev/null 2>&1; then
+      sudo /usr/local/bin/k3s-uninstall.sh || true
+      info "k3s server 卸载完成"
+    fi
+    
+    # 卸载 k3s agent
+    if command -v /usr/local/bin/k3s-agent-uninstall.sh >/dev/null 2>&1; then
+      sudo /usr/local/bin/k3s-agent-uninstall.sh || true
+      info "k3s agent 卸载完成"
+    fi
+  else
+    warn "检测到其他 Kubernetes 环境，请手动卸载后重新运行脚本"
+    error "或使用 --force 参数强制继续安装"
+    return 1
+  fi
+}
+
+# 检查 helm 是否已安装
+check_helm_installed() {
+  if command -v helm >/dev/null 2>&1; then
+    info "helm 已安装，版本: $(helm version --short 2>/dev/null || echo "无法获取版本")"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# 安装 helm
+install_helm() {
+  log "开始安装 helm..."
+  
+  # 下载并安装 helm
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  else
+    error "需要 curl 命令来安装 helm"
+    return 1
+  fi
+  
+  # 验证安装
+  if check_helm_installed; then
+    info "helm 安装成功"
+  else
+    error "helm 安装失败"
+    return 1
+  fi
+}
+
+# 检查 ingress-nginx 是否已安装
+check_ingress_nginx_installed() {
+  if ! command -v kubectl >/dev/null 2>&1; then
+    return 1
+  fi
+  
+  # 检查 ingress-nginx namespace 是否存在
+  if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
+    # 检查 ingress-nginx controller 是否运行
+    if kubectl get deployment -n ingress-nginx ingress-nginx-controller >/dev/null 2>&1; then
+      local ready_replicas
+      ready_replicas=$(kubectl get deployment -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+      if [ "$ready_replicas" -gt 0 ]; then
+        info "ingress-nginx controller 已安装并运行"
+        return 0
+      fi
+    fi
+  fi
+  
+  return 1
+}
+
+# 安装 ingress-nginx controller
+install_ingress_nginx() {
+  log "开始安装 ingress-nginx controller..."
+  
+  if ! command -v kubectl >/dev/null 2>&1; then
+    error "需要 kubectl 命令来安装 ingress-nginx"
+    return 1
+  fi
+  
+  # 创建 ingress-nginx namespace
+  kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+  
+  # 使用官方 manifest 安装 ingress-nginx
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+  
+  # 等待 ingress-nginx controller 就绪
+  log "等待 ingress-nginx controller 就绪..."
+  kubectl wait --namespace ingress-nginx \
+    --for=condition=ready pod \
+    --selector=app.kubernetes.io/component=controller \
+    --timeout=300s
+  
+  # 验证安装
+  if check_ingress_nginx_installed; then
+    info "ingress-nginx controller 安装成功"
+  else
+    error "ingress-nginx controller 安装失败"
+    return 1
+  fi
+}
+
 # --- 解析命令行参数 ---
 usage() {
   cat <<EOF
@@ -55,6 +210,7 @@ usage() {
   --disable COMPONENTS           禁用组件，逗号分隔（默认: traefik,rancher）
   --tls-sans "a.com,1.2.3.4"     追加 TLS SANs（可选）
   --extra-args "..."             追加传给 k3s 的额外参数
+  --force                        强制重新安装（卸载现有环境）
   --uninstall                    卸载 k3s
   -h, --help                     显示帮助
 
@@ -73,6 +229,9 @@ usage() {
   自动安装（根据当前服务器 IP 判断节点类型）
     sudo ./install-k3s.sh
 
+  强制重新安装
+    sudo ./install-k3s.sh --force
+
   使用自定义版本
     sudo K3S_VERSION=v1.30.4+k3s1 ./install-k3s.sh
 
@@ -82,6 +241,7 @@ EOF
 }
 
 uninstall=false
+force_install=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -93,6 +253,7 @@ while [[ $# -gt 0 ]]; do
     --disable) k3s_disable_components="$2"; shift 2 ;;
     --tls-sans) tls_sans="$2"; shift 2 ;;
     --extra-args) extra_args="$2"; shift 2 ;;
+    --force) force_install=true; shift ;;
     --uninstall) uninstall=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) error "未知参数: $1"; usage; exit 2 ;;
