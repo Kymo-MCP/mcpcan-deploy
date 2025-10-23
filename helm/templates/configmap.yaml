@@ -56,6 +56,7 @@ data:
   market.yaml: |-
     server:
       httpPort: {{ .Values.services.market.service.port }}
+    domain: {{ .Values.global.domain }}
     secret: {{ .Values.global.appSecret }}
     services:
       mcpMarket:
