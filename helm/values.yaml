@@ -95,10 +95,6 @@ services:
       host: ""
       path: /
       pathType: Prefix
-    config:
-      enabled: false
-    persistence:
-      enabled: false
     resources:
       requests:
         memory: "64Mi"
@@ -108,7 +104,7 @@ services:
         cpu: "200m"
 
   market:
-    enabled: false
+    enabled: true
     name: mcp-market
     replicas: 1
     service:
@@ -118,8 +114,10 @@ services:
     ingress:
       enabled: true
       host: ""
-      path: /api/market
+      path: /api/market/(.*)
       pathType: Prefix
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /market/$1
     config:
       enabled: false
     persistence:
@@ -133,7 +131,7 @@ services:
         cpu: "500m"
 
   authz:
-    enabled: false
+    enabled: true
     name: mcp-authz
     replicas: 1
     service:
@@ -143,12 +141,10 @@ services:
     ingress:
       enabled: true
       host: ""
-      path: /api/authz
+      path: /api/authz/(.*)
       pathType: Prefix
-    config:
-      enabled: false
-    persistence:
-      enabled: false
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /authz/$1
     resources:
       requests:
         memory: "128Mi"
@@ -168,12 +164,8 @@ services:
     ingress:
       enabled: true
       host: ""
-      path: /api/mcp-gateway
+      path: /mcp-gateway
       pathType: Prefix
-    config:
-      enabled: false
-    persistence:
-      enabled: false
     resources:
       requests:
         memory: "128Mi"
@@ -189,9 +181,14 @@ services:
     service:
       name: mcp-init-svc
       port: 8083
-      type: ClusterIP
-    config:
-      enabled: false
+      type: "ClusterIP"
+    k8sHostPath:
+      enabled: true
+      name: k8s-init-hostpath
+      path: /etc/rancher/k3s
+      type: DirectoryOrCreate
+      mountPath: /app/config/kube
+      configMapKey: kubernetes-internal.yaml
     resources:
       requests:
         memory: "64Mi"

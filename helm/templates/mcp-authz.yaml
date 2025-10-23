@@ -33,22 +33,18 @@ spec:
           {{- toYaml .Values.services.authz.resources | nindent 10 }}
         {{- end }}
         volumeMounts:
-        {{- if .Values.services.authz.config.enabled }}
         - name: config-volume
-          mountPath: {{ .Values.services.authz.config.mountPath | default "/app/config" }}
+          mountPath: "/app/config"
           readOnly: true
-        {{- end }}
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
-      {{- if .Values.services.authz.config.enabled }}
       volumes:
       - name: config-volume
         configMap:
           name: mcp-config
           items:
-          - key: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
-            path: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
-      {{- end }}
+          - key: authz.yaml
+            path: authz.yaml
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}

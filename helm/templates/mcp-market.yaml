@@ -33,22 +33,18 @@ spec:
           {{- toYaml .Values.services.market.resources | nindent 10 }}
         {{- end }}
         volumeMounts:
-        {{- if .Values.services.market.config.enabled }}
         - name: config-volume
-          mountPath: {{ .Values.services.market.config.mountPath | default "/app/config" }}
+          mountPath: "/app/config"
           readOnly: true
-        {{- end }}
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
       volumes:
-      {{- if .Values.services.market.config.enabled }}
       - name: config-volume
         configMap:
           name: mcp-config
           items:
-          - key: {{ .Values.services.market.config.configMapKey | default "market.yaml" }}
-            path: {{ .Values.services.market.config.configMapKey | default "market.yaml" }}
-      {{- end }}
+          - key: "market.yaml"
+            path: "market.yaml"
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}

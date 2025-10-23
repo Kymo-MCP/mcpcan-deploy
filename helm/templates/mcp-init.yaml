@@ -22,34 +22,30 @@ spec:
         resources:
           {{- toYaml .Values.services.init.resources | nindent 10 }}
         {{- end }}
-        {{- if .Values.services.init.config }}
         volumeMounts:
         - name: config-volume
-          mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
+          mountPath: "/app/config"
           readOnly: true
         - name: k8s-config-volume
-          mountPath: {{ .Values.services.init.config.k8sConfigMountPath | default "/app/config/kube" }}
-          readOnly: true
+          mountPath: {{ .Values.services.init.k8sHostPath.mountPath | default "/app/config/kube" }}
+          readOnly: {{ .Values.services.init.k8sHostPath.readOnly | default true }}
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
-        {{- end }}
-      {{- if .Values.services.init.config }}
       volumes:
       - name: config-volume
         configMap:
           name: mcp-config
           items:
-          - key: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
-            path: {{ .Values.services.init.config.configMapKey | default "init.yaml" }}
+          - key: "init.yaml"
+            path: "init.yaml"
       - name: k8s-config-volume
         hostPath:
-          path: {{ .Values.services.init.config.k8sConfigHostPath | default "/etc/rancher/k3s" }}
-          type: DirectoryOrCreate
+          path: {{ .Values.services.init.k8sHostPath.path }}
+          type: {{ .Values.services.init.k8sHostPath.type }}
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
           type: DirectoryOrCreate
-      {{- end }}
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
 {{- end }}
