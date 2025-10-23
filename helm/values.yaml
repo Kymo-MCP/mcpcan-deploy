@@ -166,18 +166,6 @@ services:
       host: ""
       path: /mcp-gateway
       pathType: Prefix
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /
-        # Proxy configuration for gateway service
-        nginx.ingress.kubernetes.io/proxy-body-size: "0"
-        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-        nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-        # Allow all HTTP methods and headers
-        nginx.ingress.kubernetes.io/configuration-snippet: |
-          more_set_headers "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, TRACE, CONNECT";
-          more_set_headers "Access-Control-Allow-Headers: *";
-          more_set_headers "Access-Control-Expose-Headers: *";
     resources:
       requests:
         memory: "128Mi"
