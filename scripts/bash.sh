@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 # ==============================================
-# 公共 Bash 脚本库
-# 包含环境变量加载、颜色定义、日志函数等公共逻辑
+# Common Bash Script Library
+# Contains environment variable loading, color definitions, logging functions, and other common logic
 # ==============================================
 
-# --- k3s 安装默认参数 ---
-# K3S 安装默认参数
+# --- k3s installation default parameters ---
+# K3S installation default parameters
 K3S_VERSION=${K3S_VERSION:-"v1.32.1+k3s1"}
 K3S_MIRROR=${K3S_MIRROR:-"cn"}
 K3S_INSTALL_URL=${K3S_INSTALL_URL:-"https://rancher-mirror.rancher.cn/k3s/k3s-install.sh"}
@@ -14,25 +14,25 @@ K3S_DATA_DIR=${K3S_DATA_DIR:-"/var/lib/rancher/k3s"}
 K3S_KUBECONFIG_MODE=${K3S_KUBECONFIG_MODE:-"644"}
 K3S_DISABLE_COMPONENTS=${K3S_DISABLE_COMPONENTS:-"traefik,rancher"}
 
-# --- 颜色定义 ---
+# --- Color definitions ---
 GREEN="✅ "
 YELLOW="💡️ "
 RED="❌"
 GRAY="️🕒 "
 NOTICE="⚠️ "
 
-# --- 实用函数 ---
-# 获取脚本所在目录的绝对路径
+# --- Utility functions ---
+# Get absolute path of script directory
 script_dir() { cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P; }
 
-# 日志函数
+# Logging functions
 log() { echo "[$(basename "$0")] $*"; }
 err() { echo "[$(basename "$0")][ERROR] $*" >&2; }
 info() { echo "${GREEN}$*"; }
 warn() { echo "${YELLOW}$*"; }
 error() { echo "${RED}$*" >&2; }
 
-# 生成随机 token（当未提供时）
+# Generate random token (when not provided)
 random_token() {
   if command -v openssl >/dev/null 2>&1; then
     openssl rand -hex 16
@@ -41,17 +41,17 @@ random_token() {
   fi
 }
 
-# 检查命令是否存在
+# Check if command exists
 check_command() {
   local cmd="$1"
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    error "未找到命令: $cmd"
+    error "Command not found: $cmd"
     return 1
   fi
   return 0
 }
 
-# 检查是否为 root 用户
+# Check if running as root user
 check_root() {
   if [[ $EUID -eq 0 ]]; then
     return 0
@@ -60,24 +60,24 @@ check_root() {
   fi
 }
 
-# 检查是否为 Ubuntu 系统
+# Check if running on Ubuntu system
 check_ubuntu() {
   if [[ "${OSTYPE:-linux}" != linux* ]]; then
-    error "该脚本面向 Linux/Ubuntu 环境编写。当前系统: ${OSTYPE:-unknown}"
+    error "This script is designed for Linux/Ubuntu environment. Current system: ${OSTYPE:-unknown}"
     return 1
   fi
   
   if [ -f /etc/os-release ]; then
     . /etc/os-release
     if [[ "$ID" != "ubuntu" ]]; then
-      warn "检测到非 Ubuntu 系统: $ID，可能存在兼容性问题"
+      warn "Detected non-Ubuntu system: $ID, compatibility issues may occur"
     fi
   fi
   
   return 0
 }
 
-# 安装依赖包（Ubuntu）
+# Install dependency packages (Ubuntu)
 install_dependencies() {
   local packages=("$@")
   
@@ -85,7 +85,7 @@ install_dependencies() {
     return 0
   fi
   
-  log "检查并安装依赖包: ${packages[*]}"
+  log "Checking and installing dependency packages: ${packages[*]}"
   
   local missing_packages=()
   for pkg in "${packages[@]}"; do
@@ -95,22 +95,22 @@ install_dependencies() {
   done
   
   if [ ${#missing_packages[@]} -gt 0 ]; then
-    log "安装缺失的依赖包: ${missing_packages[*]}"
+    log "Installing missing dependency packages: ${missing_packages[*]}"
     if command -v apt-get >/dev/null 2>&1; then
       sudo apt-get update -y
       sudo apt-get install -y "${missing_packages[@]}"
     else
-      error "未找到 apt-get，请手动安装依赖包: ${missing_packages[*]}"
+      error "apt-get not found, please manually install dependency packages: ${missing_packages[*]}"
       return 1
     fi
   else
-    info "所有依赖包已安装"
+    info "All dependency packages are installed"
   fi
 }
 
-# 配置 k3s 国内镜像仓库
+# Configure k3s domestic mirror repository
 setup_k3s_registry() {
-  log "配置 k3s 国内镜像仓库"
+  log "Configuring k3s domestic mirror repository"
   sudo mkdir -p /etc/rancher/k3s
   sudo tee /etc/rancher/k3s/registries.yaml > /dev/null <<EOF
 mirrors:
@@ -142,20 +142,20 @@ mirrors:
       - "https://registry.cn-guangzhou.aliyuncs.com"
 EOF
   
-  info "k3s 镜像仓库配置完成"
+  info "k3s mirror repository configuration completed"
 }
 
-# 检查 k3s 是否已安装
+# Check if k3s is installed
 check_k3s_installed() {
   if command -v k3s >/dev/null 2>&1; then
-    info "k3s 已安装，版本: $(k3s --version | head -n1)"
+    info "k3s is installed, version: $(k3s --version | head -n1)"
     return 0
   else
     return 1
   fi
 }
 
-# 获取节点 IP 地址
+# Get node IP address
 get_node_ip() {
 
   if [ -n "${NODE_IP:-}" ]; then
@@ -163,29 +163,29 @@ get_node_ip() {
     return 0
   fi
   
-  # 自动获取主网卡 IP
+  # Automatically get primary network interface IP
   local ip
   ip=$(hostname -I | awk '{print $1}')
   
   if [ -n "$ip" ]; then
     echo "$ip"
   else
-    error "无法获取节点 IP 地址"
+    error "Unable to get node IP address"
     return 1
   fi
 }
 
-# 获取当前服务器的所有 IP 地址（包括公网 IP）
+# Get all IP addresses of current server (including public IP)
 get_server_ips() {
   local ips=()
   
-  # 获取本地网卡 IP（兼容 Linux 和 macOS）
+  # Get local network interface IPs (compatible with Linux and macOS)
   local local_ips
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS 使用 ifconfig
+    # macOS uses ifconfig
     local_ips=$(ifconfig | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}')
   else
-    # Linux 使用 hostname -I
+    # Linux uses hostname -I
     local_ips=$(hostname -I | tr ' ' '\n' | grep -v '^$')
   fi
   
@@ -193,14 +193,14 @@ get_server_ips() {
     [ -n "$ip" ] && ips+=("$ip")
   done <<< "$local_ips"
   
-  # 尝试获取公网 IP
+  # Try to get public IP
   local public_ip
   if command -v curl >/dev/null 2>&1; then
-    # 尝试多个服务获取公网 IP
+    # Try multiple services to get public IP
     for service in "http://ipinfo.io/ip" "http://icanhazip.com" "http://ifconfig.me/ip" "http://checkip.amazonaws.com" "http://ip.42.pl/raw"; do
       public_ip=$(curl -s --connect-timeout 5 --max-time 10 "$service" 2>/dev/null | tr -d '\n\r\t ')
       if [[ "$public_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        # 检查是否已存在于本地 IP 列表中
+        # Check if already exists in local IP list
         local found=false
         for local_ip in "${ips[@]}"; do
           if [ "$local_ip" = "$public_ip" ]; then
@@ -210,23 +210,23 @@ get_server_ips() {
         done
         if [ "$found" = false ]; then
           ips+=("$public_ip")
-          # 只在调试模式下输出详细信息
-          [ "${DEBUG:-}" = "1" ] && info "检测到公网 IP: $public_ip"
+          # Only output detailed information in debug mode
+          [ "${DEBUG:-}" = "1" ] && info "Detected public IP: $public_ip"
         fi
         break
       fi
     done
   fi
   
-  # 如果没有获取到公网 IP，记录日志
+  # If no public IP obtained, log it
   if [ -z "$public_ip" ] || ! [[ "$public_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-    [ "${DEBUG:-}" = "1" ] && warn "无法获取公网 IP，将使用内网 IP"
+    [ "${DEBUG:-}" = "1" ] && warn "Unable to get public IP, will use private IP"
   fi
   
   printf '%s\n' "${ips[@]}"
 }
 
-# 自动获取节点 IP 列表（优先使用公网 IP，没有则使用内网 IP）
+# Auto-detect node IP list (prioritize public IP, use private IP if not available)
 auto_detect_node_ips() {
   local server_ips_str
   server_ips_str=$(get_server_ips)
@@ -235,59 +235,60 @@ auto_detect_node_ips() {
   local public_ip=""
   local private_ip=""
   
-  # 分析获取到的 IP 地址
+  # Analyze obtained IP addresses
   while IFS= read -r ip; do
     [ -z "$ip" ] && continue
     
-    # 判断是否为公网 IP（排除私有网段）
+    # Determine if it's a public IP (exclude private network segments)
     if [[ "$ip" =~ ^10\. ]] || [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\. ]] || [[ "$ip" =~ ^192\.168\. ]]; then
-      # 私有 IP
+      # Private IP
       if [ -z "$private_ip" ]; then
         private_ip="$ip"
       fi
     else
-      # 公网 IP
+      # Public IP
       if [ -z "$public_ip" ]; then
         public_ip="$ip"
       fi
     fi
   done <<< "$server_ips_str"
   
-  # 优先使用公网 IP，没有则使用私有 IP
+  # Prioritize public IP, use private IP if not available
   if [ -n "$public_ip" ]; then
     primary_ip="$public_ip"
-    # 只在调试模式下输出详细信息
-    [ "${DEBUG:-}" = "1" ] && info "使用公网 IP 作为节点 IP: $primary_ip"
+    # Only output detailed information in debug mode
+    [ "${DEBUG:-}" = "1" ] && info "Using public IP as node IP: $primary_ip"
   elif [ -n "$private_ip" ]; then
     primary_ip="$private_ip"
-    # 只在调试模式下输出详细信息
-    [ "${DEBUG:-}" = "1" ] && info "使用内网 IP 作为节点 IP: $primary_ip"
+    # Only output detailed information in debug mode
+    [ "${DEBUG:-}" = "1" ] && info "Using private IP as node IP: $primary_ip"
   else
-    error "无法获取有效的 IP 地址"
+    error "Unable to get valid IP address"
     return 1
   fi
   
-  # 设置 K3S_API_URL 为主 IP
+  # Set K3S_API_URL to primary IP
   export K3S_API_URL="$primary_ip"
   
-  # 返回主 IP（用作单节点安装）
+  # Return primary IP (for single node installation)
   echo "$primary_ip"
 }
 
-# 检查当前服务器 IP 是否在节点列表中，并返回节点类型和位置
+# Check if current server IP is in node list, return node type and position
 check_node_in_list() {
-  # 如果没有配置节点列表，自动检测并设置为单节点
+  # If no node list configured, auto-detect and set as single node
   if [ -z "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
     local auto_ip
     auto_ip=$(auto_detect_node_ips)
     if [ $? -eq 0 ] && [ -n "$auto_ip" ]; then
       export K3S_INSTALL_NODE_IP_LIST="$auto_ip"
-      info "自动检测节点 IP 列表: $K3S_INSTALL_NODE_IP_LIST"
-      # 直接返回 master 节点信息，不再输出额外的 info 信息
+      # Only output information in debug mode to avoid interfering with node type parsing
+      [ "${DEBUG:-}" = "true" ] && info "Auto-detected node IP list: $K3S_INSTALL_NODE_IP_LIST"
+      # Directly return master node information without extra output
       echo "master:$auto_ip:0"
       return 0
     else
-      error "自动检测节点 IP 失败"
+      error "Failed to auto-detect node IP"
       return 1
     fi
   fi
@@ -295,31 +296,31 @@ check_node_in_list() {
   local node_list="${K3S_INSTALL_NODE_IP_LIST}"
   
   if [ -z "$node_list" ]; then
-    error "K3S_INSTALL_NODE_IP_LIST 未配置"
+    error "K3S_INSTALL_NODE_IP_LIST not configured"
     return 1
   fi
   
-  # 将节点列表转换为数组（兼容 bash 和 zsh）
+  # Convert node list to array (compatible with bash and zsh)
   local configured_nodes
   if [ -n "$ZSH_VERSION" ]; then
-    # zsh 环境，使用 word splitting
+    # zsh environment, use word splitting
     setopt sh_word_split 2>/dev/null || true
     configured_nodes=($node_list)
   else
-    # bash 环境
+    # bash environment
     IFS=' ' read -ra configured_nodes <<< "$node_list"
   fi
   
   if [ ${#configured_nodes[@]} -eq 0 ]; then
-    error "节点 IP 列表为空"
+    error "Node IP list is empty"
     return 1
   fi
   
-  # 获取当前服务器的所有 IP
+  # Get all IPs of current server
   local server_ips_str
   server_ips_str=$(get_server_ips)
   
-  # 检查匹配
+  # Check for matches
   local i=0
   for config_ip in "${configured_nodes[@]}"; do
     while IFS= read -r server_ip; do
@@ -336,24 +337,24 @@ check_node_in_list() {
     i=$((i + 1))
   done
   
-  # 未找到匹配
-  error "当前服务器不在配置的节点 IP 列表中"
-  error "服务器 IP: $(echo "$server_ips_str" | tr '\n' ' ')"
-  error "节点列表: ${configured_nodes[*]}"
+  # No match found
+  error "Current server is not in the configured node IP list"
+  error "Server IPs: $(echo "$server_ips_str" | tr '\n' ' ')"
+  error "Node list: ${configured_nodes[*]}"
   return 1
 }
 
-# 等待服务启动
+# Wait for service to start
 wait_for_service() {
   local service_name="$1"
   local max_wait="${2:-60}"
   local wait_time=0
   
-  log "等待服务启动: $service_name"
+  log "Waiting for service to start: $service_name"
   
   while [ $wait_time -lt $max_wait ]; do
     if systemctl is-active --quiet "$service_name"; then
-      info "服务 $service_name 已启动"
+      info "Service $service_name has started"
       return 0
     fi
     
@@ -363,30 +364,30 @@ wait_for_service() {
   done
   
   echo
-  error "服务 $service_name 启动超时"
+  error "Service $service_name startup timeout"
   return 1
 }
 
-# 显示脚本使用帮助
+# Show script usage help
 show_usage() {
   cat <<EOF
-用法: $0 [选项]
+Usage: $0 [options]
 
-该脚本提供 k3s 安装的公共函数库。
+This script provides a common function library for k3s installation.
 
-环境变量:
-  K3S_VERSION              k3s 版本 (默认: v1.32.1+k3s1)
-  K3S_MIRROR              镜像源 (默认: cn)
-  K3S_INSTALL_URL         安装脚本 URL
-  K3S_DATA_DIR            数据目录 (默认: /var/lib/rancher/k3s)
-  K3S_KUBECONFIG_MODE     kubeconfig 权限 (默认: 644)
-  K3S_DISABLE_COMPONENTS  禁用组件 (默认: traefik,rancher)
-示例:
-  source bash.sh          # 加载公共函数库
+Environment Variables:
+  K3S_VERSION              k3s version (default: v1.32.1+k3s1)
+  K3S_MIRROR              Mirror source (default: cn)
+  K3S_INSTALL_URL         Installation script URL
+  K3S_DATA_DIR            Data directory (default: /var/lib/rancher/k3s)
+  K3S_KUBECONFIG_MODE     kubeconfig permissions (default: 644)
+  K3S_DISABLE_COMPONENTS  Disabled components (default: traefik,rancher)
+Examples:
+  source bash.sh          # Load common function library
 EOF
 }
 
-# 处理命令行参数（当脚本直接执行时）
+# Handle command line arguments (when script is executed directly)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${1:-}" in
     -h|--help)
@@ -394,10 +395,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       exit 0
       ;;
     *)
-      echo "这是一个公共函数库，请使用 source 命令加载："
+      echo "This is a common function library, please use source command to load:"
       echo "  source bash.sh"
       echo ""
-      echo "或查看帮助："
+      echo "Or view help:"
       echo "  bash bash.sh --help"
       exit 1
       ;;

@@ -1,155 +1,150 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
-# ==============================================
-# k3s 安装脚本（Ubuntu 环境，基于节点 IP 列表自动判断）
-# 自动判断节点类型：第一个 IP 为 master，其余为 worker
-# 配置优先级：命令行参数 > 环境变量 > 默认值
-# 依赖：curl、sudo（如非 root）
-# ==============================================
+# k3s Installation Script (Ubuntu Environment, Auto Node Type Detection)
+# Auto-detect node type: First IP is master, others are workers
+# Configuration priority: Command line args > Environment variables > Default values
+# Dependencies: curl, sudo (if not root)
 
-# 加载公共函数库
+# Load common function library
 source "$(dirname "$0")/bash.sh"
 
-# --- 默认值（从 bash.sh 中的默认配置读取）---
-k3s_version="${K3S_VERSION}"                             # k3s 版本
-k3s_token="${K3S_TOKEN:-}"                               # 为空时脚本将自动生成
-k3s_data_dir="${K3S_DATA_DIR}"                           # k3s 数据目录
-k3s_kubeconfig_mode="${K3S_KUBECONFIG_MODE}"             # kubeconfig 权限
-k3s_disable_components="${K3S_DISABLE_COMPONENTS}"       # 禁用组件
-k3s_mirror="${K3S_MIRROR}"                               # 镜像源
-k3s_install_url="${K3S_INSTALL_URL}"                     # 安装脚本 URL
-tls_sans="${TLS_SANS:-}"                                 # 可选，逗号分隔: my.domain.com,10.0.0.10
-extra_args="${K3S_EXTRA_ARGS:-}"                         # 透传给 k3s 的额外参数
+# --- Default values (read from bash.sh default configuration) ---
+k3s_version="${K3S_VERSION}"                             # k3s version
+k3s_token="${K3S_TOKEN:-}"                               # Auto-generated if empty
+k3s_data_dir="${K3S_DATA_DIR}"                           # k3s data directory
+k3s_kubeconfig_mode="${K3S_KUBECONFIG_MODE}"             # kubeconfig permissions
+k3s_disable_components="${K3S_DISABLE_COMPONENTS}"       # Disabled components
+k3s_mirror="${K3S_MIRROR}"                               # Mirror source
+k3s_install_url="${K3S_INSTALL_URL}"                     # Installation script URL
+tls_sans="${TLS_SANS:-}"                                 # Optional, comma-separated: my.domain.com,10.0.0.10
+extra_args="${K3S_EXTRA_ARGS:-}"                         # Extra args passed to k3s
 
-# 添加获取所有节点IP的函数
+# Function to get all node IPs
 get_all_node_ips() {
-  local ips=()
   if [ -n "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
-    read -ra nodes <<< "${K3S_INSTALL_NODE_IP_LIST}"
-    for node in "${nodes[@]}"; do
-      ips+=("$node")
-    done
+    echo "$K3S_INSTALL_NODE_IP_LIST" | tr ' ' '\n'
+  else
+    # If no node list configured, return current server IP
+    auto_detect_node_ips
   fi
-  printf '%s\n' "${ips[@]}"
 }
 
-# 检查 Kubernetes 环境是否已安装（k3s 或其他 k8s 发行版）
-check_kubernetes_installed() {
-  local k8s_found=false
+# Check if Kubernetes environment is already installed (k3s or other k8s distributions)
+check_existing_k8s() {
   local k8s_type=""
   
-  # 检查 k3s
+  # Check k3s
   if command -v k3s >/dev/null 2>&1; then
-    k8s_found=true
     k8s_type="k3s"
-    info "检测到 k3s，版本: $(k3s --version | head -n1)"
+    info "Detected k3s, version: $(k3s --version | head -n1)"
+    return 0
   fi
   
-  # 检查 kubectl
+  # Check kubectl
   if command -v kubectl >/dev/null 2>&1; then
-    k8s_found=true
-    if [ -z "$k8s_type" ]; then
-      k8s_type="kubernetes"
+    if kubectl version --client >/dev/null 2>&1; then
+      k8s_type="kubectl"
+      info "Detected kubectl, version: $(kubectl version --client --short 2>/dev/null || echo "Unable to get version")"
     fi
-    info "检测到 kubectl，版本: $(kubectl version --client --short 2>/dev/null || echo "无法获取版本")"
   fi
   
-  # 检查 systemd 服务
+  # Check systemd services
   if systemctl is-active --quiet k3s 2>/dev/null; then
-    k8s_found=true
     k8s_type="k3s"
-    info "检测到 k3s 服务正在运行"
-  elif systemctl is-active --quiet k3s-agent 2>/dev/null; then
-    k8s_found=true
-    k8s_type="k3s"
-    info "检测到 k3s-agent 服务正在运行"
-  elif systemctl is-active --quiet kubelet 2>/dev/null; then
-    k8s_found=true
-    if [ -z "$k8s_type" ]; then
-      k8s_type="kubernetes"
-    fi
-    info "检测到 kubelet 服务正在运行"
+    info "Detected k3s service running"
+    return 0
   fi
   
-  if [ "$k8s_found" = true ]; then
+  if systemctl is-active --quiet k3s-agent 2>/dev/null; then
+    k8s_type="k3s"
+    info "Detected k3s-agent service running"
+    return 0
+  fi
+  
+  if systemctl is-active --quiet kubelet 2>/dev/null; then
+    k8s_type="kubelet"
+    info "Detected kubelet service running"
+  fi
+  
+  if [ -n "$k8s_type" ]; then
     echo "$k8s_type"
     return 0
-  else
-    return 1
   fi
+  
+  return 1
 }
 
-# 卸载现有 Kubernetes 环境
+# Uninstall existing Kubernetes environment
 uninstall_kubernetes() {
   local k8s_type="$1"
   
-  log "卸载现有 $k8s_type 环境..."
+  log "Uninstalling existing $k8s_type environment..."
   
   if [ "$k8s_type" = "k3s" ]; then
-    # 卸载 k3s server
+    # Uninstall k3s server
     if command -v /usr/local/bin/k3s-uninstall.sh >/dev/null 2>&1; then
       sudo /usr/local/bin/k3s-uninstall.sh || true
-      info "k3s server 卸载完成"
+      info "k3s server uninstalled"
     fi
     
-    # 卸载 k3s agent
+    # Uninstall k3s agent
     if command -v /usr/local/bin/k3s-agent-uninstall.sh >/dev/null 2>&1; then
       sudo /usr/local/bin/k3s-agent-uninstall.sh || true
-      info "k3s agent 卸载完成"
+      info "k3s agent uninstalled"
     fi
   else
-    warn "检测到其他 Kubernetes 环境，请手动卸载后重新运行脚本"
-    error "或使用 --force 参数强制继续安装"
+    warn "Detected other Kubernetes environment, please uninstall manually and re-run the script"
+    error "Or use --force parameter to force installation"
     return 1
   fi
 }
 
-# 检查 helm 是否已安装
+# Check if helm is installed
 check_helm_installed() {
   if command -v helm >/dev/null 2>&1; then
-    info "helm 已安装，版本: $(helm version --short 2>/dev/null || echo "无法获取版本")"
+    info "helm is installed, version: $(helm version --short 2>/dev/null || echo "Unable to get version")"
     return 0
   else
     return 1
   fi
 }
 
-# 安装 helm
+# Install helm
 install_helm() {
-  log "开始安装 helm..."
+  log "Starting helm installation..."
   
-  # 下载并安装 helm
+  # Download and install helm
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
   else
-    error "需要 curl 命令来安装 helm"
+    error "curl command is required to install helm"
     return 1
   fi
   
-  # 验证安装
+  # Verify installation
   if check_helm_installed; then
-    info "helm 安装成功"
+    info "helm installed successfully"
   else
-    error "helm 安装失败"
+    error "helm installation failed"
     return 1
   fi
 }
 
-# 检查 ingress-nginx 是否已安装
+# Check if ingress-nginx is installed
 check_ingress_nginx_installed() {
   if ! command -v kubectl >/dev/null 2>&1; then
     return 1
   fi
   
-  # 检查 ingress-nginx namespace 是否存在
+  # Check if ingress-nginx namespace exists
   if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
-    # 检查 ingress-nginx controller 是否运行
+    # Check if ingress-nginx controller is running
     if kubectl get deployment -n ingress-nginx ingress-nginx-controller >/dev/null 2>&1; then
       local ready_replicas
       ready_replicas=$(kubectl get deployment -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
       if [ "$ready_replicas" -gt 0 ]; then
-        info "ingress-nginx controller 已安装并运行"
+        info "ingress-nginx controller is installed and running"
         return 0
       fi
     fi
@@ -158,78 +153,78 @@ check_ingress_nginx_installed() {
   return 1
 }
 
-# 安装 ingress-nginx controller
+# Install ingress-nginx controller
 install_ingress_nginx() {
-  log "开始安装 ingress-nginx controller..."
+  log "Starting ingress-nginx controller installation..."
   
   if ! command -v kubectl >/dev/null 2>&1; then
-    error "需要 kubectl 命令来安装 ingress-nginx"
+    error "kubectl command is required to install ingress-nginx"
     return 1
   fi
   
-  # 创建 ingress-nginx namespace
+  # Create ingress-nginx namespace
   kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
   
-  # 使用官方 manifest 安装 ingress-nginx
+  # Install ingress-nginx using official manifest
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
   
-  # 等待 ingress-nginx controller 就绪
-  log "等待 ingress-nginx controller 就绪..."
+  # Wait for ingress-nginx controller to be ready
+  log "Waiting for ingress-nginx controller to be ready..."
   kubectl wait --namespace ingress-nginx \
     --for=condition=ready pod \
     --selector=app.kubernetes.io/component=controller \
     --timeout=300s
   
-  # 验证安装
+  # Verify installation
   if check_ingress_nginx_installed; then
-    info "ingress-nginx controller 安装成功"
+    info "ingress-nginx controller installed successfully"
   else
-    error "ingress-nginx controller 安装失败"
+    error "ingress-nginx controller installation failed"
     return 1
   fi
 }
 
-# --- 解析命令行参数 ---
+# --- Parse command line arguments ---
 usage() {
   cat <<EOF
-用法: ./install-k3s.sh [选项]
+Usage: ./install-k3s.sh [options]
 
-该脚本基于节点 IP 列表自动判断节点类型：
-- 第一个 IP 为 master 节点（初始化集群）
-- 其余 IP 为 worker 节点（加入集群）
-- 当前服务器 IP 必须在配置的节点列表中
+This script auto-detects node type based on node IP list:
+- First IP is master node (initialize cluster)
+- Other IPs are worker nodes (join cluster)
+- Current server IP must be in the configured node list
 
-选项：
-  --token TOKEN                  集群 token，不提供时自动生成（master）
-  --version VERSION              指定 k3s 版本，如 v1.32.1+k3s1
-  --data-dir PATH                k3s 数据目录（默认: /var/lib/rancher/k3s）
-  --kubeconfig-mode MODE         kubeconfig 权限
-  --mirror [cn|global]           镜像源（默认: cn）
-  --disable COMPONENTS           禁用组件，逗号分隔（默认: traefik,rancher）
-  --tls-sans "a.com,1.2.3.4"     追加 TLS SANs（可选）
-  --extra-args "..."             追加传给 k3s 的额外参数
-  --force                        强制重新安装（卸载现有环境）
-  --uninstall                    卸载 k3s
-  -h, --help                     显示帮助
+Options:
+  --token TOKEN                  Cluster token, auto-generated if not provided (master)
+  --version VERSION              Specify k3s version, e.g. v1.32.1+k3s1
+  --data-dir PATH                k3s data directory (default: /var/lib/rancher/k3s)
+  --kubeconfig-mode MODE         kubeconfig permissions
+  --mirror [cn|global]           Mirror source (default: cn)
+  --disable COMPONENTS           Disable components, comma-separated (default: traefik,rancher)
+  --tls-sans "a.com,1.2.3.4"     Append TLS SANs (optional)
+  --extra-args "..."             Append extra args to k3s
+  --force                        Force reinstall (uninstall existing environment)
+  --uninstall                    Uninstall k3s
+  -h, --help                     Show help
 
-特性：
-  - 自动检测公网 IP 地址，无公网 IP 时使用内网 IP
-  - 自动检测并安装 Helm 工具
-  - 自动检测并安装 Ingress-Nginx 控制器
-  - 支持单节点和多节点集群部署
-  - 内置默认配置，无需依赖环境变量文件
+Features:
+  - Auto-detect public IP address, use private IP if no public IP
+  - Auto-detect and install Helm tool
+  - Auto-detect and install Ingress-Nginx controller
+  - Support single-node and multi-node cluster deployment
+  - Built-in default configuration, no dependency on environment variable files
 
-示例：
-  自动安装（自动检测 IP 和节点类型）
+Examples:
+  Auto install (auto-detect IP and node type)
     sudo ./install-k3s.sh
 
-  强制重新安装
+  Force reinstall
     sudo ./install-k3s.sh --force
 
-  使用自定义版本
+  Use custom version
     sudo ./install-k3s.sh --version v1.30.4+k3s1
 
-  指定 token（用于 worker 节点）
+  Specify token (for worker nodes)
     sudo ./install-k3s.sh --token mytoken
 EOF
 }
@@ -254,84 +249,84 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# --- 前置检查 ---
+# --- Pre-checks ---
 check_ubuntu || exit 1
 
-# 处理卸载请求
+# Handle uninstall request
 if [ "$uninstall" = true ]; then
-  log "卸载 k3s..."
+  log "Uninstalling k3s..."
   
-  # 尝试卸载 server
+  # Try to uninstall server
   if command -v /usr/local/bin/k3s-uninstall.sh >/dev/null 2>&1; then
     sudo /usr/local/bin/k3s-uninstall.sh || true
-    info "k3s server 卸载完成"
-  # 尝试卸载 agent
+    info "k3s server uninstalled"
+  # Try to uninstall agent
   elif command -v /usr/local/bin/k3s-agent-uninstall.sh >/dev/null 2>&1; then
     sudo /usr/local/bin/k3s-agent-uninstall.sh || true
-    info "k3s agent 卸载完成"
+    info "k3s agent uninstalled"
   else
-    error "未找到 k3s 卸载脚本"
+    error "k3s uninstall script not found"
   fi
   exit 0
 fi
 
-# 检查现有 Kubernetes 环境
-if existing_k8s=$(check_kubernetes_installed); then
+# Check existing Kubernetes environment
+if existing_k8s=$(check_existing_k8s); then
   if [ "$force_install" = true ]; then
-    log "检测到现有 $existing_k8s 环境，强制重新安装..."
+    log "Detected existing $existing_k8s environment, forcing reinstall..."
     uninstall_kubernetes "$existing_k8s" || exit 1
   else
-    warn "$existing_k8s 已安装，如需重新安装请使用 --force 参数"
+    warn "$existing_k8s is already installed, use --force parameter to reinstall"
     
-    # 如果是 k3s 环境，继续检查其他组件
+    # If it's k3s environment, continue checking other components
     if [ "$existing_k8s" = "k3s" ]; then
-      log "检查其他组件..."
+      log "Checking other components..."
       
-      # 检查并安装 helm
+      # Check and install helm
       if ! check_helm_installed; then
-        log "helm 未安装，开始安装..."
+        log "helm not installed, starting installation..."
         install_helm || exit 1
       fi
       
-      # 检查并安装 ingress-nginx
+      # Check and install ingress-nginx
       if ! check_ingress_nginx_installed; then
-        log "ingress-nginx controller 未安装，开始安装..."
+        log "ingress-nginx controller not installed, starting installation..."
         install_ingress_nginx || exit 1
       fi
       
-      info "所有组件检查完成"
+      info "All components check completed"
     fi
     
     exit 0
   fi
 fi
 
-# 安装依赖
+# Install dependencies
 install_dependencies curl
 
-# 配置镜像仓库
+# Configure mirror repository
 if [ "$k3s_mirror" = "cn" ]; then
   setup_k3s_registry
 fi
 
-# --- 节点类型自动判断 ---
+# --- Auto node type detection ---
 if ! node_info=$(check_node_in_list); then
-  error "节点 IP 检查失败"
+  error "Node IP check failed"
   exit 1
 fi
 
-# 解析节点信息：类型:IP:索引
+# Parse node info: type:IP:index
 IFS=':' read -r node_type node_ip node_index <<< "$node_info"
 
-# 验证解析结果
+# Validate parsing result
 if [ -z "$node_type" ] || [ -z "$node_ip" ]; then
-  error "节点信息解析失败: $node_info"
+  error "Node info parsing failed: $node_info"
   exit 1
 fi
 
-info "检测到节点类型: $node_type，IP: $node_ip，索引: $node_index"
+info "Detected node type: $node_type, IP: $node_ip, index: $node_index"
 
-# 构建通用安装参数的函数
+# Function to build common installation arguments
 build_install_args() {
   local role="$1"
   local args=()
@@ -342,7 +337,7 @@ build_install_args() {
     args=(agent)
   fi
   
-  # 禁用组件
+  # Disable components
   if [ -n "$k3s_disable_components" ]; then
     IFS=',' read -ra components <<< "$k3s_disable_components"
     for comp in "${components[@]}"; do
@@ -350,179 +345,192 @@ build_install_args() {
     done
   fi
   
-  # TLS SANs (仅master节点)
+  # TLS SANs (master node only)
   if [ "$role" = "master" ]; then
-    # 添加通过--tls-sans参数指定的SANs
+    # Add SANs specified via --tls-sans parameter
     if [ -n "$tls_sans" ]; then
       IFS=',' read -ra sans <<< "$tls_sans"
       for s in "${sans[@]}"; do 
         args+=("--tls-san" "$s")
       done
-      log "添加 TLS SANs: $tls_sans"
+      log "Adding TLS SANs: $tls_sans"
     fi
 
-    # 添加所有节点IP到TLS SANs中
+    # Add all node IPs to TLS SANs
     local node_ips
     node_ips=$(get_all_node_ips)
     while IFS= read -r ip; do
       [ -n "$ip" ] && args+=("--tls-san" "$ip")
     done <<< "$node_ips"
     
-    # 添加k8s常用的内部服务IP到TLS SANs中
-    args+=("--tls-san" "10.43.0.1") # kubernetes服务IP
+    # Add common k8s internal service IPs to TLS SANs
+    args+=("--tls-san" "10.43.0.1") # kubernetes service IP
     args+=("--tls-san" "127.0.0.1") # localhost
 
-    # 添加K3S_API_URL到TLS SANs中
+    # Add K3S_API_URL to TLS SANs
     if [ -n "$K3S_API_URL" ]; then
       args+=("--tls-san" "$K3S_API_URL")
     fi
   fi
   
-  # 额外参数
+  # Extra arguments
   if [ -n "$extra_args" ]; then
     # shellcheck disable=SC2206
     local extra_array=( $extra_args )
     args+=("${extra_array[@]}")
-    log "额外参数: $extra_args"
+    log "Extra arguments: $extra_args"
   fi
   
   printf '%s\n' "${args[@]}"
 }
 
-# 执行k3s安装的函数
+# Function to execute k3s installation
 install_k3s() {
   local install_env="$1"
   shift
   local args=("$@")
   
   if [ -n "$k3s_version" ]; then
-    log "安装指定版本: $k3s_version"
+    log "Installing specified version: $k3s_version"
     curl -ksfL "$k3s_install_url" | INSTALL_K3S_VERSION="$k3s_version" sudo env $install_env sh -s - "${args[@]}"
   else
-    log "安装最新版本"
+    log "Installing latest version"
     curl -ksfL "$k3s_install_url" | sudo env $install_env sh -s - "${args[@]}"
   fi
 }
 
-# 根据节点类型安装
+# Install based on node type
 if [ "$node_type" = "master" ]; then
-  log "开始安装 k3s master 节点..."
+  log "Starting k3s master node installation..."
   
-  # 生成 token（如果未提供）
+  # Generate token (if not provided)
   if [ -z "$k3s_token" ]; then
     k3s_token="$(random_token)"
-    log "未提供 token，自动生成: $k3s_token"
+    log "No token provided, auto-generated: $k3s_token"
   fi
 
-  # 构建环境变量
-  install_env="K3S_TOKEN=$k3s_token K3S_KUBECONFIG_MODE=$k3s_kubeconfig_mode K3S_DATA_DIR=$k3s_data_dir K3S_NODE_IP=$node_ip K3S_INSTALL_NODE_IP_LIST=$K3S_INSTALL_NODE_IP_LIST"
+  # Build environment variables
+  install_env="K3S_TOKEN=$k3s_token K3S_KUBECONFIG_MODE=$k3s_kubeconfig_mode K3S_DATA_DIR=$k3s_data_dir K3S_NODE_IP=$node_ip"
+  if [ -n "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
+    install_env+=" K3S_INSTALL_NODE_IP_LIST=$K3S_INSTALL_NODE_IP_LIST"
+  fi
   [ "$k3s_mirror" = "cn" ] && install_env+=" INSTALL_K3S_MIRROR=cn"
 
-  # 构建安装参数并执行安装
-  log "初始化集群，节点 IP: $node_ip"
+  # Build installation arguments and execute installation
+  log "Initializing cluster, node IP: $node_ip"
   readarray -t args < <(build_install_args "master")
   install_k3s "$install_env" "${args[@]}"
 
-  # 等待服务启动
+  # Wait for service to start
   wait_for_service k3s
   
-  info "k3s master 节点安装完成！"
+  info "k3s master node installation completed!"
   info "Token: $k3s_token"
-  info "节点 IP: $node_ip"
-  info "其他节点加入命令: sudo ./install-k3s.sh --token $k3s_token"
+  info "Node IP: $node_ip"
+  info "Command for other nodes to join: sudo ./install-k3s.sh --token $k3s_token"
 
 elif [ "$node_type" = "worker" ]; then
-  log "开始安装 k3s worker 节点..."
+  log "Starting k3s worker node installation..."
   
-  # 检查必需参数
+  # Check required parameters
   if [ -z "$k3s_token" ]; then
-    error "worker 节点需要提供 --token 参数"
+    error "Worker node requires --token parameter"
     exit 2
   fi
   
-  # 获取 master 节点 IP（节点列表中的第一个）
-  node_list="${K3S_INSTALL_NODE_IP_LIST//\"/}"
-  master_ip=$(echo "$node_list" | awk '{print $1}')
+  # Get master node IP (first one in node list)
+  if [ -n "${K3S_INSTALL_NODE_IP_LIST:-}" ]; then
+    node_list="${K3S_INSTALL_NODE_IP_LIST//\"/}"
+    master_ip=$(echo "$node_list" | awk '{print $1}')
+  else
+    # If no node list configured, try to get from environment or use default
+    master_ip="${K3S_MASTER_IP:-}"
+    if [ -z "$master_ip" ]; then
+      error "Unable to get master node IP. Please set K3S_INSTALL_NODE_IP_LIST or K3S_MASTER_IP environment variable"
+      exit 2
+    fi
+  fi
+  
   if [ -z "$master_ip" ]; then
-    error "无法获取 master 节点 IP"
+    error "Unable to get master node IP"
     exit 2
   fi
   
   k3s_url="https://$master_ip:6443"
 
-  # 构建环境变量
+  # Build environment variables
   install_env="K3S_URL=$k3s_url K3S_TOKEN=$k3s_token K3S_DATA_DIR=$k3s_data_dir K3S_NODE_IP=$node_ip"
   [ "$k3s_mirror" = "cn" ] && install_env+=" INSTALL_K3S_MIRROR=cn"
 
-  # 构建安装参数并执行安装
-  log "连接到集群: $k3s_url，节点 IP: $node_ip"
+  # Build installation arguments and execute installation
+  log "Connecting to cluster: $k3s_url, node IP: $node_ip"
   readarray -t args < <(build_install_args "worker")
   install_k3s "$install_env" "${args[@]}"
 
-  # 等待服务启动
+  # Wait for service to start
   wait_for_service k3s-agent
   
-  info "k3s worker 节点安装完成！"
-  info "已连接到集群: $k3s_url"
-  info "节点 IP: $node_ip"
+  info "k3s worker node installation completed!"
+  info "Connected to cluster: $k3s_url"
+  info "Node IP: $node_ip"
 
 else
-  error "未知节点类型: $node_type"
+  error "Unknown node type: $node_type"
   exit 2
 fi
 
-# 安装后提示
+# Post-installation tips
 if [ "$node_type" = "master" ]; then
-  info "kubeconfig 路径: /etc/rancher/k3s/k3s.yaml"
-  info "使用 kubectl: sudo kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get nodes"
-  info "或者: export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
-  info "检查服务状态: systemctl status k3s"
+  info "kubeconfig path: /etc/rancher/k3s/k3s.yaml"
+  info "Use kubectl: sudo kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get nodes"
+  info "Or: export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
+  info "Check service status: systemctl status k3s"
   
-  # 等待 k3s 完全启动
-  log "等待 k3s 完全启动..."
+  # Wait for k3s to fully start
+  log "Waiting for k3s to fully start..."
   sleep 10
   
-  # 设置 KUBECONFIG 环境变量
+  # Set KUBECONFIG environment variable
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   
-  # 安装 helm（如果未安装）
+  # Install helm (if not installed)
   if ! check_helm_installed; then
-    log "helm 未安装，开始安装..."
-    install_helm || error "helm 安装失败"
+    log "helm not installed, starting installation..."
+    install_helm || error "helm installation failed"
   fi
   
-  # 安装 ingress-nginx controller（如果未安装）
+  # Install ingress-nginx controller (if not installed)
   if ! check_ingress_nginx_installed; then
-    log "ingress-nginx controller 未安装，开始安装..."
-    install_ingress_nginx || error "ingress-nginx controller 安装失败"
+    log "ingress-nginx controller not installed, starting installation..."
+    install_ingress_nginx || error "ingress-nginx controller installation failed"
   fi
   
-  # 生成外部访问 kubeconfig
-  log "生成外部访问 kubeconfig 配置文件"
+  # Generate external access kubeconfig
+  log "Generating external access kubeconfig configuration file"
   if [ -f /etc/rancher/k3s/k3s.yaml ]; then
 
-    # 如果配置了 K3S_API_URL，也替换为域名
+    # If K3S_API_URL is configured, also replace with domain name
     if [ -n "${K3S_API_URL:-}" ]; then
-      # 创建外部访问配置目录
+      # Create external access configuration directory
       sudo mkdir -p /etc/rancher/k3s/external
       sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/$K3S_API_URL.yaml
       sudo sed -i "s|https://127.0.0.1:6443|https://$K3S_API_URL:6443|g" /etc/rancher/k3s/$K3S_API_URL.yaml
       sudo sed -i "s|https://localhost:6443|https://$K3S_API_URL:6443|g" /etc/rancher/k3s/$K3S_API_URL.yaml
-      info "外部访问 kubeconfig 已生成: /etc/rancher/k3s/$K3S_API_URL.yaml"
+      info "External access kubeconfig generated: /etc/rancher/k3s/$K3S_API_URL.yaml"
     fi
 
-    # 生成容器内部使用的 https://kubernetes.default.svc:443 配置文件, kubernetes-internal.yaml
+    # Generate container internal https://kubernetes.default.svc:443 configuration file, kubernetes-internal.yaml
     sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/kubernetes-internal.yaml
     sudo sed -i "s|https://127.0.0.1:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
     sudo sed -i "s|https://localhost:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
-    info "容器内部 kubeconfig 已生成: /etc/rancher/k3s/kubernetes-internal.yaml"
+    info "Container internal kubeconfig generated: /etc/rancher/k3s/kubernetes-internal.yaml"
 
   else
-    error "无法找到默认 kubeconfig 文件，外部访问配置生成失败"
+    error "Cannot find default kubeconfig file, external access configuration generation failed"
   fi
 
 else
-  info "检查服务状态: systemctl status k3s-agent"
+  info "Check service status: systemctl status k3s-agent"
 fi
 
-info "k3s 安装完成！节点类型: $node_type，IP: $node_ip"
+info "k3s installation completed! Node type: $node_type, IP: $node_ip"

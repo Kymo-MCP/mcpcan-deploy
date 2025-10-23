@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# MCP-Box Kubernetes 部署脚本
-# 从 GitHub Pages Helm 仓库部署到 Kubernetes 集群
+# MCP-Box Kubernetes Deployment Script
+# Deploy to Kubernetes cluster from GitHub Pages Helm repository
 # Usage: ./deploy-to-k8s.sh [environment] [namespace] [values-file]
 
 set -e
 
-# 配置参数
+# Configuration parameters
 ENVIRONMENT=${1:-"dev"}
 NAMESPACE=${2:-"mcp-system"}
 VALUES_FILE=${3:-"values-${ENVIRONMENT}.yaml"}
@@ -15,7 +15,7 @@ RELEASE_NAME="mcp-box"
 HELM_REPO_NAME="mcp-box"
 HELM_REPO_URL="https://kymo-mcp.github.io/mcp-box-helm-charts/"
 
-# 颜色输出
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -38,81 +38,81 @@ log_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# 检查必要工具
+# Check necessary tools
 check_prerequisites() {
-    log_info "检查必要工具..."
+    log_info "Checking necessary tools..."
     
     if ! command -v kubectl &> /dev/null; then
-        log_error "kubectl 未安装，请先安装 kubectl"
+        log_error "kubectl is not installed, please install kubectl first"
         exit 1
     fi
     
     if ! command -v helm &> /dev/null; then
-        log_error "helm 未安装，请先安装 Helm"
+        log_error "helm is not installed, please install Helm first"
         exit 1
     fi
     
-    log_success "必要工具检查完成"
+    log_success "Necessary tools check completed"
 }
 
-# 检查 Kubernetes 连接
+# Check Kubernetes connection
 check_k8s_connection() {
-    log_info "检查 Kubernetes 集群连接..."
+    log_info "Checking Kubernetes cluster connection..."
     
     if ! kubectl cluster-info &> /dev/null; then
-        log_error "无法连接到 Kubernetes 集群，请检查 kubeconfig"
+        log_error "Cannot connect to Kubernetes cluster, please check kubeconfig"
         exit 1
     fi
     
     CURRENT_CONTEXT=$(kubectl config current-context)
-    log_success "已连接到集群: $CURRENT_CONTEXT"
+    log_success "Connected to cluster: $CURRENT_CONTEXT"
 }
 
-# 创建命名空间
+# Create namespace
 create_namespace() {
-    log_info "检查命名空间 $NAMESPACE..."
+    log_info "Checking namespace $NAMESPACE..."
     
     if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
-        log_info "创建命名空间 $NAMESPACE..."
+        log_info "Creating namespace $NAMESPACE..."
         kubectl create namespace "$NAMESPACE"
-        log_success "命名空间 $NAMESPACE 创建成功"
+        log_success "Namespace $NAMESPACE created successfully"
     else
-        log_success "命名空间 $NAMESPACE 已存在"
+        log_success "Namespace $NAMESPACE already exists"
     fi
 }
 
-# 添加 Helm 仓库
+# Add Helm repository
 add_helm_repo() {
-    log_info "添加 Helm 仓库..."
+    log_info "Adding Helm repository..."
     
-    # 检查仓库是否已存在
+    # Check if repository already exists
     if helm repo list | grep -q "$HELM_REPO_NAME"; then
-        log_info "更新现有 Helm 仓库..."
+        log_info "Updating existing Helm repository..."
         helm repo update "$HELM_REPO_NAME"
     else
-        log_info "添加新的 Helm 仓库..."
+        log_info "Adding new Helm repository..."
         helm repo add "$HELM_REPO_NAME" "$HELM_REPO_URL"
         helm repo update
     fi
     
-    log_success "Helm 仓库配置完成"
+    log_success "Helm repository configuration completed"
 }
 
-# 检查配置文件
+# Check configuration file
 check_values_file() {
     if [ ! -f "$VALUES_FILE" ]; then
-        log_warning "配置文件 $VALUES_FILE 不存在，将使用默认配置"
+        log_warning "Configuration file $VALUES_FILE does not exist, will use default configuration"
         VALUES_FILE=""
     else
-        log_success "使用配置文件: $VALUES_FILE"
+        log_success "Using configuration file: $VALUES_FILE"
     fi
 }
 
-# 部署应用
+# Deploy application
 deploy_application() {
-    log_info "开始部署 MCP-Box 到环境: $ENVIRONMENT"
+    log_info "Starting deployment of MCP-Box to environment: $ENVIRONMENT"
     
-    # 构建 helm install/upgrade 命令
+    # Build helm install/upgrade command
     HELM_CMD="helm upgrade --install $RELEASE_NAME $HELM_REPO_NAME/$CHART_NAME"
     HELM_CMD="$HELM_CMD --namespace $NAMESPACE"
     HELM_CMD="$HELM_CMD --create-namespace"
@@ -123,7 +123,7 @@ deploy_application() {
         HELM_CMD="$HELM_CMD -f $VALUES_FILE"
     fi
     
-    # 添加环境特定的配置
+    # Add environment-specific configuration
     case $ENVIRONMENT in
         "prod")
             HELM_CMD="$HELM_CMD --set global.environment=production"
@@ -139,12 +139,12 @@ deploy_application() {
             ;;
     esac
     
-    log_info "执行部署命令: $HELM_CMD"
+    log_info "Executing deployment command: $HELM_CMD"
     
     if eval "$HELM_CMD"; then
-        log_success "MCP-Box 部署成功!"
+        log_success "MCP-Box deployment successful!"
     else
-        log_error "MCP-Box 部署失败"
+        log_error "MCP-Box deployment failed"
         exit 1
     fi
 }
