@@ -20,6 +20,10 @@ metadata:
   labels:
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
   name: {{ .Values.ingressController.namespace }}
 ---
 apiVersion: v1
