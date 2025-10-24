@@ -55,7 +55,7 @@ data:
   market.yaml: |-
     server:
       httpPort: {{ .Values.services.market.service.port }}
-    domain: https://{{ .Values.global.domain }}
+    domain: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.global.domain | default .Values.global.publicIP }}
     secret: {{ .Values.global.appSecret }}
     services:
       mcpMarket:

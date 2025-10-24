@@ -85,11 +85,17 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
   - hosts:
-    - {{ .Values.services.gateway.ingress.host | default .Values.global.domain }}
+    {{- if .Values.global.domain }}
+    - {{ .Values.global.domain }}
+    {{- end }}
     secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-  - host: {{ .Values.services.gateway.ingress.host | default .Values.global.domain }}
+  {{- if .Values.global.domain }}
+  - host: {{ .Values.global.domain }}
+  {{- else }}
+  - 
+  {{- end }}
     http:
       paths:
       - path: {{ .Values.services.gateway.ingress.path | default "/" }}

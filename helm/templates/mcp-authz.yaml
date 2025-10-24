@@ -91,11 +91,17 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
   - hosts:
-    - {{ .Values.services.authz.ingress.host | default .Values.global.domain }}
+    {{- if .Values.global.domain }}
+    - {{ .Values.global.domain }}
+    {{- end }}
     secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-  - host: {{ .Values.services.authz.ingress.host | default .Values.global.domain }}
+  {{- if .Values.global.domain }}
+  - host: {{ .Values.global.domain }}
+  {{- else }}
+  - 
+  {{- end }}
     http:
       paths:
       - path: {{ .Values.services.authz.ingress.path | default "/" }}
