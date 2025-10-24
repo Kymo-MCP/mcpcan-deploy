@@ -170,21 +170,13 @@ install_ingress_nginx() {
   # Get the directory where this script is located
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local nginx_template="${script_dir}/ingress-nginx-controller-v1.8.1.yaml"
-  local remote_url="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml"
+  local nginx_template="${script_dir}/nginx-ingress-controller.yaml"
   
   # Try to use local template first
   if [ -f "$nginx_template" ]; then
     log "Using local ingress-nginx-controller template: $nginx_template"
     if ! kubectl apply -f "$nginx_template"; then
       error "Failed to apply local ingress-nginx-controller template"
-      return 1
-    fi
-  else
-    # Fall back to remote manifest
-    log "Local template not found, using remote manifest..."
-    if ! kubectl apply -f "$remote_url"; then
-      error "Failed to apply remote ingress-nginx manifest"
       return 1
     fi
   fi
@@ -397,9 +389,11 @@ build_install_args() {
     args+=("--tls-san" "10.43.0.1") # kubernetes service IP
     args+=("--tls-san" "127.0.0.1") # localhost
 
-    # Add K3S_API_URL to TLS SANs
-    if [ -n "$K3S_API_URL" ]; then
-      args+=("--tls-san" "$K3S_API_URL")
+    # Add public IP to TLS SANs
+    local public_ip
+    public_ip=$(auto_detect_node_ips | head -n1)
+    if [ -n "$public_ip" ]; then
+      args+=("--tls-san" "$public_ip")
     fi
   fi
   
@@ -539,14 +533,15 @@ if [ "$node_type" = "master" ]; then
   log "Generating external access kubeconfig configuration file"
   if [ -f /etc/rancher/k3s/k3s.yaml ]; then
 
-    # If K3S_API_URL is configured, also replace with domain name
-    if [ -n "${K3S_API_URL:-}" ]; then
+    # Generate external access kubeconfig based on public IP
+    public_ip=$(auto_detect_node_ips | head -n1)
+    if [ -n "$public_ip" ]; then
       # Create external access configuration directory
       sudo mkdir -p /etc/rancher/k3s/external
-      sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/$K3S_API_URL.yaml
-      sudo sed -i "s|https://127.0.0.1:6443|https://$K3S_API_URL:6443|g" /etc/rancher/k3s/$K3S_API_URL.yaml
-      sudo sed -i "s|https://localhost:6443|https://$K3S_API_URL:6443|g" /etc/rancher/k3s/$K3S_API_URL.yaml
-      info "External access kubeconfig generated: /etc/rancher/k3s/$K3S_API_URL.yaml"
+      sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/external-access.yaml
+      sudo sed -i "s|https://127.0.0.1:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
+      sudo sed -i "s|https://localhost:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
+      info "External access kubeconfig generated: /etc/rancher/k3s/external-access.yaml (using $public_ip:6443)"
     fi
 
     # Generate container internal https://kubernetes.default.svc:443 configuration file, kubernetes-internal.yaml
@@ -554,6 +549,12 @@ if [ "$node_type" = "master" ]; then
     sudo sed -i "s|https://127.0.0.1:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
     sudo sed -i "s|https://localhost:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
     info "Container internal kubeconfig generated: /etc/rancher/k3s/kubernetes-internal.yaml"
+
+    # Copy kubeconfig to user's home directory
+    mkdir -p ~/kube
+    sudo cp /etc/rancher/k3s/k3s.yaml ~/kube/config
+    sudo chown $(id -u):$(id -g) ~/kube/config
+    info "Kubeconfig copied to ~/kube/config"
 
   else
     error "Cannot find default kubeconfig file, external access configuration generation failed"
