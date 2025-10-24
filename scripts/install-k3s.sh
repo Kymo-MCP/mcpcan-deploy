@@ -143,7 +143,9 @@ check_ingress_nginx_installed() {
     if kubectl get deployment -n ingress-nginx ingress-nginx-controller >/dev/null 2>&1; then
       local ready_replicas
       ready_replicas=$(kubectl get deployment -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-      if [ "$ready_replicas" -gt 0 ]; then
+      # Ensure ready_replicas is a valid integer
+      ready_replicas=${ready_replicas:-0}
+      if [[ "$ready_replicas" =~ ^[0-9]+$ ]] && [ "$ready_replicas" -gt 0 ]; then
         info "ingress-nginx controller is installed and running"
         return 0
       fi
@@ -166,14 +168,27 @@ install_ingress_nginx() {
   kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
   
   # Install ingress-nginx using official manifest
-  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+  log "Applying ingress-nginx manifest..."
+  if ! kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml; then
+    error "Failed to apply ingress-nginx manifest"
+    return 1
+  fi
   
   # Wait for ingress-nginx controller to be ready
   log "Waiting for ingress-nginx controller to be ready..."
-  kubectl wait --namespace ingress-nginx \
+  if ! kubectl wait --namespace ingress-nginx \
     --for=condition=ready pod \
     --selector=app.kubernetes.io/component=controller \
-    --timeout=300s
+    --timeout=300s; then
+    error "Timeout waiting for ingress-nginx controller to be ready"
+    
+    # Show pod status for debugging
+    log "Checking ingress-nginx pod status..."
+    kubectl get pods -n ingress-nginx
+    kubectl describe pods -n ingress-nginx
+    
+    return 1
+  fi
   
   # Verify installation
   if check_ingress_nginx_installed; then
