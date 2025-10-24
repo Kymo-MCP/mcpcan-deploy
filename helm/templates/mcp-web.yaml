@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.web.name | default "mcp-web" }}
+  name: {{ .Values.services.web.name | default "mcp-web" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.web.name | default "mcp-web" }}

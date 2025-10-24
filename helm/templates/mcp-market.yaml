@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.market.name | default "mcp-market" }}
+  name: {{ .Values.services.market.name | default "mcp-market" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}

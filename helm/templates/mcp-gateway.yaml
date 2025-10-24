@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.gateway.name | default "mcp-gateway" }}
+  name: {{ .Values.services.gateway.name | default "mcp-gateway" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
