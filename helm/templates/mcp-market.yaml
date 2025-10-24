@@ -8,6 +8,8 @@ metadata:
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
+  annotations:
+    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
   replicas: {{ .Values.services.market.replicas | default 1 }}
   selector:
@@ -18,6 +20,8 @@ spec:
       labels:
         app: {{ .Values.services.market.name | default "mcp-market" }}
         {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: {{ .Values.services.market.name | default "mcp-market" }}
