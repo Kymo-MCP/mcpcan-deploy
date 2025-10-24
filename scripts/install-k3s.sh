@@ -167,11 +167,26 @@ install_ingress_nginx() {
   # Create ingress-nginx namespace
   kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
   
-  # Install ingress-nginx using official manifest
-  log "Applying ingress-nginx manifest..."
-  if ! kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml; then
-    error "Failed to apply ingress-nginx manifest"
-    return 1
+  # Get the directory where this script is located
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local nginx_template="${script_dir}/ingress-nginx-controller-v1.8.1.yaml"
+  local remote_url="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml"
+  
+  # Try to use local template first
+  if [ -f "$nginx_template" ]; then
+    log "Using local ingress-nginx-controller template: $nginx_template"
+    if ! kubectl apply -f "$nginx_template"; then
+      error "Failed to apply local ingress-nginx-controller template"
+      return 1
+    fi
+  else
+    # Fall back to remote manifest
+    log "Local template not found, using remote manifest..."
+    if ! kubectl apply -f "$remote_url"; then
+      error "Failed to apply remote ingress-nginx manifest"
+      return 1
+    fi
   fi
   
   # Wait for ingress-nginx controller to be ready
@@ -179,7 +194,7 @@ install_ingress_nginx() {
   if ! kubectl wait --namespace ingress-nginx \
     --for=condition=ready pod \
     --selector=app.kubernetes.io/component=controller \
-    --timeout=300s; then
+    --timeout=30s; then
     error "Timeout waiting for ingress-nginx controller to be ready"
     
     # Show pod status for debugging
