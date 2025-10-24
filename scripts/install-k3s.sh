@@ -551,11 +551,11 @@ if [ "$node_type" = "master" ]; then
     info "Container internal kubeconfig generated: /etc/rancher/k3s/kubernetes-internal.yaml"
 
     # Copy kubeconfig to user's home directory
-    mkdir -p ~/kube
-    sudo cp /etc/rancher/k3s/k3s.yaml ~/kube/config
-    sudo chown $(id -u):$(id -g) ~/kube/config
-    info "Kubeconfig copied to ~/kube/config"
-
+    mkdir -p ~/.kube
+    sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+    sudo chown $(id -u):$(id -g) ~/.kube/config
+    info "Kubeconfig copied to ~/.kube/config"
+    export KUBECONFIG=~/.kube/config
   else
     error "Cannot find default kubeconfig file, external access configuration generation failed"
   fi

@@ -31,10 +31,10 @@ kubeadm 部署 k3s 集群
 
 ```bash
 # 基本部署
-helm install mcp-box ./helm --namespace mcp-box --create-namespace --timeout 600s --wait
+helm install mcp-box ./helm -f ./helm/values-example.yaml --namespace mcp-box --create-namespace --timeout 600s --wait
 
 # 升级部署
-helm upgrade --install mcp-box ./helm --namespace mcp-box --timeout 600s --wait
+helm upgrade --install mcp-box ./helm -f ./helm/values-example.yaml --namespace mcp-box --timeout 600s --wait
 ```
 
 ### 卸载命令
