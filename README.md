@@ -101,7 +101,7 @@ kubectl get svc -n ingress-nginx
 
 ```bash
 # Clone project repository
-git clone https://github.com/your-org/mcp-box-deploy.git
+git clone https://github.com/Kymo-MCP/mcp-box-deploy.git
 cd mcp-box-deploy
 ```
 
