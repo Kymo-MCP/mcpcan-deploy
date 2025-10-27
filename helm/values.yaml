@@ -234,18 +234,3 @@ imagePull:
       memory: 128Mi
   nodeSelector: {}
   tolerations: []
-
-# Monitoring and observability
-monitoring:
-  enabled: false
-  prometheus:
-    enabled: false
-  grafana:
-    enabled: false
-
-# Security
-security:
-  podSecurityPolicy:
-    enabled: false
-  networkPolicy:
-    enabled: false
