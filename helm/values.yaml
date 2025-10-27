@@ -1,236 +1,494 @@
-# Global configuration
+# =============================================================================
+# MCP-Box Helm Chart Configuration
+# =============================================================================
+# This file contains all configurable values for the MCP-Box deployment.
+# Modify these values according to your environment requirements.
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+# Global settings that apply to all components of the MCP-Box system
 global:
-  # need to set domain or publicIP
+  # Domain name for the application (optional)
+  # If not set, publicIP will be used for access
+  # Example: "mcp.example.com"
   domain: ""
+  
+  # Public IP address for external access
+  # Used when domain is not configured
+  # Must be accessible from client networks
   publicIP: "192.168.1.100"
+  
+  # Application version tag
+  # Used for image tags and deployment tracking
   version: v1.0.0
+  
+  # Container registry URL
+  # All service images will be pulled from this registry
   registry: ccr.ccs.tencentyun.com/itqm-private
+  
+  # Image pull policy for all containers
+  # Options: Always, IfNotPresent, Never
   imagePullPolicy: Always
+  
+  # Application secret key
+  # Used for JWT token signing and other cryptographic operations
+  # Change this in production environments
   appSecret: dev-app-secret
+  
+  # Host storage configuration
+  # Defines where data is stored on the host system
   hostStorage:
+    # Root directory for all MCP-Box data
     rootPath: /data/mcp-box
+    # Directory for static files (uploads, assets)
     staticPath: /data/mcp-box/static
+    # Directory for code packages and artifacts
     codePackagePath: /data/mcp-box/code-package
+    # Directory for MySQL data files
     mysqlPath: /data/mcp-box/mysql
+    # Directory for Redis data files
     redisPath: /data/mcp-box/redis
+  
+  # Mount storage configuration
+  # Defines how storage is mounted inside containers
   mountStorage:
+    # Root mount point inside containers
     rootPath: /data/mcp-box
+    # Static files mount point
     staticPath: /data/mcp-box/static
+    # Code packages mount point
     codePackagePath: /data/mcp-box/code-package
+    # MySQL data mount point (standard MySQL path)
     mysqlPath: /var/lib/mysql
+    # Redis data mount point
     redisPath: /data/redis
 
-# Infrastructure configuration
+# =============================================================================
+# Infrastructure Configuration
+# =============================================================================
+# Configuration for backend infrastructure services (databases, caches, etc.)
 infrastructure:
+  # MySQL Database Configuration
   mysql:
+    # Enable/disable MySQL deployment
     enabled: true
+    
+    # Database authentication settings
     auth:
+      # Root user password for MySQL
+      # Change this in production environments
       rootPassword: dev-root-password
+      # Default database name to create
       database: mcp_dev
+      # Application database username
       username: mcp_user
+      # Application database password
       password: dev-password
+    
+    # MySQL service name (used for internal DNS resolution)
     name: mysql
+    
+    # MySQL container image configuration
     image:
+      # MySQL image repository
       repository: mysql
+      # MySQL version tag
       tag: "8.0.30"
+    
+    # Kubernetes service configuration
     service:
+      # Service name for MySQL
       name: mysql-svc
+      # MySQL port number
       port: 3306
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+      # Enable NodePort for external access
       enabledNodePort: true
+      # NodePort number for external access
       nodePort: 31306
+    
+    # Host path volume configuration
     hostPath:
+      # Enable host path volume for data persistence
       enabled: true
+      # Volume name
       name: mysql-hostpath
+      # Host directory path
       path: /data/mcp-box/mysql
+      # Directory creation type
       type: DirectoryOrCreate
+      # Container mount path
       mountPath: /var/lib/mysql
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "256Mi"
         cpu: "100m"
+      # Maximum allowed resources
       limits:
         memory: "512Mi"
         cpu: "500m"
 
+  # Redis Cache Configuration
   redis:
+    # Enable/disable Redis deployment
     enabled: true
+    
+    # Redis authentication settings
     auth:
+      # Redis password for authentication
+      # Change this in production environments
       password: dev-redis-password
+      # Default Redis database number
       db: 0
+    
+    # Redis service name (used for internal DNS resolution)
     name: redis
+    
+    # Redis container image configuration
     image:
+      # Redis image repository
       repository: redis
+      # Redis version tag (Alpine variant for smaller size)
       tag: "6-alpine"
+    
+    # Kubernetes service configuration
     service:
+      # Service name for Redis
       name: redis-svc
+      # Redis port number
       port: 6379
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+      # Enable NodePort for external access
       enabledNodePort: true
+      # NodePort number for external access
       nodePort: 31379
+    
+    # Host path volume configuration
     hostPath:
+      # Enable host path volume for data persistence
       enabled: true
+      # Volume name
       name: redis-hostpath
+      # Host directory path
       path: /data/mcp-box/redis
+      # Directory creation type
       type: DirectoryOrCreate
+      # Container mount path
       mountPath: /data/redis
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "128Mi"
         cpu: "50m"
+      # Maximum allowed resources
       limits:
         memory: "256Mi"
         cpu: "200m"
 
-# Services configuration
+# =============================================================================
+# Services Configuration
+# =============================================================================
+# Configuration for MCP-Box application services
 services:
+  # Web Frontend Service
   web:
+    # Enable/disable web service deployment
     enabled: true
+    # Service name for Kubernetes resources
     name: mcp-web
+    # Number of pod replicas
     replicas: 1
+    
+    # Kubernetes service configuration
     service:
+      # Service name for internal DNS resolution
       name: mcp-web-svc
+      # Service port number
       port: 3000
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+    
+    # Ingress configuration for external access
     ingress:
+      # Enable/disable ingress for this service
       enabled: true
+      # Host header for routing (empty uses default)
       host: ""
+      # URL path for routing
       path: /
+      # Path matching type
       pathType: Prefix
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "64Mi"
         cpu: "50m"
+      # Maximum allowed resources
       limits:
         memory: "128Mi"
         cpu: "200m"
 
+  # Market Service (Code Package Management)
   market:
+    # Enable/disable market service deployment
     enabled: true
+    # Service name for Kubernetes resources
     name: mcp-market
+    # Number of pod replicas
     replicas: 1
+    
+    # Kubernetes service configuration
     service:
+      # Service name for internal DNS resolution
       name: mcp-market-svc
+      # Service port number
       port: 8080
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+    
+    # Ingress configuration for external access
     ingress:
+      # Enable/disable ingress for this service
       enabled: true
+      # Host header for routing (empty uses default)
       host: ""
+      # URL path pattern with regex capture group
       path: /api/market/(.*)
+      # Path matching type
       pathType: Prefix
+      # Ingress annotations for URL rewriting
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /market/$1
+    
+    # ConfigMap configuration (currently disabled)
     config:
       enabled: false
+    
+    # Persistent volume configuration (currently disabled)
     persistence:
       enabled: false
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "128Mi"
         cpu: "100m"
+      # Maximum allowed resources
       limits:
         memory: "256Mi"
         cpu: "500m"
 
+  # Authorization Service
   authz:
+    # Enable/disable authorization service deployment
     enabled: true
+    # Service name for Kubernetes resources
     name: mcp-authz
+    # Number of pod replicas
     replicas: 1
+    
+    # Kubernetes service configuration
     service:
+      # Service name for internal DNS resolution
       name: mcp-authz-svc
+      # Service port number
       port: 8081
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+    
+    # Ingress configuration for external access
     ingress:
+      # Enable/disable ingress for this service
       enabled: true
+      # Host header for routing (empty uses default)
       host: ""
+      # URL path pattern with regex capture group
       path: /api/authz/(.*)
+      # Path matching type
       pathType: Prefix
+      # Ingress annotations for URL rewriting
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /authz/$1
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "128Mi"
         cpu: "100m"
+      # Maximum allowed resources
       limits:
         memory: "256Mi"
         cpu: "500m"
 
+  # Gateway Service (API Gateway)
   gateway:
+    # Enable/disable gateway service deployment
     enabled: true
+    # Service name for Kubernetes resources
     name: mcp-gateway
+    # Number of pod replicas
     replicas: 1
+    
+    # Kubernetes service configuration
     service:
+      # Service name for internal DNS resolution
       name: mcp-gateway-svc
+      # Service port number
       port: 8082
+      # Service type (ClusterIP for internal access)
       type: ClusterIP
+    
+    # Ingress configuration for external access
     ingress:
+      # Enable/disable ingress for this service
       enabled: true
+      # Host header for routing (empty uses default)
       host: ""
+      # URL path for routing
       path: /mcp-gateway
+      # Path matching type
       pathType: Prefix
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "128Mi"
         cpu: "100m"
+      # Maximum allowed resources
       limits:
         memory: "256Mi"
         cpu: "500m"
 
+  # Initialization Service
   init:
+    # Enable/disable initialization service deployment
     enabled: true
+    # Service name for Kubernetes resources
     name: mcp-init
+    # Number of pod replicas
     replicas: 1
+    
+    # Kubernetes service configuration
     service:
+      # Service name for internal DNS resolution
       name: mcp-init-svc
+      # Service port number
       port: 8083
+      # Service type (ClusterIP for internal access)
       type: "ClusterIP"
+    
+    # Kubernetes host path volume configuration
+    # Used to access K3s configuration files
     k8sHostPath:
+      # Enable/disable host path volume
       enabled: true
+      # Volume name
       name: k8s-init-hostpath
+      # Host directory path (K3s config location)
       path: /etc/rancher/k3s
+      # Directory creation type
       type: DirectoryOrCreate
+      # Container mount path
       mountPath: /app/config/kube
+      # ConfigMap key for Kubernetes config
       configMapKey: kubernetes-internal.yaml
+    
+    # Resource limits and requests
     resources:
+      # Minimum guaranteed resources
       requests:
         memory: "64Mi"
         cpu: "50m"
+      # Maximum allowed resources
       limits:
         memory: "128Mi"
         cpu: "200m"
 
-# Ingress configuration
+# =============================================================================
+# Ingress Configuration
+# =============================================================================
+# Global ingress settings for external access to services
 ingress:
+  # Enable/disable ingress controller usage
   enabled: true
+  # Ingress class name (nginx for NGINX Ingress Controller)
   className: nginx
+  
+  # Global ingress annotations
   annotations:
+    # Enable regex support for path matching
     nginx.ingress.kubernetes.io/use-regex: "true"
+    # Force HTTPS redirect
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    # CORS configuration
+    
+    # CORS (Cross-Origin Resource Sharing) configuration
+    # Enable CORS support
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    # Allow requests from any origin
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # Allowed HTTP methods
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    # Allowed request headers
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    # Headers exposed to the client
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
+    # Allow credentials in CORS requests
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+  
+  # TLS/SSL configuration
   tls:
+    # Enable/disable TLS encryption
     enabled: false
+    # Kubernetes secret name containing TLS certificate
     secretName: "domain-tls"
+    # TLS certificate content (PEM format)
+    # Base64 encoded certificate data
     crt: ''
+    # TLS private key content (PEM format)
+    # Base64 encoded private key data
     key: ''
 
-
-# Image Pre-Pull configuration (Simple)
+# =============================================================================
+# Image Pre-Pull Configuration
+# =============================================================================
+# Configuration for offline image pre-pulling functionality
+# Useful for air-gapped environments or slow network conditions
 imagePull:
+  # Enable/disable image pre-pull job
   enabled: false
+  # Container image used for importing images
   importerImage: "alpine:3.18"
+  # Path where image files are stored
   imagesPath: "/opt/mcp-box/images"
+  
+  # Resource limits and requests for image pull job
   resources:
+    # Maximum allowed resources
     limits:
       cpu: 500m
       memory: 512Mi
+    # Minimum guaranteed resources
     requests:
       cpu: 100m
       memory: 128Mi
+  
+  # Node selector for scheduling image pull job
+  # Empty means no specific node requirements
   nodeSelector: {}
+  
+  # Tolerations for scheduling image pull job
+  # Empty means no specific tolerations
   tolerations: []
