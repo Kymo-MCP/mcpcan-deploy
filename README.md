@@ -337,6 +337,163 @@ helm install mcp-box-prod ./helm -f helm/values-prod.yaml \
   --namespace mcp-box-prod --create-namespace
 ```
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for comprehensive automated testing, security scanning, and Helm chart releases. The pipeline follows industry best practices and includes multiple validation stages.
+
+### Workflows Overview
+
+1. **Release Charts** (`release.yml`)
+   - **Triggers**: Push to `main`/`develop` branches, version tags (`v*`), manual dispatch
+   - **Features**:
+     - Comprehensive chart testing with `chart-testing` (ct)
+     - Multi-stage validation (lint → test → release)
+     - Automatic version management from tags or VERSION file
+     - Chart packaging and GitHub release creation
+     - GitHub Pages deployment for chart repository
+     - Support for development and production releases
+
+2. **PR Validation** (`pr-validation.yml`)
+   - **Triggers**: Pull requests to `main`/`develop` branches
+   - **Features**:
+     - Smart change detection (Helm charts, scripts, workflows)
+     - Multi-Kubernetes version testing (v1.27, v1.28, v1.29)
+     - Shell script validation with ShellCheck
+     - GitHub Actions workflow validation with ActionLint
+     - Chart version format validation
+     - Comprehensive validation summary
+
+3. **Security Scan** (`security.yml`)
+   - **Triggers**: Push events, pull requests, daily schedule (2 AM UTC), manual dispatch
+   - **Features**:
+     - **Helm Security**: kube-linter and Checkov scanning
+     - **Container Security**: Trivy vulnerability scanning for base images
+     - **Dependency Security**: SBOM generation and Grype vulnerability scanning
+     - **Integration**: Results uploaded to GitHub Security tab
+     - **Reporting**: Detailed vulnerability summaries and recommendations
+
+### Chart Repository
+
+The Helm chart repository is automatically maintained and deployed to GitHub Pages:
+
+```bash
+# Add the repository
+helm repo add mcp-box https://qm-mcp.github.io/mcp-box-deploy/
+helm repo update
+
+# Install the chart
+helm install mcp-box mcp-box/mcp-box --namespace mcp-box --create-namespace
+```
+
+### Release Process
+
+#### Automatic Releases
+
+1. **Development Releases**: Automatically created on push to `develop` branch
+   - Version format: `{base-version}-develop-{timestamp}`
+   - Marked as pre-release
+
+2. **Production Releases**: Created when pushing version tags
+   ```bash
+   git tag v1.2.3
+   git push origin v1.2.3
+   ```
+
+#### Manual Releases
+
+Use the GitHub Actions UI to trigger manual releases:
+1. Go to Actions → Release Charts → Run workflow
+2. Select branch and specify version
+3. Choose whether to mark as pre-release
+
+### Development Workflow
+
+1. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+
+2. **Make Changes** - Modify Helm charts, scripts, or documentation
+
+3. **Create Pull Request** - PR validation will automatically run:
+   - Helm chart linting and testing
+   - Security scanning
+   - Script validation
+   - Multi-Kubernetes version compatibility testing
+
+4. **Review and Merge** - After approval and successful validation
+
+5. **Automatic Release** - Charts are automatically released upon merge to main
+
+### Security and Compliance
+
+The pipeline includes comprehensive security measures:
+
+- **Daily Security Scans**: Automated vulnerability detection
+- **Container Image Scanning**: Base image security validation
+- **Kubernetes Security**: Best practices enforcement with kube-linter
+- **Dependency Tracking**: SBOM generation and vulnerability monitoring
+- **SARIF Integration**: Security results in GitHub Security tab
+
+### Monitoring and Troubleshooting
+
+#### Workflow Status
+
+Monitor workflow status in the GitHub Actions tab:
+- ✅ Green: All checks passed
+- ❌ Red: Issues found, check logs for details
+- 🟡 Yellow: In progress or warnings
+
+#### Common Issues
+
+1. **Chart Validation Failures**
+   ```bash
+   # Test locally before pushing
+   helm lint helm/
+   helm template helm/ --debug
+   ```
+
+2. **Security Scan Failures**
+   - Review security tab for vulnerability details
+   - Update base images or dependencies as needed
+   - Check uploaded artifacts for detailed reports
+
+3. **Release Failures**
+   - Ensure proper version format (semantic versioning)
+   - Check Chart.yaml version consistency
+   - Verify GitHub token permissions
+
+### Configuration Files
+
+- **`.github/workflows/`**: GitHub Actions workflow definitions
+- **`cr.yaml`**: Chart Releaser configuration
+- **`helm/Chart.yaml`**: Chart metadata and version information
+- **`VERSION`**: Base version for development releases
+```
+https://<username>.github.io/mcp-box-deploy/
+```
+
+Add the repository:
+```bash
+helm repo add mcp-box https://<username>.github.io/mcp-box-deploy/
+helm repo update
+```
+
+### Release Process
+
+1. **Development**: Create feature branches and submit PRs
+2. **Validation**: Automated PR validation ensures quality
+3. **Release**: Merge to `main` triggers automatic release
+4. **Versioning**: Use semantic versioning tags (e.g., `v1.2.3`)
+
+### Manual Release
+
+To trigger a manual release:
+1. Go to Actions tab in GitHub repository
+2. Select "Release Charts" workflow
+3. Click "Run workflow"
+4. Specify version and release options
+
 ## Important Notes
 
 1. **Resource Requirements**: Ensure the cluster has sufficient resources
