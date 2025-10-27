@@ -1,99 +1,14 @@
 # MCP-Box 部署指南
 
-## 软件架构设计
-
-基于 Kubernetes 的微服务架构，包含以下核心组件：
-
-1. **Gateway 服务** - MCP 网关服务，负责请求路由和认证
-2. **Authz 服务** - 认证授权服务
-3. **Market 服务** - 市场服务
-4. **Web 服务** - 前端服务
-5. **MySQL** - 数据库服务
-6. **Redis** - 缓存服务
-
 ## 环境依赖
-
-### 必需环境
 
 在开始部署之前，请确保您的环境满足以下要求：
 
-#### 1. Kubernetes 集群
-
-**选项 A: 使用 K3s（推荐用于开发和测试）**
-```bash
-# 安装 K3s
-curl -sfL https://get.k3s.io | sh -
-
-# 或使用项目提供的脚本（推荐:默认安装 K3s，ingress-nginx, helm）
-./scripts/install-k3s.sh
-
-# 验证安装
-kubectl get nodes
-```
-
-**选项 B: 使用标准 Kubernetes**
-- Kubernetes 版本 >= 1.20
-- 至少 2GB 可用内存
-- 至少 2 CPU 核心
-
-#### 2. 必需工具
-
-确保已安装以下工具：
-
-```bash
-# Helm 3.x
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-# kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
-
-# 验证安装
-helm version
-kubectl version --client
-```
-
-#### 3. NGINX Ingress Controller
-
-MCP-Box 依赖 NGINX Ingress Controller 来处理外部流量路由，请确保已安装：
-
-**选项 A: 使用 Helm 安装（推荐）**
-```bash
-# 添加 NGINX Ingress Helm 仓库
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-
-# 安装 NGINX Ingress Controller
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.service.type=NodePort \
-  --set controller.service.nodePorts.http=30080 \
-  --set controller.service.nodePorts.https=30443
-
-# 验证安装
-kubectl get pods -n ingress-nginx
-kubectl get svc -n ingress-nginx
-```
-
-**选项 B: 使用项目提供的配置文件**
-```bash
-# 使用项目提供的 NGINX Ingress 配置
-kubectl apply -f scripts/nginx-ingress-controller.yaml
-
-# 验证安装
-kubectl get pods -n ingress-nginx
-```
-
-**验证 Ingress Controller 状态**
-```bash
-# 检查 Ingress Controller 是否正常运行
-kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
-
-# 检查服务端口
-kubectl get svc -n ingress-nginx
-```
+- **Kubernetes**: 1.20 或更高版本
+- **Helm**: 3.0 或更高版本  
+- **NGINX Ingress Controller**: 如果启用 Ingress（域名访问）
+- **持久化存储**: 用于数据持久化
+- **资源要求**: 至少 2GB 内存和 2 CPU 核心
 
 ## 快速开始
 
@@ -345,6 +260,87 @@ helm install mcp-box-prod ./helm -f helm/values-prod.yaml \
 5. **备份策略**：定期备份数据库和重要配置文件
 6. **监控告警**：建议配置监控和告警系统
 7. **版本管理**：建议使用具体的版本标签而不是 `latest`
+
+
+## 环境依赖安装说明
+
+#### 1. Kubernetes 集群
+
+**选项 A: 使用 K3s（推荐用于开发和测试）**
+```bash
+# 安装 K3s
+curl -sfL https://get.k3s.io | sh -
+
+# 或使用项目提供的脚本（推荐:默认安装 K3s，ingress-nginx, helm）
+./scripts/install-k3s.sh
+
+# 验证安装
+kubectl get nodes
+```
+
+**选项 B: 使用标准 Kubernetes**
+- Kubernetes 版本 >= 1.20
+- 至少 2GB 可用内存
+- 至少 2 CPU 核心
+
+#### 2. 必需工具
+
+确保已安装以下工具：
+
+```bash
+# Helm 3.x
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+# 验证安装
+helm version
+kubectl version --client
+```
+
+#### 3. NGINX Ingress Controller
+
+MCP-Box 依赖 NGINX Ingress Controller 来处理外部流量路由，请确保已安装：
+
+**选项 A: 使用 Helm 安装（推荐）**
+```bash
+# 添加 NGINX Ingress Helm 仓库
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+# 安装 NGINX Ingress Controller
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.service.type=NodePort \
+  --set controller.service.nodePorts.http=30080 \
+  --set controller.service.nodePorts.https=30443
+
+# 验证安装
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+```
+
+**选项 B: 使用项目提供的配置文件**
+```bash
+# 使用项目提供的 NGINX Ingress 配置
+kubectl apply -f scripts/nginx-ingress-controller.yaml
+
+# 验证安装
+kubectl get pods -n ingress-nginx
+```
+
+**验证 Ingress Controller 状态**
+```bash
+# 检查 Ingress Controller 是否正常运行
+kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
+
+# 检查服务端口
+kubectl get svc -n ingress-nginx
+```
 
 ## 常见问题
 
