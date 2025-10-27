@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-set
+  labels:
+    app: postgresql-set
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql-set
+  template:
+    metadata:
+      labels:
+        app: postgresql-set
+    spec:
+      containers:
+      - name: postgresql-set
+        image: postgres:15
+        ports:
+          - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: ${POSTGRESQL_PASSWORD}
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgresql-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: postgresql
+      volumes:
+      - name: postgresql-storage
+        persistentVolumeClaim:
+          claimName: ${LOCAL_STORAGE_VOLUME_PVC_NAME}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${POSTGRESQL_SERVICE}
+  labels:
+    app: postgresql-service
+spec:
+  selector:
+    app: postgresql-set
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: ${POSTGRESQL_SERVICE_PORT}
+  type: ClusterIP

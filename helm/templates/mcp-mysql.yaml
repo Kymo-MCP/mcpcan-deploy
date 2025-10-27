@@ -38,25 +38,6 @@ data:
     GRANT ALL PRIVILEGES ON {{ .Values.infrastructure.mysql.auth.database | default "mcp_market" }}.* TO '{{ .Values.infrastructure.mysql.auth.username | default "mcp_user" }}'@'%';
     FLUSH PRIVILEGES;
 ---
-{{- if .Values.infrastructure.mysql.persistence.enabled }}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pvc
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: mysql
-    {{- include "mcp-box.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.infrastructure.mysql.persistence.size | default "10Gi" }}
-  {{- if .Values.infrastructure.mysql.persistence.storageClass }}
-  storageClassName: {{ .Values.infrastructure.mysql.persistence.storageClass }}
-  {{- end }}
----
 {{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
@@ -67,7 +48,7 @@ metadata:
     app: mysql
     {{- include "mcp-box.labels" . | nindent 4 }}
 spec:
-  serviceName: mysql-headless
+  serviceName: {{ .Values.infrastructure.mysql.name | default "mysql" }}
   replicas: 1
   selector:
     matchLabels:
@@ -80,7 +61,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.infrastructure.mysql.name | default "mysql" }}
-        image: {{ .Values.infrastructure.mysql.image.repository }}:{{ .Values.infrastructure.mysql.image.tag }}
+        image: {{ .Values.global.registry }}/{{ .Values.infrastructure.mysql.image.repository | default "mysql" }}:{{ .Values.infrastructure.mysql.image.tag | default "8.0.30" }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: 3306
@@ -97,20 +78,6 @@ spec:
         {{- if .Values.infrastructure.mysql.resources }}
         resources:
           {{- toYaml .Values.infrastructure.mysql.resources | nindent 10 }}
-        {{- end }}
-        volumeMounts:
-        - name: mysql-config-volume
-          mountPath: /etc/mysql/conf.d
-          readOnly: true
-        - name: mysql-init-volume
-          mountPath: /docker-entrypoint-initdb.d
-          readOnly: true
-        {{- if .Values.infrastructure.mysql.persistence.enabled }}
-        - name: mysql-data-pvc
-          mountPath: {{ .Values.global.mountStorage.mysqlPath | default "/var/lib/mysql" }}
-        {{- else }}
-        - name: mysql-data-hostpath
-          mountPath: {{ .Values.global.hostStorage.mysqlPath | default "/var/lib/mysql" }}
         {{- end }}
         livenessProbe:
           exec:
@@ -136,6 +103,17 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
+        volumeMounts:
+        - name: mysql-config-volume
+          mountPath: /etc/mysql/conf.d
+          readOnly: true
+        - name: mysql-init-volume
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        {{- if .Values.infrastructure.mysql.hostPath.enabled }}
+        - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
+          mountPath: {{ .Values.infrastructure.mysql.hostPath.mountPath | default "/var/lib/mysql" }}
+        {{- end }}
       volumes:
       - name: mysql-config-volume
         configMap:
@@ -143,28 +121,12 @@ spec:
       - name: mysql-init-volume
         configMap:
           name: mysql-init-scripts
-      {{- if not .Values.infrastructure.mysql.persistence.enabled }}
-      - name: mysql-data-hostpath
+      {{- if .Values.infrastructure.mysql.hostPath.enabled }}
+      - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
         hostPath:
-          path: {{ .Values.global.hostStorage.mysqlPath | default "/data/mysql" }}
-          type: DirectoryOrCreate
+          path: {{ .Values.infrastructure.mysql.hostPath.path | default "/data/mcp-box/mysql" }}
+          type: {{ .Values.infrastructure.mysql.hostPath.type | default "DirectoryOrCreate" }}
       {{- end }}
-  {{- if .Values.infrastructure.mysql.persistence.enabled }}
-  volumeClaimTemplates:
-  - metadata:
-      name: mysql-data
-      labels:
-        app: mysql
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: {{ .Values.infrastructure.mysql.persistence.size | default "10Gi" }}
-      {{- if .Values.infrastructure.mysql.persistence.storageClass }}
-      storageClassName: {{ .Values.infrastructure.mysql.persistence.storageClass }}
-      {{- end }}
-  {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -182,6 +144,29 @@ spec:
   - port: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
     targetPort: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
     name: {{ .Values.infrastructure.mysql.service.name | default "mysql" }}
+  selector:
+    app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
+---
+{{- if .Values.infrastructure.mysql.service.enabledNodePort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.infrastructure.mysql.service.name | default "mysql" }}-nodeport
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+  labels:
+    app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
+    service-type: nodeport
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
+    targetPort: {{ .Values.infrastructure.mysql.service.port | default 3306 }}
+    nodePort: {{ .Values.infrastructure.mysql.service.nodePort | default 31306 }}
+    name: {{ .Values.infrastructure.mysql.service.name | default "mysql" }}
+    protocol: TCP
   selector:
     app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
 {{- end }}

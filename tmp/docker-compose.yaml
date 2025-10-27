@@ -1,7 +1,0 @@
-services:
-  mcp-market:
-      image: ccr.ccs.tencentyun.com/itqm-private/mcp-market:v1.0.0
-      ports:
-        - "8081:8081"
-      volumes:
-        - ./config/market.yaml:/app/config/market.yaml

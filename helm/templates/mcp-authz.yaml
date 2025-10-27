@@ -3,11 +3,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.authz.name | default "mcp-authz" }}
+  name: {{ .Values.services.authz.name | default "mcp-authz" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.authz.name | default "mcp-authz" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
+  annotations:
+    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
   replicas: {{ .Values.services.authz.replicas | default 1 }}
   selector:
@@ -18,6 +20,8 @@ spec:
       labels:
         app: {{ .Values.services.authz.name | default "mcp-authz" }}
         {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: {{ .Values.services.authz.name | default "mcp-authz" }}
@@ -33,29 +37,18 @@ spec:
           {{- toYaml .Values.services.authz.resources | nindent 10 }}
         {{- end }}
         volumeMounts:
-        {{- if .Values.services.authz.config.enabled }}
         - name: config-volume
-          mountPath: {{ .Values.services.authz.config.mountPath | default "/app/config" }}
+          mountPath: "/app/config"
           readOnly: true
-        {{- end }}
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
-        {{- if .Values.services.authz.env }}
-        env:
-        {{- range $key, $value := .Values.services.authz.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
-      {{- if .Values.services.authz.config.enabled }}
       volumes:
       - name: config-volume
         configMap:
           name: mcp-config
           items:
-          - key: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
-            path: {{ .Values.services.authz.config.configMapKey | default "authz.yaml" }}
-      {{- end }}
+          - key: authz.yaml
+            path: authz.yaml
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
@@ -90,9 +83,10 @@ metadata:
   labels:
     app: {{ .Values.services.authz.name | default "mcp-authz" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- $ann := (merge (.Values.services.authz.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
+  {{- if gt (len $ann) 0 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- toYaml $ann | nindent 4 }}
   {{- end }}
 spec:
   {{- if .Values.ingress.className }}
@@ -101,11 +95,17 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
   - hosts:
-    - {{ .Values.services.authz.ingress.host | default .Values.global.domain }}
+    {{- if .Values.global.domain }}
+    - {{ .Values.global.domain }}
+    {{- end }}
     secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
+  {{- if .Values.global.domain }}
   - host: {{ .Values.global.domain }}
+  {{- else }}
+  - 
+  {{- end }}
     http:
       paths:
       - path: {{ .Values.services.authz.ingress.path | default "/" }}

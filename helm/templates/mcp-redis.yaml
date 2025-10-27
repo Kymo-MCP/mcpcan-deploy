@@ -81,25 +81,6 @@ data:
     aof-rewrite-incremental-fsync yes
     rdb-save-incremental-fsync yes
 ---
-{{- if .Values.infrastructure.redis.persistence.enabled }}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: redis-pvc
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: redis
-    {{- include "mcp-box.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.infrastructure.redis.persistence.size | default "50Gi" }}
-  {{- if .Values.infrastructure.redis.persistence.storageClass }}
-  storageClassName: {{ .Values.infrastructure.redis.persistence.storageClass }}
-  {{- end }}
----
 {{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
@@ -110,7 +91,7 @@ metadata:
     app: redis
     {{- include "mcp-box.labels" . | nindent 4 }}
 spec:
-  serviceName: redis-headless
+  serviceName: {{ .Values.infrastructure.redis.name | default "redis" }}
   replicas: 1
   selector:
     matchLabels:
@@ -123,7 +104,8 @@ spec:
     spec:
       containers:
       - name: {{ .Values.infrastructure.redis.name | default "redis" }}
-        image: {{ .Values.infrastructure.redis.image.repository }}:{{ .Values.infrastructure.redis.image.tag }}
+        image: {{ .Values.global.registry }}/{{ .Values.infrastructure.redis.image.repository | default "redis" }}:{{ .Values.infrastructure.redis.image.tag | default "6-alpine" }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
           name: {{ .Values.infrastructure.redis.name | default "redis" }}
@@ -137,11 +119,8 @@ spec:
           mountPath: /etc/redis/redis.conf
           subPath: redis.conf
           readOnly: true
-        {{- if .Values.infrastructure.redis.persistence.enabled }}
-        - name: redis-data-pvc
-          mountPath: {{ .Values.global.mountStorage.redisPath | default "/data/redis" }}
-        {{- else }}
-        - name: redis-data-hostpath
+        {{- if .Values.infrastructure.redis.hostPath.enabled }}
+        - name: {{ .Values.infrastructure.redis.hostPath.name | default "redis-hostpath" }}
           mountPath: {{ .Values.global.mountStorage.redisPath | default "/data/redis" }}
         {{- end }}
         livenessProbe:
@@ -164,28 +143,12 @@ spec:
       - name: redis-config-volume
         configMap:
           name: redis-config
-      {{- if not .Values.infrastructure.redis.persistence.enabled }}
-      - name: redis-data-hostpath
+      {{- if .Values.infrastructure.redis.hostPath.enabled }}
+      - name: {{ .Values.infrastructure.redis.hostPath.name | default "redis-hostpath" }}
         hostPath:
           path: {{ .Values.global.hostStorage.redisPath | default "/data/redis" }}
-          type: DirectoryOrCreate
+          type: {{ .Values.infrastructure.redis.hostPath.type | default "DirectoryOrCreate" }}
       {{- end }}
-  {{- if .Values.infrastructure.redis.persistence.enabled }}
-  volumeClaimTemplates:
-  - metadata:
-      name: redis-data
-      labels:
-        app: redis
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: {{ .Values.infrastructure.redis.persistence.size | default "5Gi" }}
-      {{- if .Values.infrastructure.redis.persistence.storageClass }}
-      storageClassName: {{ .Values.infrastructure.redis.persistence.storageClass }}
-      {{- end }}
-  {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -198,11 +161,34 @@ metadata:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     {{- include "mcp-box.labels" . | nindent 4 }}
 spec:
-  clusterIP: {{ .Values.infrastructure.redis.service.clusterIP | default "None" }}
+  type: {{ .Values.infrastructure.redis.service.type | default "ClusterIP" }}
   ports:
   - port: {{ .Values.infrastructure.redis.service.port | default 6379 }}
     targetPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
     name: {{ .Values.infrastructure.redis.service.name | default "redis" }}
+  selector:
+    app: {{ .Values.infrastructure.redis.name | default "redis" }}
+---
+{{- if .Values.infrastructure.redis.service.enabledNodePort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.infrastructure.redis.service.name | default "redis" }}-nodeport
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+  labels:
+    app: {{ .Values.infrastructure.redis.name | default "redis" }}
+    service-type: nodeport
+    {{- include "mcp-box.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.infrastructure.redis.service.port | default 6379 }}
+    targetPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
+    nodePort: {{ .Values.infrastructure.redis.service.nodePort | default 30379 }}
+    name: {{ .Values.infrastructure.redis.service.name | default "redis" }}
+    protocol: TCP
   selector:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
 {{- end }}

@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.services.init.name | default "mcp-init" }}
+  name: {{ .Values.services.init.name | default "mcp-init" }}-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.init.name | default "mcp-init" }}
@@ -22,28 +22,30 @@ spec:
         resources:
           {{- toYaml .Values.services.init.resources | nindent 10 }}
         {{- end }}
-        {{- if .Values.services.init.config }}
         volumeMounts:
         - name: config-volume
-          mountPath: {{ .Values.services.init.config.mountPath | default "/app/config" }}
+          mountPath: "/app/config"
           readOnly: true
-        {{- end }}
-        {{- if .Values.services.init.env }}
-        env:
-        {{- range $key, $value := .Values.services.init.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
-      {{- if .Values.services.init.config }}
+        - name: k8s-config-volume
+          mountPath: {{ .Values.services.init.k8sHostPath.mountPath | default "/app/config/kube" }}
+          readOnly: {{ .Values.services.init.k8sHostPath.readOnly | default true }}
+        - name: data-volume
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
       volumes:
       - name: config-volume
         configMap:
           name: mcp-config
           items:
-          - key: init.yaml
-            path: init.yaml
-      {{- end }}
+          - key: "init.yaml"
+            path: "init.yaml"
+      - name: k8s-config-volume
+        hostPath:
+          path: {{ .Values.services.init.k8sHostPath.path }}
+          type: {{ .Values.services.init.k8sHostPath.type }}
+      - name: data-volume
+        hostPath:
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
+          type: DirectoryOrCreate
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
 {{- end }}
