@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCPCan Helm Chart - Microservices Container Platform</title>
+    <meta name="description" content="MCPCan (Microservices Container Platform) Helm Chart - 一个全面的微服务平台，提供代码包管理、授权服务、API网关和Web界面">
+    <meta name="keywords" content="MCPCan, Helm Chart, Kubernetes, Microservices, Container Platform">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚙️%3C/text%3E%3C/svg%3E">
+    
+    <!-- CSS Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            margin-right: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Main Content */
+        .main {
+            background: white;
+            margin-top: -2rem;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #333;
+        }
+
+        .section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h4 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        /* Installation Section */
+        .installation {
+            background: #f8f9fa;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        /* Components Section */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .component-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .component-item h5 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .component-item p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 3rem 0 2rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #a0aec0;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .section {
+                padding: 2rem 0;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <div class="logo">
+                <span class="logo-icon">⚙️</span>
+                MCPCan
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">特性</a></li>
+                <li><a href="#installation">安装</a></li>
+                <li><a href="#components">组件</a></li>
+                <li><a href="#docs">文档</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="fade-in-up">MCPCan Helm Chart</h1>
+            <p class="fade-in-up">微服务容器平台 - 提供代码包管理、授权服务、API网关和Web界面的全面解决方案</p>
+            
+            <div class="badges fade-in-up">
+                <span class="badge">📦 Version v1.0.0-dev</span>
+                <span class="badge">⚖️ Apache 2.0</span>
+                <span class="badge">☸️ Kubernetes 1.20+</span>
+                <span class="badge">⎈ Helm 3.0+</span>
+            </div>
+
+            <div class="cta-buttons fade-in-up">
+                <a href="#installation" class="btn btn-primary">快速开始</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" class="btn btn-secondary" target="_blank">查看源码</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Features Section -->
+        <section id="features" class="section">
+            <div class="container">
+                <h2>核心特性</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h4>一键部署</h4>
+                        <p>使用 Helm Chart 快速部署完整的微服务平台，支持自定义配置和扩展</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h4>微服务架构</h4>
+                        <p>包含 Web 前端、市场服务、授权服务、网关服务和初始化服务的完整生态系统</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h4>安全可靠</h4>
+                        <p>内置授权服务和安全配置，支持 TLS 加密和访问控制</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>可观测性</h4>
+                        <p>完整的日志记录、监控和调试功能，便于运维管理</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h4>高可用</h4>
+                        <p>支持多副本部署、滚动更新和自动故障恢复</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h4>高性能</h4>
+                        <p>优化的资源配置和缓存策略，确保系统高效运行</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Section -->
+        <section id="installation" class="section installation">
+            <div class="container">
+                <h2>快速安装</h2>
+                
+                <h3>添加 Helm 仓库</h3>
+                <div class="code-block">
+                    <pre># 添加 MCPCan Helm 仓库
+helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
+
+# 更新仓库
+helm repo update</pre>
+                </div>
+
+                <h3>安装 MCPCan</h3>
+                <div class="code-block">
+                    <pre># 使用默认配置安装
+helm install mcpcan mcpcan/mcpcan
+
+# 或从本地 Chart 安装
+helm install mcpcan ./helm/
+
+# 自定义安装
+helm install mcpcan ./helm/ \
+  --set global.domain=mcp.example.com \
+  --set global.publicIP=192.168.1.100 \
+  --set infrastructure.mysql.auth.rootPassword=secure-password</pre>
+                </div>
+
+                <h3>验证安装</h3>
+                <div class="code-block">
+                    <pre># 检查 Pod 状态
+kubectl get pods -l app.kubernetes.io/instance=mcpcan
+
+# 检查服务状态
+kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Components Section -->
+        <section id="components" class="section">
+            <div class="container">
+                <h2>系统组件</h2>
+                
+                <h3>基础设施服务</h3>
+                <div class="components-grid">
+                    <div class="component-item">
+                        <h5>🗄️ MySQL 8.0</h5>
+                        <p>应用数据的主数据库，提供持久化存储</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🔄 Redis 6</h5>
+                        <p>缓存和会话存储，提升系统性能</p>
+                    </div>
+                </div>
+
+                <h3>应用服务</h3>
+                <div class="components-grid">
+                    <div class="component-item">
+                        <h5>🌐 Web 前端 (端口: 3000)</h5>
+                        <p>基于 React 的用户界面，提供直观的操作体验</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🏪 市场服务 (端口: 8080)</h5>
+                        <p>代码包管理和市场功能，支持包的发布和下载</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🔐 授权服务 (端口: 8081)</h5>
+                        <p>用户认证和授权管理，确保系统安全</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🚪 网关服务 (端口: 8082)</h5>
+                        <p>API 网关和路由管理，统一服务入口</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🔧 初始化服务 (端口: 8083)</h5>
+                        <p>系统初始化和配置管理，自动化部署流程</p>
+                    </div>
+                </div>
+
+                <h3>支持组件</h3>
+                <div class="components-grid">
+                    <div class="component-item">
+                        <h5>📋 ConfigMaps</h5>
+                        <p>配置管理，支持动态配置更新</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🔒 Secrets</h5>
+                        <p>敏感数据管理，安全存储密钥和证书</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>🌍 Ingress</h5>
+                        <p>外部访问路由，支持域名和 TLS</p>
+                    </div>
+                    <div class="component-item">
+                        <h5>💾 持久化卷</h5>
+                        <p>数据持久化存储，确保数据安全</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section id="docs" class="section installation">
+            <div class="container">
+                <h2>文档和支持</h2>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📚</div>
+                        <h4>完整文档</h4>
+                        <p>详细的安装指南、配置说明和故障排除文档</p>
+                        <a href="https://github.com/Kymo-MCP/mcpcan/wiki" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">查看文档</a>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🐛</div>
+                        <h4>问题反馈</h4>
+                        <p>遇到问题？在 GitHub Issues 中报告 Bug 或提出功能请求</p>
+                        <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">报告问题</a>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💬</div>
+                        <h4>社区支持</h4>
+                        <p>加入我们的社区，获取帮助和分享经验</p>
+                        <a href="mailto:opensource@kymo.cn" class="btn btn-primary" style="margin-top: 1rem;">联系我们</a>
+                    </div>
+                </div>
+
+                <h3>快速链接</h3>
+                <div class="code-block">
+                    <pre># Helm 仓库地址
+https://kymo-mcp.github.io/mcpcan-deploy/
+
+# GitHub 仓库
+https://github.com/Kymo-MCP/mcpcan-deploy
+
+# 主项目仓库
+https://github.com/Kymo-MCP/mcpcan</pre>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/Kymo-MCP/mcpcan" target="_blank">主项目</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" target="_blank">部署仓库</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan/wiki" target="_blank">文档</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" target="_blank">问题反馈</a>
+                <a href="mailto:opensource@kymo.cn">联系我们</a>
+            </div>
+            <p>&copy; 2024 MCPCan Project. Licensed under Apache License 2.0</p>
+            <p>🚀 为 Kubernetes 而生的微服务容器平台</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript for smooth animations -->
+    <script>
+        // Add fade-in animation to elements when they come into view
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all feature cards and sections
+        document.querySelectorAll('.feature-card, .component-item, .section h2').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
