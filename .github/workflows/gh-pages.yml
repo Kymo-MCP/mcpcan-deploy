@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - v1.0.0-dev
     paths:
       - 'helm/**'
       - '.github/workflows/gh-pages.yml'
