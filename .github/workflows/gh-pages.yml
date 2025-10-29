@@ -50,83 +50,28 @@ jobs:
           cp .cr-release-packages/index.yaml _site/
           cp .cr-release-packages/*.tgz _site/ 2>/dev/null || true
           
-          # Create simple HTML page
-          cat > _site/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>MCPCan Helm Charts</title>
-              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
-              <style>
-                  .markdown-body {
-                      box-sizing: border-box;
-                      min-width: 200px;
-                      max-width: 980px;
-                      margin: 0 auto;
-                      padding: 45px;
-                  }
-                  .header {
-                      text-align: center;
-                      margin-bottom: 2rem;
-                  }
-                  .install-box {
-                      background: #f6f8fa;
-                      border: 1px solid #d0d7de;
-                      border-radius: 6px;
-                      padding: 1rem;
-                      margin: 1rem 0;
-                  }
-                  .install-box pre {
-                      background: #24292f;
-                      color: #f0f6fc;
-                      padding: 1rem;
-                      border-radius: 6px;
-                      overflow-x: auto;
-                  }
-              </style>
-          </head>
-          <body>
-              <div class="markdown-body">
-                  <div class="header">
-                      <h1>🚀 MCPCan Helm Charts</h1>
-                      <p>Official Helm repository for MCPCan - Model Context Protocol Container Application Network</p>
-                  </div>
-                  
-                  <div class="install-box">
-                      <h2>📦 Quick Installation</h2>
-                      <pre><code># Add the repository
-          helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
-
-          # Update repository
-          helm repo update
-
-          # Install MCPCan
-          helm install mcpcan mcpcan/mcpcan</code></pre>
-                  </div>
-                  
-                  <div class="install-box">
-                      <h2>📋 Available Charts</h2>
-                      <ul>
-                          <li><strong>mcpcan</strong> - Complete MCPCan platform with all services</li>
-                      </ul>
-                      <p>📄 <a href="index.yaml">View Repository Index</a></p>
-                      <p>🔗 <a href="https://github.com/Kymo-MCP/mcpcan-deploy">GitHub Repository</a></p>
-                      <p>🏠 <a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Project</a></p>
-                  </div>
-                  
-                  <div class="install-box">
-                      <h2>📖 Documentation</h2>
-                      <p>For detailed documentation and configuration options, please visit:</p>
-                      <ul>
-                          <li><a href="https://github.com/Kymo-MCP/mcpcan-deploy/blob/main/helm/README.md">Helm Chart Documentation</a></li>
-                          <li><a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Main Project</a></li>
-                      </ul>
-                  </div>
-              </div>
-          </body>
-          </html>
+          # Copy Helm README as main page with Jekyll front matter
+          cat > _site/index.md << 'EOF'
+          ---
+          layout: default
+          title: MCPCan Helm Charts
+          description: Official Helm repository for MCPCan - Model Context Protocol Container Application Network
+          ---
+          EOF
+          
+          # Append the Helm README content
+          cat helm/README.md >> _site/index.md
+          
+          # Create a simple _config.yml for Jekyll
+          cat > _site/_config.yml << 'EOF'
+          title: MCPCan Helm Charts
+          description: Official Helm repository for MCPCan
+          theme: minima
+          markdown: kramdown
+          highlighter: rouge
+          plugins:
+            - jekyll-feed
+            - jekyll-sitemap
           EOF
 
       - name: 📤 Upload Build Artifact
