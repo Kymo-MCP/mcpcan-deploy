@@ -114,4 +114,4 @@ jobs:
       - name: ✅ Deployment Complete
         run: |
           echo "🎉 GitHub Pages deployed successfully!"
-          echo "🌐 Site URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "🌐 Site URL: ${{ steps.deployment.outputs.page_url }}"# Trigger workflow - 2025年10月29日 星期三 14时23分50秒 CST
