@@ -1,0 +1,173 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - v1.0.0-dev
+    paths:
+      - 'helm/**'
+      - '.github/workflows/gh-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job for all branches
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+
+      - name: 📦 Package Helm Chart
+        run: |
+          mkdir -p .cr-release-packages
+          helm package helm/ --destination .cr-release-packages/
+
+      - name: 📋 Generate Repository Index
+        run: |
+          helm repo index .cr-release-packages/ --url https://kymo-mcp.github.io/mcpcan-deploy/
+
+      - name: 🌐 Prepare GitHub Pages Content
+        run: |
+          mkdir -p _site
+          
+          # Copy repository index and charts
+          cp .cr-release-packages/index.yaml _site/
+          cp .cr-release-packages/*.tgz _site/ 2>/dev/null || true
+          
+          # Create simple HTML page
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>MCPCan Helm Charts</title>
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
+              <style>
+                  .markdown-body {
+                      box-sizing: border-box;
+                      min-width: 200px;
+                      max-width: 980px;
+                      margin: 0 auto;
+                      padding: 45px;
+                  }
+                  .header {
+                      text-align: center;
+                      margin-bottom: 2rem;
+                  }
+                  .install-box {
+                      background: #f6f8fa;
+                      border: 1px solid #d0d7de;
+                      border-radius: 6px;
+                      padding: 1rem;
+                      margin: 1rem 0;
+                  }
+                  .install-box pre {
+                      background: #24292f;
+                      color: #f0f6fc;
+                      padding: 1rem;
+                      border-radius: 6px;
+                      overflow-x: auto;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="markdown-body">
+                  <div class="header">
+                      <h1>🚀 MCPCan Helm Charts</h1>
+                      <p>Official Helm repository for MCPCan - Model Context Protocol Container Application Network</p>
+                  </div>
+                  
+                  <div class="install-box">
+                      <h2>📦 Quick Installation</h2>
+                      <pre><code># Add the repository
+          helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
+
+          # Update repository
+          helm repo update
+
+          # Install MCPCan
+          helm install mcpcan mcpcan/mcpcan</code></pre>
+                  </div>
+                  
+                  <div class="install-box">
+                      <h2>📋 Available Charts</h2>
+                      <ul>
+                          <li><strong>mcpcan</strong> - Complete MCPCan platform with all services</li>
+                      </ul>
+                      <p>📄 <a href="index.yaml">View Repository Index</a></p>
+                      <p>🔗 <a href="https://github.com/Kymo-MCP/mcpcan-deploy">GitHub Repository</a></p>
+                      <p>🏠 <a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Project</a></p>
+                  </div>
+                  
+                  <div class="install-box">
+                      <h2>📖 Documentation</h2>
+                      <p>For detailed documentation and configuration options, please visit:</p>
+                      <ul>
+                          <li><a href="https://github.com/Kymo-MCP/mcpcan-deploy/blob/main/helm/README.md">Helm Chart Documentation</a></li>
+                          <li><a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Main Project</a></li>
+                      </ul>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: 📤 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-pages-content
+          path: '_site'
+
+  # Deploy job only for main branch
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: 📊 Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: 📥 Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages-content
+          path: '_site'
+
+      - name: 📤 Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: ✅ Deployment Complete
+        run: |
+          echo "🎉 GitHub Pages deployed successfully!"
+          echo "🌐 Site URL: ${{ steps.deployment.outputs.page_url }}"

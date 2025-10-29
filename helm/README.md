@@ -1,11 +1,11 @@
-# Helm Chart for MCP-Box
+# Helm Chart for MCPCan
 
-[![Version](https://img.shields.io/badge/version-v1.0.0--dev-blue.svg)](https://github.com/Kymo-MCP/MCPbox)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/Kymo-MCP/MCPbox/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-v1.0.0--dev-blue.svg)](https://github.com/Kymo-MCP/mcpcan)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/Kymo-MCP/mcpcan/blob/main/LICENSE)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.20%2B-blue.svg)](https://kubernetes.io/)
 [![Helm](https://img.shields.io/badge/helm-3.0%2B-blue.svg)](https://helm.sh/)
 
-MCP-Box (Microservices Container Platform) is a comprehensive microservices platform that provides code package management, authorization services, API gateway, and web interface. This Helm chart enables easy deployment and management of the entire MCP-Box ecosystem on Kubernetes.
+MCPCan (Microservices Container Platform) is a comprehensive microservices platform that provides code package management, authorization services, API gateway, and web interface. This Helm chart enables easy deployment and management of the entire MCPCan ecosystem on Kubernetes.
 
 ## Table of Contents
 
@@ -33,30 +33,30 @@ MCP-Box (Microservices Container Platform) is a comprehensive microservices plat
 ### Quick Start
 
 ```bash
-# Add the MCP-Box Helm repository (if available)
-helm repo add mcp-box https://kymo-mcp.github.io/mcp-box-deploy/
+# Add the MCPCan Helm repository (if available)
+helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
 
 # Update repository
 helm repo update
 
-# Install MCP-Box with default configuration
-helm install mcp-box mcp-box/mcp-box
+# Install MCPCan with default configuration
+helm install mcpcan mcpcan/mcpcan
 
 # Or install from local chart
-helm install mcp-box ./helm/
+helm install mcpcan ./helm/
 ```
 
 ### Custom Installation
 
 ```bash
 # Install with custom values
-helm install mcp-box ./helm/ -f custom-values.yaml
+helm install mcpcan ./helm/ -f custom-values.yaml
 
 # Install in specific namespace
-helm install mcp-box ./helm/ --namespace mcp-system --create-namespace
+helm install mcpcan ./helm/ --namespace mcp-system --create-namespace
 
 # Install with inline value overrides
-helm install mcp-box ./helm/ \
+helm install mcpcan ./helm/ \
   --set global.domain=mcp.example.com \
   --set global.publicIP=192.168.1.100 \
   --set infrastructure.mysql.auth.rootPassword=secure-password
@@ -168,7 +168,7 @@ The following table lists the configurable parameters and their default values:
 
 ## Components
 
-MCP-Box consists of the following components:
+MCPCan consists of the following components:
 
 ### Infrastructure Services
 
@@ -194,7 +194,7 @@ MCP-Box consists of the following components:
 
 ### Accessing the Application
 
-After installation, you can access MCP-Box through:
+After installation, you can access MCPCan through:
 
 1. **Domain-based access** (if domain is configured):
    ```
@@ -238,13 +238,13 @@ redis-cli -h localhost -p 6379
 
 ```bash
 # Upgrade to latest version
-helm upgrade mcp-box ./helm/
+helm upgrade mcpcan ./helm/
 
 # Upgrade with new values
-helm upgrade mcp-box ./helm/ -f new-values.yaml
+helm upgrade mcpcan ./helm/ -f new-values.yaml
 
 # Upgrade with specific version
-helm upgrade mcp-box ./helm/ --version 1.1.0
+helm upgrade mcpcan ./helm/ --version 1.1.0
 ```
 
 ### Rolling Updates
@@ -253,23 +253,23 @@ The chart supports rolling updates for all services. To update a specific servic
 
 ```bash
 # Update web service image
-helm upgrade mcp-box ./helm/ --set global.version=v1.1.0
+helm upgrade mcpcan ./helm/ --set global.version=v1.1.0
 
 # Update with zero downtime
-helm upgrade mcp-box ./helm/ --wait --timeout=600s
+helm upgrade mcpcan ./helm/ --wait --timeout=600s
 ```
 
 ## Uninstalling
 
 ```bash
 # Uninstall the release
-helm uninstall mcp-box
+helm uninstall mcpcan
 
 # Uninstall from specific namespace
-helm uninstall mcp-box --namespace mcp-system
+helm uninstall mcpcan --namespace mcp-system
 
 # Remove persistent data (optional)
-kubectl delete pvc -l app.kubernetes.io/instance=mcp-box
+kubectl delete pvc -l app.kubernetes.io/instance=mcpcan
 ```
 
 ## Configuration Examples
@@ -416,7 +416,7 @@ kubectl logs -l app=mcp-market
 kubectl get pods -n ingress-nginx
 
 # Check ingress configuration
-kubectl describe ingress mcp-box-ingress
+kubectl describe ingress mcpcan-ingress
 
 # Check ingress logs
 kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
@@ -445,7 +445,7 @@ kubectl create secret docker-registry regcred \
 
 ```bash
 # Check all resources
-kubectl get all -l app.kubernetes.io/instance=mcp-box
+kubectl get all -l app.kubernetes.io/instance=mcpcan
 
 # Check pod logs
 kubectl logs -l app=mcp-web --tail=100
@@ -460,7 +460,7 @@ kubectl describe pod <pod-name>
 kubectl get pv,pvc
 
 # Check configuration
-helm get values mcp-box
+helm get values mcpcan
 ```
 
 ### Performance Tuning
@@ -503,10 +503,10 @@ We welcome contributions! Please see our [Contributing Guide](../CONTRIBUTING.md
 
 ```bash
 # Clone the repository
-git clone https://github.com/Kymo-MCP/mcp-box-deploy.git
+git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
 
 # Navigate to helm directory
-cd mcp-box-deploy/helm
+cd mcpcan-deploy/helm
 
 # Validate the chart
 helm lint .
@@ -517,7 +517,7 @@ helm install test-release . --dry-run --debug
 
 ### Reporting Issues
 
-Please report issues on our [GitHub Issues](https://github.com/Kymo-MCP/mcp-box-deploy/issues) page.
+Please report issues on our [GitHub Issues](https://github.com/Kymo-MCP/mcpcan-deploy/issues) page.
 
 ## License
 
@@ -525,10 +525,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../LIC
 
 ## Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/Kymo-MCP/MCPbox/wiki)
-- **Issues**: [GitHub Issues](https://github.com/Kymo-MCP/mcp-box-deploy/issues)
+- **Documentation**: [GitHub Wiki](https://github.com/Kymo-MCP/mcpcan/wiki)
+- **Issues**: [GitHub Issues](https://github.com/Kymo-MCP/mcpcan-deploy/issues)
 - **Email**: opensource@kymo.cn
 
 ---
 
-**Note**: This chart is designed for Kubernetes environments. For Docker Compose deployment, please refer to the main repository documentation.
+**Note**: This chart is designed for Kubernetes environments. For Docker Compose deployment, please refer to the main repository documentation.# Test trigger

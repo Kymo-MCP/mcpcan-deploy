@@ -1,17 +1,17 @@
 # =============================================================================
-# MCP-Box Helm Chart Configuration
+# MCPCan Helm Chart Configuration
 # =============================================================================
-# This file contains all configurable values for the MCP-Box deployment.
+# This file contains all configurable values for the MCPCan deployment.
 # Modify these values according to your environment requirements.
 
 # =============================================================================
 # Global Configuration
 # =============================================================================
-# Global settings that apply to all components of the MCP-Box system
+# Global settings that apply to all components of the MCPCan system
 global:
   # Domain name for the application (optional)
   # If not set, publicIP will be used for access
-  # Example: "mcp.example.com"
+  # Example: "mcpcan.example.com"
   domain: ""
   
   # Public IP address for external access
@@ -25,7 +25,7 @@ global:
   
   # Container registry URL
   # All service images will be pulled from this registry
-  registry: ccr.ccs.tencentyun.com/itqm-private
+  registry: 77kymo
   
   # Image pull policy for all containers
   # Options: Always, IfNotPresent, Never
@@ -39,26 +39,26 @@ global:
   # Host storage configuration
   # Defines where data is stored on the host system
   hostStorage:
-    # Root directory for all MCP-Box data
-    rootPath: /data/mcp-box
+    # Root directory for all MCPCan data
+    rootPath: /data/mcpcan
     # Directory for static files (uploads, assets)
-    staticPath: /data/mcp-box/static
+    staticPath: /data/mcpcan/static
     # Directory for code packages and artifacts
-    codePackagePath: /data/mcp-box/code-package
+    codePackagePath: /data/mcpcan/code-package
     # Directory for MySQL data files
-    mysqlPath: /data/mcp-box/mysql
+    mysqlPath: /data/mcpcan/mysql
     # Directory for Redis data files
-    redisPath: /data/mcp-box/redis
+    redisPath: /data/mcpcan/redis
   
   # Mount storage configuration
   # Defines how storage is mounted inside containers
   mountStorage:
     # Root mount point inside containers
-    rootPath: /data/mcp-box
+    rootPath: /data/mcpcan
     # Static files mount point
-    staticPath: /data/mcp-box/static
+    staticPath: /data/mcpcan/static
     # Code packages mount point
-    codePackagePath: /data/mcp-box/code-package
+    codePackagePath: /data/mcpcan/code-package
     # MySQL data mount point (standard MySQL path)
     mysqlPath: /var/lib/mysql
     # Redis data mount point
@@ -116,7 +116,7 @@ infrastructure:
       # Volume name
       name: mysql-hostpath
       # Host directory path
-      path: /data/mcp-box/mysql
+      path: /data/mcpcan/mysql
       # Directory creation type
       type: DirectoryOrCreate
       # Container mount path
@@ -176,7 +176,7 @@ infrastructure:
       # Volume name
       name: redis-hostpath
       # Host directory path
-      path: /data/mcp-box/redis
+      path: /data/mcpcan/redis
       # Directory creation type
       type: DirectoryOrCreate
       # Container mount path
@@ -196,7 +196,7 @@ infrastructure:
 # =============================================================================
 # Services Configuration
 # =============================================================================
-# Configuration for MCP-Box application services
+# Configuration for MCPCan application services
 services:
   # Web Frontend Service
   web:
@@ -472,7 +472,7 @@ imagePull:
   # Container image used for importing images
   importerImage: "alpine:3.18"
   # Path where image files are stored
-  imagesPath: "/opt/mcp-box/images"
+  imagesPath: "/opt/mcpcan/images"
   
   # Resource limits and requests for image pull job
   resources:

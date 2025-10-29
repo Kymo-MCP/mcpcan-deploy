@@ -1,6 +1,6 @@
 # 离线镜像导入方案
 
-本方案提供了一套完整的离线镜像管理解决方案，允许在没有网络连接的环境中部署 MCP-Box 应用。
+本方案提供了一套完整的离线镜像管理解决方案，允许在没有网络连接的环境中部署 MCPCan 应用。
 
 ## 方案架构
 
@@ -42,7 +42,7 @@ cd /path/to/mcp-box-deploy
 tar -czf mcp-box-images.tar.gz images/
 
 # 传输到目标环境（示例）
-scp mcp-box-images.tar.gz user@target-host:/opt/mcp-box/
+scp mcp-box-images.tar.gz user@target-host:/opt/mcpcan/
 ```
 
 ### 步骤 3: 部署到离线环境
@@ -51,14 +51,14 @@ scp mcp-box-images.tar.gz user@target-host:/opt/mcp-box/
 
 ```bash
 # 解压镜像文件
-cd /opt/mcp-box
+cd /opt/mcpcan
 tar -xzf mcp-box-images.tar.gz
 
 # 启用离线镜像导入
 # 编辑 helm/values.yaml，设置：
 # imagePull:
 #   enabled: true
-#   imagesPath: "/opt/mcp-box/images"
+#   imagesPath: "/opt/mcpcan/images"
 
 # 执行 Helm 部署
 helm install mcp-box ./helm -n mcp-box --create-namespace
@@ -72,7 +72,7 @@ helm install mcp-box ./helm -n mcp-box --create-namespace
 imagePull:
   enabled: false                    # 设置为 true 启用离线镜像导入
   importerImage: "alpine:3.18"      # 导入器镜像
-  imagesPath: "/opt/mcp-box/images" # 镜像文件路径
+  imagesPath: "/opt/mcpcan/images" # 镜像文件路径
   resources:                        # 资源限制
     limits:
       cpu: 500m
@@ -86,7 +86,7 @@ imagePull:
 
 ### 镜像文件路径
 
-默认镜像文件路径为 `/opt/mcp-box/images`，可通过 `imagePull.imagesPath` 配置修改。
+默认镜像文件路径为 `/opt/mcpcan/images`，可通过 `imagePull.imagesPath` 配置修改。
 
 ## 支持的镜像格式
 
@@ -120,7 +120,7 @@ docker pull mysql:8.0
 ### 2. 镜像导入失败
 ```bash
 # 检查镜像文件是否存在
-ls -la /opt/mcp-box/images/
+ls -la /opt/mcpcan/images/
 
 # 检查容器运行时
 kubectl get nodes -o wide
@@ -132,8 +132,8 @@ kubectl logs -n mcp-box job/mcp-box-image-import
 ### 3. 权限问题
 ```bash
 # 确保镜像目录权限正确
-sudo chown -R root:root /opt/mcp-box/images/
-sudo chmod -R 644 /opt/mcp-box/images/*.tar*
+sudo chown -R root:root /opt/mcpcan/images/
+sudo chmod -R 644 /opt/mcpcan/images/*.tar*
 ```
 
 ## 最佳实践

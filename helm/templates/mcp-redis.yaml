@@ -7,7 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: redis
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 data:
   redis.conf: |
     bind 0.0.0.0
@@ -89,7 +89,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: redis
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   serviceName: {{ .Values.infrastructure.redis.name | default "redis" }}
   replicas: 1
@@ -100,7 +100,7 @@ spec:
     metadata:
       labels:
         app: redis
-        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - name: {{ .Values.infrastructure.redis.name | default "redis" }}
@@ -159,7 +159,7 @@ metadata:
     "helm.sh/resource-policy": "keep"
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.infrastructure.redis.service.type | default "ClusterIP" }}
   ports:
@@ -180,7 +180,7 @@ metadata:
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     service-type: nodeport
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: NodePort
   ports:

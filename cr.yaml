@@ -3,24 +3,24 @@
 
 # Owner and repository name
 owner: Kymo-MCP
-repo: mcp-box-deploy
+repo: mcpcan-deploy
 
 # GitHub Pages configuration
 pages-branch: gh-pages
 pages-index-path: index.yaml
 
-# Release configuration
-release-name-template: "{{ .Name }}-{{ .Version }}"
-commit-username: github-actions[bot]
-commit-email: 41898282+github-actions[bot]@users.noreply.github.com
-
 # Chart configuration
 charts-dir: helm
-charts-repo-url: https://kymo-mcp.github.io/mcp-box-deploy
+charts-repo-url: https://kymo-mcp.github.io/mcpcan-deploy
 
 # Package configuration
 package-path: .cr-release-packages
 index-path: .cr-index
+
+# Release configuration
+release-name-template: "{{ .Name }}-{{ .Version }}"
+commit-username: github-actions[bot]
+commit-email: 41898282+github-actions[bot]@users.noreply.github.com
 
 # Skip existing releases
 skip-existing: true
@@ -30,20 +30,4 @@ generate-release-notes: true
 
 # Mark pre-releases
 mark-as-latest: true
-
-# Additional configuration for better release management
-remote: origin
-target-branch: main
-
-# Chart validation
-validate-chart-schema: true
-validate-yaml: true
-
-# Release notes configuration
-release-notes-header: |
-  ## What's Changed
-  
-  This release includes the following changes to the MCP-Box Helm Chart:
-
-# Dependency update configuration
 update-dependencies: true

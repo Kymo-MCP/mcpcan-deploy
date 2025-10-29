@@ -7,7 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
     deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
@@ -19,7 +19,7 @@ spec:
     metadata:
       labels:
         app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
-        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -56,7 +56,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.services.gateway.service.type | default "ClusterIP" }}
   ports:
@@ -76,7 +76,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.gateway.name | default "mcp-gateway" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
   {{- $ann := (merge (.Values.services.gateway.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
   {{- if gt (len $ann) 0 }}
   annotations:
