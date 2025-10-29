@@ -37,6 +37,43 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Generate Documentation
+        run: |
+          # Extract version from Chart.yaml
+          CHART_VERSION=$(grep '^version:' helm/Chart.yaml | awk '{print $2}')
+          CHART_NAME=$(grep '^name:' helm/Chart.yaml | awk '{print $2}')
+          CHART_DESCRIPTION=$(grep '^description:' helm/Chart.yaml | sed 's/^description: //')
+          
+          echo "📋 Generating index.yaml documentation..."
+          echo "Chart Name: $CHART_NAME"
+          echo "Chart Version: $CHART_VERSION"
+          echo "Chart Description: $CHART_DESCRIPTION"
+          
+          # Create index.yaml with chart information
+          cat > index.yaml << EOF
+          apiVersion: v1
+          entries:
+            $CHART_NAME:
+            - apiVersion: v2
+              appVersion: $CHART_VERSION
+              created: "$(date -u +%Y-%m-%dT%H:%M:%S.%fZ)"
+              description: $CHART_DESCRIPTION
+              digest: $(helm package helm/ --destination /tmp/ > /dev/null 2>&1 && sha256sum /tmp/$CHART_NAME-$CHART_VERSION.tgz | awk '{print $1}')
+              name: $CHART_NAME
+              type: application
+              urls:
+              - https://kymo-mcp.github.io/mcpcan-deploy/$CHART_NAME-$CHART_VERSION.tgz
+              version: $CHART_VERSION
+          generated: "$(date -u +%Y-%m-%dT%H:%M:%S.%fZ)"
+          EOF
+          
+          echo "✅ index.yaml documentation generated successfully"
+          echo "📄 Generated index.yaml content:"
+          cat index.yaml
+          
+          # Clean up temporary files
+          rm -f /tmp/$CHART_NAME-$CHART_VERSION.tgz
+
       - name: Build Helm Repository
         run: |
           # Create output directory

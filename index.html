@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCPCan Helm Chart - Microservices Container Platform</title>
-    <meta name="description" content="MCPCan (Microservices Container Platform) Helm Chart - 一个全面的微服务平台，提供代码包管理、授权服务、API网关和Web界面">
+    <meta name="description" content="MCPCan (Microservices Container Platform) Helm Chart - A comprehensive microservices platform providing package management, authorization services, API gateway and web interface">
     <meta name="keywords" content="MCPCan, Helm Chart, Kubernetes, Microservices, Container Platform">
     
     <!-- Favicon -->
@@ -346,10 +346,10 @@
                 MCPCan
             </div>
             <ul class="nav-links">
-                <li><a href="#features">特性</a></li>
-                <li><a href="#installation">安装</a></li>
-                <li><a href="#components">组件</a></li>
-                <li><a href="#docs">文档</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#components">Components</a></li>
+                <li><a href="#docs">Documentation</a></li>
             </ul>
         </nav>
     </header>
@@ -358,7 +358,7 @@
     <section class="hero">
         <div class="container">
             <h1 class="fade-in-up">MCPCan Helm Chart</h1>
-            <p class="fade-in-up">微服务容器平台 - 提供代码包管理、授权服务、API网关和Web界面的全面解决方案</p>
+            <p class="fade-in-up">Microservices Container Platform - A comprehensive solution providing package management, authorization services, API gateway and web interface</p>
             
             <div class="badges fade-in-up">
                 <span class="badge">📦 Version v1.0.0</span>
@@ -367,8 +367,8 @@
             </div>
 
             <div class="cta-buttons fade-in-up">
-                <a href="#installation" class="btn btn-primary">快速开始</a>
-                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" class="btn btn-secondary" target="_blank">查看源码</a>
+                <a href="#installation" class="btn btn-primary">Quick Start</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" class="btn btn-secondary" target="_blank">View Source</a>
             </div>
         </div>
     </section>
@@ -378,37 +378,37 @@
         <!-- Features Section -->
         <section id="features" class="section">
             <div class="container">
-                <h2>核心特性</h2>
+                <h2>Core Features</h2>
                 <div class="features-grid">
                     <div class="feature-card">
                         <div class="feature-icon">🚀</div>
-                        <h4>一键部署</h4>
-                        <p>使用 Helm Chart 快速部署完整的微服务平台，支持自定义配置和扩展</p>
+                        <h4>One-Click Deployment</h4>
+                        <p>Quickly deploy a complete microservices platform using Helm Chart with custom configuration and extension support</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🔧</div>
-                        <h4>微服务架构</h4>
-                        <p>包含 Web 前端、市场服务、授权服务、网关服务和初始化服务的完整生态系统</p>
+                        <h4>Microservices Architecture</h4>
+                        <p>Complete ecosystem including web frontend, market service, authorization service, gateway service and initialization service</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🛡️</div>
-                        <h4>安全可靠</h4>
-                        <p>内置授权服务和安全配置，支持 TLS 加密和访问控制</p>
+                        <h4>Secure & Reliable</h4>
+                        <p>Built-in authorization service and security configuration with TLS encryption and access control support</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">📊</div>
-                        <h4>可观测性</h4>
-                        <p>完整的日志记录、监控和调试功能，便于运维管理</p>
+                        <h4>Observability</h4>
+                        <p>Complete logging, monitoring and debugging capabilities for easy operations management</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🔄</div>
-                        <h4>高可用</h4>
-                        <p>支持多副本部署、滚动更新和自动故障恢复</p>
+                        <h4>High Availability</h4>
+                        <p>Support for multi-replica deployment, rolling updates and automatic failure recovery</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">⚡</div>
-                        <h4>高性能</h4>
-                        <p>优化的资源配置和缓存策略，确保系统高效运行</p>
+                        <h4>High Performance</h4>
+                        <p>Optimized resource configuration and caching strategies to ensure efficient system operation</p>
                     </div>
                 </div>
             </div>
@@ -417,32 +417,32 @@
         <!-- Installation Section -->
         <section id="installation" class="section installation">
             <div class="container">
-                <h2>快速安装</h2>
+                <h2>Quick Installation</h2>
                 
-                <h3>添加 Helm 仓库</h3>
+                <h3>Add Helm Repository</h3>
                 <div class="code-block">
-                    <pre># 添加 MCPCan Helm 仓库
+                    <pre># Add MCPCan Helm repository
 helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
 
-# 更新仓库
+# Update repository
 helm repo update</pre>
                 </div>
 
-                <h3>安装 MCPCan</h3>
+                <h3>Install MCPCan</h3>
                 <div class="code-block">
-                    <pre># 使用默认配置安装
+                    <pre># Install with default configuration
 helm install mcpcan mcpcan/mcpcan
 
-# 或从本地 Chart 安装
+# Or install from local Chart
 helm install mcpcan ./helm/
 
-# 公网IP自定义安装
+# Custom installation with public IP
 helm install mcpcan ./helm/ \
   --set global.publicIP=192.168.1.100 \
   --set infrastructure.mysql.auth.rootPassword=secure-password \
   --set infrastructure.redis.auth.password=secure-password
 
-# 域名自定义安装
+# Custom installation with domain
 helm install mcpcan ./helm/ \
   --set global.domain=mcp.example.com \
   --set infrastructure.mysql.auth.rootPassword=secure-password \
@@ -450,12 +450,12 @@ helm install mcpcan ./helm/ \
 </pre>
                 </div>
 
-                <h3>验证安装</h3>
+                <h3>Verify Installation</h3>
                 <div class="code-block">
-                    <pre># 检查 Pod 状态
+                    <pre># Check Pod status
 kubectl get pods -l app.kubernetes.io/instance=mcpcan
 
-# 检查服务状态
+# Check service status
 kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
                 </div>
             </div>
@@ -464,61 +464,61 @@ kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
         <!-- Components Section -->
         <section id="components" class="section">
             <div class="container">
-                <h2>系统组件</h2>
+                <h2>System Components</h2>
                 
-                <h3>基础设施服务</h3>
+                <h3>Infrastructure Services</h3>
                 <div class="components-grid">
                     <div class="component-item">
                         <h5>🗄️ MySQL 8.0</h5>
-                        <p>应用数据的主数据库，提供持久化存储</p>
+                        <p>Primary database for application data, providing persistent storage</p>
                     </div>
                     <div class="component-item">
                         <h5>🔄 Redis 6</h5>
-                        <p>缓存和会话存储，提升系统性能</p>
+                        <p>Cache and session storage to improve system performance</p>
                     </div>
                 </div>
 
-                <h3>应用服务</h3>
+                <h3>Application Services</h3>
                 <div class="components-grid">
                     <div class="component-item">
-                        <h5>🌐 Web 前端 (端口: 3000)</h5>
-                        <p>基于 React 的用户界面，提供直观的操作体验</p>
+                        <h5>🌐 Web Frontend (Port: 3000)</h5>
+                        <p>React-based user interface providing intuitive operation experience</p>
                     </div>
                     <div class="component-item">
-                        <h5>🏪 市场服务 (端口: 8080)</h5>
-                        <p>代码包管理和市场功能，支持包的发布和下载</p>
+                        <h5>🏪 Market Service (Port: 8080)</h5>
+                        <p>Package management and marketplace functionality, supporting package publishing and downloading</p>
                     </div>
                     <div class="component-item">
-                        <h5>🔐 授权服务 (端口: 8081)</h5>
-                        <p>用户认证和授权管理，确保系统安全</p>
+                        <h5>🔐 Authorization Service (Port: 8081)</h5>
+                        <p>User authentication and authorization management to ensure system security</p>
                     </div>
                     <div class="component-item">
-                        <h5>🚪 网关服务 (端口: 8082)</h5>
-                        <p>API 网关和路由管理，统一服务入口</p>
+                        <h5>🚪 Gateway Service (Port: 8082)</h5>
+                        <p>API gateway and routing management, unified service entry point</p>
                     </div>
                     <div class="component-item">
-                        <h5>🔧 初始化服务 (端口: 8083)</h5>
-                        <p>系统初始化和配置管理，自动化部署流程</p>
+                        <h5>🔧 Initialization Service (Port: 8083)</h5>
+                        <p>System initialization and configuration management, automated deployment process</p>
                     </div>
                 </div>
 
-                <h3>支持组件</h3>
+                <h3>Supporting Components</h3>
                 <div class="components-grid">
                     <div class="component-item">
                         <h5>📋 ConfigMaps</h5>
-                        <p>配置管理，支持动态配置更新</p>
+                        <p>Configuration management with support for dynamic configuration updates</p>
                     </div>
                     <div class="component-item">
                         <h5>🔒 Secrets</h5>
-                        <p>敏感数据管理，安全存储密钥和证书</p>
+                        <p>Sensitive data management, secure storage of keys and certificates</p>
                     </div>
                     <div class="component-item">
                         <h5>🌍 Ingress</h5>
-                        <p>外部访问路由，支持域名和 TLS</p>
+                        <p>External access routing with domain and TLS support</p>
                     </div>
                     <div class="component-item">
-                        <h5>💾 持久化卷</h5>
-                        <p>数据持久化存储，确保数据安全</p>
+                        <h5>💾 Persistent Volumes</h5>
+                        <p>Data persistence storage to ensure data security</p>
                     </div>
                 </div>
             </div>
@@ -527,39 +527,39 @@ kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
         <!-- Documentation Section -->
         <section id="docs" class="section installation">
             <div class="container">
-                <h2>文档和支持</h2>
+                <h2>Documentation and Support</h2>
                 
                 <div class="features-grid">
                     <div class="feature-card">
                         <div class="feature-icon">📚</div>
-                        <h4>完整文档</h4>
-                        <p>详细的安装指南、配置说明和故障排除文档</p>
-                        <a href="https://github.com/Kymo-MCP/mcpcan/wiki" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">查看文档</a>
+                        <h4>Complete Documentation</h4>
+                        <p>Detailed installation guides, configuration instructions and troubleshooting documentation</p>
+                        <a href="https://github.com/Kymo-MCP/mcpcan/wiki" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">View Documentation</a>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🐛</div>
-                        <h4>问题反馈</h4>
-                        <p>遇到问题？在 GitHub Issues 中报告 Bug 或提出功能请求</p>
-                        <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">报告问题</a>
+                        <h4>Issue Reporting</h4>
+                        <p>Encountered issues? Report bugs or request features in GitHub Issues</p>
+                        <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" class="btn btn-primary" target="_blank" style="margin-top: 1rem;">Report Issues</a>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">💬</div>
-                        <h4>社区支持</h4>
-                        <p>加入我们的社区，获取帮助和分享经验</p>
-                        <a href="mailto:opensource@kymo.cn" class="btn btn-primary" style="margin-top: 1rem;">联系我们</a>
+                        <h4>Community Support</h4>
+                        <p>Join our community to get help and share experiences</p>
+                        <a href="mailto:opensource@kymo.cn" class="btn btn-primary" style="margin-top: 1rem;">Contact Us</a>
                     </div>
                 </div>
 
-                <h3>快速链接</h3>
+                <h3>Quick Links</h3>
                 <div class="code-block">
                     <pre>
-# 主项目仓库地址
+# Main project repository
 https://github.com/Kymo-MCP/mcpcan              
 
-# Deploy 项目仓库地址
+# Deploy project repository
 https://github.com/Kymo-MCP/mcpcan-deploy
 
-# Helm Charts仓库地址
+# Helm Charts repository
 https://kymo-mcp.github.io/mcpcan-deploy/
 
 
@@ -573,14 +573,14 @@ https://kymo-mcp.github.io/mcpcan-deploy/
     <footer class="footer">
         <div class="container">
             <div class="footer-links">
-                <a href="https://github.com/Kymo-MCP/mcpcan" target="_blank">主项目</a>
-                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" target="_blank">部署仓库</a>
-                <a href="https://github.com/Kymo-MCP/mcpcan/wiki" target="_blank">文档</a>
-                <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" target="_blank">问题反馈</a>
-                <a href="mailto:opensource@kymo.cn">联系我们</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan" target="_blank">Main Project</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" target="_blank">Deploy Repository</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan/wiki" target="_blank">Documentation</a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" target="_blank">Issue Reporting</a>
+                <a href="mailto:opensource@kymo.cn">Contact Us</a>
             </div>
             <p>&copy; 2024 MCPCan Project. Licensed under Apache License 2.0</p>
-            <p>🚀 为 Kubernetes 而生的微服务容器平台</p>
+            <p>🚀 Microservices Container Platform built for Kubernetes</p>
         </div>
     </footer>
 
