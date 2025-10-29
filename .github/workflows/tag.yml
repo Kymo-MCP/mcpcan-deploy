@@ -1,0 +1,95 @@
+name: Release Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      ReleaseTag:
+        description: '是否创建发布标签'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    # 只在 ReleaseTag 为 true 时执行
+    if: github.event.inputs.ReleaseTag == 'true'
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 获取分支信息
+        id: branch_info
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "当前分支: $BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: 验证分支格式
+        id: validate_branch
+        run: |
+          BRANCH_NAME="${{ steps.branch_info.outputs.branch_name }}"
+          # 检查分支名称是否符合 v*.*.* 格式（如 v1.0.1, v2.3.1）
+          # 不允许有其他后缀（如 v1.0.1-dev）
+          if [[ $BRANCH_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✅ 分支格式验证通过: $BRANCH_NAME"
+            echo "valid_branch=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ 分支格式不符合要求: $BRANCH_NAME"
+            echo "❌ 要求格式: v*.*.* (如 v1.0.1, v2.3.1)"
+            echo "❌ 不允许后缀: v1.0.1-dev, v1.0.1-alpha 等"
+            echo "valid_branch=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: 生成标签名称
+        id: tag_info
+        run: |
+          BRANCH_NAME="${{ steps.branch_info.outputs.branch_name }}"
+          # 使用分支名称作为标签名称
+          TAG_NAME="$BRANCH_NAME"
+          echo "标签名称: $TAG_NAME"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: 检查标签是否存在
+        id: check_tag
+        # 只有在分支格式验证通过后才执行
+        if: steps.validate_branch.outputs.valid_branch == 'true'
+        run: |
+          TAG_NAME="${{ steps.tag_info.outputs.tag_name }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
+            echo "标签 $TAG_NAME 已存在"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "标签 $TAG_NAME 不存在，可以创建"
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 创建并推送标签
+        if: steps.validate_branch.outputs.valid_branch == 'true' && steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          TAG_NAME="${{ steps.tag_info.outputs.tag_name }}"
+          BRANCH_NAME="${{ steps.branch_info.outputs.branch_name }}"
+          
+          # 配置 Git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 创建标签
+          git tag -a "$TAG_NAME" -m "从分支 $BRANCH_NAME 创建发布标签 $TAG_NAME"
+          
+          # 推送标签
+          git push origin "$TAG_NAME"
+          
+          echo "✅ 成功创建并推送标签: $TAG_NAME"
+          echo "📍 来源分支: $BRANCH_NAME"
+
+      - name: 跳过创建（标签已存在）
+        if: steps.validate_branch.outputs.valid_branch == 'true' && steps.check_tag.outputs.tag_exists == 'true'
+        run: |
+          TAG_NAME="${{ steps.tag_info.outputs.tag_name }}"
+          echo "⏭️ 跳过标签创建"
+          echo "🏷️ 标签 $TAG_NAME 已存在"
