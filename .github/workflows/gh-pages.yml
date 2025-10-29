@@ -13,6 +13,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -41,20 +42,43 @@ jobs:
           # Create output directory
           mkdir -p _site
           
+          # Verify Helm chart structure
+          echo "🔍 Verifying Helm chart structure..."
+          helm lint helm/
+          
           # Package Helm chart
+          echo "📦 Packaging Helm chart..."
           helm package helm/ --destination _site/
           
           # Generate repository index
+          echo "📋 Generating repository index..."
           helm repo index _site/ --url https://kymo-mcp.github.io/mcpcan-deploy/
           
+          # Verify index.yaml was created
+          if [ -f "_site/index.yaml" ]; then
+            echo "✅ index.yaml created successfully"
+            echo "📄 Index file content:"
+            cat _site/index.yaml
+          else
+            echo "❌ index.yaml not found!"
+            exit 1
+          fi
+          
           # Copy homepage
+          echo "🏠 Copying homepage..."
           cp index.html _site/
           
           # Disable Jekyll
           touch _site/.nojekyll
           
-          echo "📦 Helm chart packaged and repository index generated"
+          # Set proper permissions
+          chmod -R 755 _site/
+          
+          echo "📦 Build completed successfully!"
+          echo "📁 Final directory structure:"
           ls -la _site/
+          echo "📊 File sizes:"
+          du -h _site/*
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
