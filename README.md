@@ -1,6 +1,6 @@
-# MCP-Box Deployment Guide
+# MCPCan Deployment Guide
 
-## Environment Dependencies
+## [Environment Dependencies](#dependencies) 
 
 Before starting deployment, please ensure your environment meets the following requirements:
 
@@ -16,8 +16,8 @@ Before starting deployment, please ensure your environment meets the following r
 
 ```bash
 # Clone project repository
-git clone https://github.com/Kymo-MCP/mcp-box-deploy.git
-cd mcp-box-deploy
+git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
+cd mcpcan-deploy
 ```
 
 ### 2. Basic Configuration Deployment
@@ -26,11 +26,11 @@ Deploy using default configuration for quick setup:
 
 ```bash
 # Basic deployment (using IP access, modify publicIP in ./helm/values.yaml)
-helm install mcp-box ./helm --namespace mcp-box --create-namespace --timeout 600s --wait
+helm install mcpcan ./helm --namespace mcpcan --create-namespace --timeout 600s --wait
 
 # Check deployment status
-kubectl get pods -n mcp-box
-kubectl get svc -n mcp-box
+kubectl get pods -n mcpcan
+kubectl get svc -n mcpcan
 ```
 
 After deployment is complete, you can access through:
@@ -54,14 +54,14 @@ Edit `helm/values-custom.yaml`:
 ```yaml
 # Global configuration
 global:
-  # Set your domain, e.g.: demo.mcp-box.com, publicIP configuration will be ignored when domain exists
-  domain: "demo.mcp-box.com"
+  # Set your domain, e.g.: demo.mcpcan.com, publicIP configuration will be ignored when domain exists
+  domain: "demo.mcpcan.com"
   
 # Ingress configuration
 ingress:
   tls:
     enabled: true
-    # If using self-signed certificate (e.g.: demo.mcp-box.com), please configure certificate content
+    # If using self-signed certificate (e.g.: demo.mcpcan.com), please configure certificate content
     # Note: Self-signed certificates will show security warnings in browsers
     # Installing with self-signed certificates may cause MCP access configurations to fail, 
     # in which case you can manually change the protocol to http in the configuration
@@ -90,12 +90,12 @@ ls certs/
 
 ```bash
 # Deploy with custom configuration
-helm install mcp-box ./helm -f helm/values-custom.yaml \
-  --namespace mcp-box --create-namespace --timeout 600s --wait
+helm install mcpcan ./helm -f helm/values-custom.yaml \
+  --namespace mcpcan --create-namespace --timeout 600s --wait
 
 # Or upgrade existing deployment
-helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
-  --namespace mcp-box --timeout 600s --wait
+helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
+  --namespace mcpcan --timeout 600s --wait
 ```
 
 ## Deployment Management
@@ -104,25 +104,25 @@ helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
 
 ```bash
 # Upgrade to new version
-helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
+helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
   --set global.version=v1.1.0 \
-  --namespace mcp-box --timeout 600s --wait
+  --namespace mcpcan --timeout 600s --wait
 
 # View upgrade history
-helm history mcp-box --namespace mcp-box
+helm history mcpcan --namespace mcpcan
 ```
 
 ### Uninstall Deployment
 
 ```bash
 # Uninstall Helm Release
-helm uninstall mcp-box --namespace mcp-box
+helm uninstall mcpcan --namespace mcpcan
 
 # Clean up namespace
-kubectl delete namespace mcp-box
+kubectl delete namespace mcpcan
 
 # Clean up persistent data (use with caution)
-sudo rm -rf /data/mcp-box
+sudo rm -rf /data/mcpcan
 ```
 
 ### Common Management Commands
@@ -131,46 +131,46 @@ sudo rm -rf /data/mcp-box
 
 ```bash
 # View Helm Release status
-helm status mcp-box --namespace mcp-box
+helm status mcpcan --namespace mcpcan
 
 # View Pod status
-kubectl get pods -n mcp-box
+kubectl get pods -n mcpcan
 
 # View service status
-kubectl get svc -n mcp-box
+kubectl get svc -n mcpcan
 
 # View Ingress status
-kubectl get ingress -n mcp-box
+kubectl get ingress -n mcpcan
 ```
 
 #### View Logs
 
 ```bash
 # View specific service logs
-kubectl logs -n mcp-box -l app=mcp-gateway
-kubectl logs -n mcp-box -l app=mcp-authz
-kubectl logs -n mcp-box -l app=mcp-market
-kubectl logs -n mcp-box -l app=mcp-web
+kubectl logs -n mcpcan -l app=mcp-gateway
+kubectl logs -n mcpcan -l app=mcp-authz
+kubectl logs -n mcpcan -l app=mcp-market
+kubectl logs -n mcpcan -l app=mcp-web
 
 # View logs in real-time
-kubectl logs -n mcp-box -l app=mcp-gateway -f
+kubectl logs -n mcpcan -l app=mcp-gateway -f
 ```
 
 #### Troubleshooting
 
 ```bash
 # View Pod detailed information
-kubectl describe pod <pod-name> -n mcp-box
+kubectl describe pod <pod-name> -n mcpcan
 
 # View events
-kubectl get events -n mcp-box --sort-by='.lastTimestamp'
+kubectl get events -n mcpcan --sort-by='.lastTimestamp'
 
 # Enter Pod for debugging
-kubectl exec -it <pod-name> -n mcp-box -- /bin/sh
+kubectl exec -it <pod-name> -n mcpcan -- /bin/sh
 
 # Port forwarding (local debugging)
-kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcp-box
-kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcp-box
+kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcpcan
+kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 ```
 
 ## Shell Script Usage Guide
@@ -192,7 +192,7 @@ The project provides multiple utility scripts to simplify deployment and managem
 ```bash
 # Generate self-signed certificate
 # Usage: ./scripts/generate-simple-cert.sh <domain> <validity-days>
-./scripts/generate-simple-cert.sh demo.mcp-box.com 365
+./scripts/generate-simple-cert.sh demo.mcpcan.com 365
 
 # Generated certificate files
 ls certs/
@@ -215,41 +215,41 @@ You can override default configurations using `--set` parameters:
 
 ```bash
 # Custom image version
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set global.version=v1.2.3 \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # Custom domain
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set global.domain=my-custom-domain.com \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # Custom resource limits
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set services.gateway.resources.limits.memory=512Mi \
   --set services.gateway.resources.limits.cpu=500m \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # Disable a service
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set services.market.enabled=false \
-  --namespace mcp-box
+  --namespace mcpcan
 ```
 
 ### Multi-Environment Deployment
 
 ```bash
 # Development environment
-helm install mcp-box-dev ./helm -f helm/values-dev.yaml \
-  --namespace mcp-box-dev --create-namespace
+helm install mcpcan-dev ./helm -f helm/values-dev.yaml \
+  --namespace mcpcan-dev --create-namespace
 
 # Staging environment
-helm install mcp-box-staging ./helm -f helm/values-staging.yaml \
-  --namespace mcp-box-staging --create-namespace
+helm install mcpcan-staging ./helm -f helm/values-staging.yaml \
+  --namespace mcpcan-staging --create-namespace
 
 # Production environment
-helm install mcp-box-prod ./helm -f helm/values-prod.yaml \
-  --namespace mcp-box-prod --create-namespace
+helm install mcpcan-prod ./helm -f helm/values-prod.yaml \
+  --namespace mcpcan-prod --create-namespace
 ```
 
 ## Environment Dependencies Installation Guide
@@ -293,7 +293,7 @@ kubectl version --client
 
 ### 3. NGINX Ingress Controller
 
-MCP-Box depends on NGINX Ingress Controller to handle external traffic routing. Please ensure it's installed:
+MCPCan depends on NGINX Ingress Controller to handle external traffic routing. Please ensure it's installed:
 
 **Option A: Install using Helm (Recommended)**
 ```bash
@@ -355,7 +355,7 @@ Based on Kubernetes microservice architecture, including the following core comp
 ## Frequently Asked Questions
 
 ### Q: Pod stuck in Pending state?
-A: Check if node resources are sufficient, view event information with `kubectl describe pod <pod-name> -n mcp-box`.
+A: Check if node resources are sufficient, view event information with `kubectl describe pod <pod-name> -n mcpcan`.
 
 ### Q: Cannot access services?
 A: Check Ingress configuration and domain resolution, ensure firewall rules are correct.
@@ -369,7 +369,7 @@ A: After modifying values.yaml file, use `helm upgrade` command to update deploy
 ## Technical Support
 
 If you encounter issues, please:
-1. View logs: `kubectl logs -n mcp-box <pod-name>`
-2. Check events: `kubectl get events -n mcp-box`
+1. View logs: `kubectl logs -n mcpcan <pod-name>`
+2. Check events: `kubectl get events -n mcpcan`
 3. Submit Issue to project repository
 4. Contact technical support team: opensource@kymo.cn

@@ -6,13 +6,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.init.name | default "mcp-init" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   template:
     metadata:
       labels:
         app: {{ .Values.services.init.name | default "mcp-init" }}
-        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
@@ -30,7 +30,7 @@ spec:
           mountPath: {{ .Values.services.init.k8sHostPath.mountPath | default "/app/config/kube" }}
           readOnly: {{ .Values.services.init.k8sHostPath.readOnly | default true }}
         - name: data-volume
-          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
       volumes:
       - name: config-volume
         configMap:
@@ -44,7 +44,7 @@ spec:
           type: {{ .Values.services.init.k8sHostPath.type }}
       - name: data-volume
         hostPath:
-          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}
           type: DirectoryOrCreate
       restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}

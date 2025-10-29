@@ -1,6 +1,6 @@
-# MCP-Box 部署指南
+# mcpcan 部署指南
 
-## 环境依赖
+## [环境依赖安装说明](#环境依赖安装说明)
 
 在开始部署之前，请确保您的环境满足以下要求：
 
@@ -16,8 +16,8 @@
 
 ```bash
 # 克隆项目仓库
-git clone https://github.com/Kymo-MCP/mcp-box-deploy.git
-cd mcp-box-deploy
+git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
+cd mcpcan-deploy
 ```
 
 ### 2. 基本配置部署
@@ -26,11 +26,11 @@ cd mcp-box-deploy
 
 ```bash
 # 基本部署（使用 IP 访问, 修改 ./helm/values.yaml 中的 publicIP）
-helm install mcp-box ./helm --namespace mcp-box --create-namespace --timeout 600s --wait
+helm install mcpcan ./helm --namespace mcpcan --create-namespace --timeout 600s --wait
 
 # 查看部署状态
-kubectl get pods -n mcp-box
-kubectl get svc -n mcp-box
+kubectl get pods -n mcpcan
+kubectl get svc -n mcpcan
 ```
 
 部署完成后，可通过以下方式访问：
@@ -54,14 +54,14 @@ cp helm/values.yaml helm/values-custom.yaml
 ```yaml
 # Global configuration
 global:
-  # 设置您的域名, 例如: demo.mcp-box.com, 存在 domain 时 publicIP 配置将被忽略
-  domain: "demo.mcp-box.com"
+  # 设置您的域名, 例如: demo.mcpcan.com, 存在 domain 时 publicIP 配置将被忽略
+  domain: "demo.mcpcan.com"
   
 # Ingress configuration
 ingress:
   tls:
     enabled: true
-    # 如果使用自签名证书（例如：demo.mcp-box.com），请配置证书内容
+    # 如果使用自签名证书（例如：demo.mcpcan.com），请配置证书内容
     # 注意：自签名证书在浏览器中会显示安全警告
     # 使用自签名证书安装，系统生成的MCP访问配置可能会导致无法正常访问，此时可以手动将配置中协议改为 http
     #　生产环境建议使用正式证书
@@ -89,12 +89,12 @@ ls certs/
 
 ```bash
 # 使用自定义配置部署
-helm install mcp-box ./helm -f helm/values-custom.yaml \
-  --namespace mcp-box --create-namespace --timeout 600s --wait
+helm install mcpcan ./helm -f helm/values-custom.yaml \
+  --namespace mcpcan --create-namespace --timeout 600s --wait
 
 # 或升级现有部署
-helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
-  --namespace mcp-box --timeout 600s --wait
+helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
+  --namespace mcpcan --timeout 600s --wait
 ```
 
 ## 部署管理
@@ -103,25 +103,25 @@ helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
 
 ```bash
 # 升级到新版本
-helm upgrade mcp-box ./helm -f helm/values-custom.yaml \
+helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
   --set global.version=v1.1.0 \
-  --namespace mcp-box --timeout 600s --wait
+  --namespace mcpcan --timeout 600s --wait
 
 # 查看升级历史
-helm history mcp-box --namespace mcp-box
+helm history mcpcan --namespace mcpcan
 ```
 
 ### 卸载部署
 
 ```bash
 # 卸载 Helm Release
-helm uninstall mcp-box --namespace mcp-box
+helm uninstall mcpcan --namespace mcpcan
 
 # 清理命名空间
-kubectl delete namespace mcp-box
+kubectl delete namespace mcpcan
 
 # 清理持久化数据（谨慎操作）
-sudo rm -rf /data/mcp-box
+sudo rm -rf /data/mcpcan
 ```
 
 ### 常用管理命令
@@ -130,46 +130,46 @@ sudo rm -rf /data/mcp-box
 
 ```bash
 # 查看 Helm Release 状态
-helm status mcp-box --namespace mcp-box
+helm status mcpcan --namespace mcpcan
 
 # 查看 Pod 状态
-kubectl get pods -n mcp-box
+kubectl get pods -n mcpcan
 
 # 查看服务状态
-kubectl get svc -n mcp-box
+kubectl get svc -n mcpcan
 
 # 查看 Ingress 状态
-kubectl get ingress -n mcp-box
+kubectl get ingress -n mcpcan
 ```
 
 #### 日志查看
 
 ```bash
 # 查看特定服务日志
-kubectl logs -n mcp-box -l app=mcp-gateway
-kubectl logs -n mcp-box -l app=mcp-authz
-kubectl logs -n mcp-box -l app=mcp-market
-kubectl logs -n mcp-box -l app=mcp-web
+kubectl logs -n mcpcan -l app=mcp-gateway
+kubectl logs -n mcpcan -l app=mcp-authz
+kubectl logs -n mcpcan -l app=mcp-market
+kubectl logs -n mcpcan -l app=mcp-web
 
 # 实时查看日志
-kubectl logs -n mcp-box -l app=mcp-gateway -f
+kubectl logs -n mcpcan -l app=mcp-gateway -f
 ```
 
 #### 故障排查
 
 ```bash
 # 查看 Pod 详细信息
-kubectl describe pod <pod-name> -n mcp-box
+kubectl describe pod <pod-name> -n mcpcan
 
 # 查看事件
-kubectl get events -n mcp-box --sort-by='.lastTimestamp'
+kubectl get events -n mcpcan --sort-by='.lastTimestamp'
 
 # 进入 Pod 调试
-kubectl exec -it <pod-name> -n mcp-box -- /bin/sh
+kubectl exec -it <pod-name> -n mcpcan -- /bin/sh
 
 # 端口转发（本地调试）
-kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcp-box
-kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcp-box
+kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcpcan
+kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 ```
 
 ## Shell 脚本使用说明
@@ -191,7 +191,7 @@ kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcp-box
 ```bash
 # 生成自签名证书
 # 用法: ./scripts/generate-simple-cert.sh <域名> <有效期天数>
-./scripts/generate-simple-cert.sh demo.mcp-box.com 365
+./scripts/generate-simple-cert.sh demo.mcpcan.com 365
 
 # 生成的证书文件
 ls certs/
@@ -215,41 +215,41 @@ ls certs/
 
 ```bash
 # 自定义镜像版本
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set global.version=v1.2.3 \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # 自定义域名
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set global.domain=my-custom-domain.com \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # 自定义资源限制
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set services.gateway.resources.limits.memory=512Mi \
   --set services.gateway.resources.limits.cpu=500m \
-  --namespace mcp-box
+  --namespace mcpcan
 
 # 禁用某个服务
-helm upgrade --install mcp-box ./helm \
+helm upgrade --install mcpcan ./helm \
   --set services.market.enabled=false \
-  --namespace mcp-box
+  --namespace mcpcan
 ```
 
 ### 多环境部署
 
 ```bash
 # 开发环境
-helm install mcp-box-dev ./helm -f helm/values-dev.yaml \
-  --namespace mcp-box-dev --create-namespace
+helm install mcpcan-dev ./helm -f helm/values-dev.yaml \
+  --namespace mcpcan-dev --create-namespace
 
 # 测试环境
-helm install mcp-box-staging ./helm -f helm/values-staging.yaml \
-  --namespace mcp-box-staging --create-namespace
+helm install mcpcan-staging ./helm -f helm/values-staging.yaml \
+  --namespace mcpcan-staging --create-namespace
 
 # 生产环境
-helm install mcp-box-prod ./helm -f helm/values-prod.yaml \
-  --namespace mcp-box-prod --create-namespace
+helm install mcpcan-prod ./helm -f helm/values-prod.yaml \
+  --namespace mcpcan-prod --create-namespace
 ```
 
 ## 注意事项
@@ -303,7 +303,7 @@ kubectl version --client
 
 #### 3. NGINX Ingress Controller
 
-MCP-Box 依赖 NGINX Ingress Controller 来处理外部流量路由，请确保已安装：
+mcpcan 依赖 NGINX Ingress Controller 来处理外部流量路由，请确保已安装：
 
 **选项 A: 使用 Helm 安装（推荐）**
 ```bash
@@ -345,7 +345,7 @@ kubectl get svc -n ingress-nginx
 ## 常见问题
 
 ### Q: Pod 一直处于 Pending 状态？
-A: 检查节点资源是否充足，查看 `kubectl describe pod <pod-name> -n mcp-box` 的事件信息。
+A: 检查节点资源是否充足，查看 `kubectl describe pod <pod-name> -n mcpcan` 的事件信息。
 
 ### Q: 无法访问服务？
 A: 检查 Ingress 配置和域名解析，确保防火墙规则正确。
@@ -359,7 +359,7 @@ A: 修改 values.yaml 文件后，使用 `helm upgrade` 命令更新部署。
 ## 技术支持
 
 如遇到问题，请：
-1. 查看日志：`kubectl logs -n mcp-box <pod-name>`
-2. 检查事件：`kubectl get events -n mcp-box`
+1. 查看日志：`kubectl logs -n mcpcan <pod-name>`
+2. 检查事件：`kubectl get events -n mcpcan`
 3. 提交 Issue 到项目仓库
 4. 联系技术支持团队

@@ -7,7 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
     deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
@@ -19,7 +19,7 @@ spec:
     metadata:
       labels:
         app: {{ .Values.services.market.name | default "mcp-market" }}
-        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -41,7 +41,7 @@ spec:
           mountPath: "/app/config"
           readOnly: true
         - name: data-volume
-          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcp-box" }}
+          mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
       volumes:
       - name: config-volume
         configMap:
@@ -51,7 +51,7 @@ spec:
             path: "market.yaml"
       - name: data-volume
         hostPath:
-          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcp-box" }}
+          path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}
           type: DirectoryOrCreate
 ---
 {{- if .Values.services.market.service.port }}
@@ -62,7 +62,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.services.market.service.type | default "ClusterIP" }}
   ports:
@@ -83,7 +83,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
   {{- $ann := (merge (.Values.services.market.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
   {{- if gt (len $ann) 0 }}
   annotations:

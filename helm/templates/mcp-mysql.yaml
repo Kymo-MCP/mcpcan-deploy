@@ -7,7 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: mysql
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 data:
   mysql.conf: |
     [mysqld]
@@ -30,7 +30,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: mysql
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 data:
   init.sql: |
     CREATE DATABASE IF NOT EXISTS {{ .Values.infrastructure.mysql.auth.database | default "mcp_market" }};
@@ -46,7 +46,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: mysql
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   serviceName: {{ .Values.infrastructure.mysql.name | default "mysql" }}
   replicas: 1
@@ -57,7 +57,7 @@ spec:
     metadata:
       labels:
         app: mysql
-        {{- include "mcp-box.selectorLabels" . | nindent 8 }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - name: {{ .Values.infrastructure.mysql.name | default "mysql" }}
@@ -124,7 +124,7 @@ spec:
       {{- if .Values.infrastructure.mysql.hostPath.enabled }}
       - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
         hostPath:
-          path: {{ .Values.infrastructure.mysql.hostPath.path | default "/data/mcp-box/mysql" }}
+          path: {{ .Values.infrastructure.mysql.hostPath.path | default "/data/mcpcan/mysql" }}
           type: {{ .Values.infrastructure.mysql.hostPath.type | default "DirectoryOrCreate" }}
       {{- end }}
 ---
@@ -137,7 +137,7 @@ metadata:
     "helm.sh/resource-policy": "keep"
   labels:
     app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.infrastructure.mysql.service.type | default "ClusterIP" }}
   ports:
@@ -158,7 +158,7 @@ metadata:
   labels:
     app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
     service-type: nodeport
-    {{- include "mcp-box.labels" . | nindent 4 }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   type: NodePort
   ports:

@@ -3,7 +3,7 @@
 
 # Owner and repository name
 owner: Kymo-MCP
-repo: mcp-box-deploy
+repo: mcpcan-deploy
 
 # GitHub Pages configuration
 pages-branch: gh-pages
@@ -16,7 +16,7 @@ commit-email: 41898282+github-actions[bot]@users.noreply.github.com
 
 # Chart configuration
 charts-dir: helm
-charts-repo-url: https://kymo-mcp.github.io/mcp-box-deploy
+charts-repo-url: https://kymo-mcp.github.io/mcpcan-deploy
 
 # Package configuration
 package-path: .cr-release-packages
@@ -43,7 +43,7 @@ validate-yaml: true
 release-notes-header: |
   ## What's Changed
   
-  This release includes the following changes to the MCP-Box Helm Chart:
+  This release includes the following changes to the MCPCan Helm Chart:
 
 # Dependency update configuration
 update-dependencies: true

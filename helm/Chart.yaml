@@ -1,17 +1,17 @@
 apiVersion: v2
-name: mcp-box
-description: A Helm chart for MCP Box - Microservices Container Platform
+name: mcpcan-deploy
+description: A Helm chart for MCPCan - Microservices Container Platform
 type: application
 version: v1.0.0-dev
 appVersion: v1.0.0-dev
 keywords:
-  - mcp-box
+  - mcpcan
   - microservices
   - platform
   - kubernetes
-home: https://github.com/Kymo-MCP/MCPbox
+home: https://github.com/Kymo-MCP/mcpcan
 sources:
-  - https://github.com/Kymo-MCP/MCPbox
+  - https://github.com/Kymo-MCP/mcpcan
 maintainers:
-  - name: MCP Box Team
+  - name: MCPCan Team
     email: opensource@kymo.cn
