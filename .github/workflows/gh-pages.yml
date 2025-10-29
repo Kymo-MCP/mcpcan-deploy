@@ -51,7 +51,7 @@ jobs:
           cp .cr-release-packages/*.tgz _site/ 2>/dev/null || true
           
           # Copy Helm README as main page with Jekyll front matter
-          cat > _site/index.md << 'EOF'
+          cat > _site/index.html << 'EOF'
           ---
           layout: default
           title: MCPCan Helm Charts
@@ -60,7 +60,7 @@ jobs:
           EOF
           
           # Append the Helm README content
-          cat helm/README.md >> _site/index.md
+          cat helm/README.md >> _site/index.html
           
           # Create a simple _config.yml for Jekyll
           cat > _site/_config.yml << 'EOF'
