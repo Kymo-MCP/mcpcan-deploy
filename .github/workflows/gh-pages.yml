@@ -65,11 +65,15 @@ jobs:
           # Create a simple _config.yml for Jekyll
           cat > _site/_config.yml << 'EOF'
           title: MCPCan Helm Charts
-          description: Official Helm repository for MCPCan
-          theme: minima
+          description: Official Helm repository for MCPCan - Model Context Protocol Container Application Network
+          remote_theme: pages-themes/minimal@v0.2.0
           markdown: kramdown
+          kramdown:
+            input: GFM
+            hard_wrap: false
           highlighter: rouge
           plugins:
+            - jekyll-remote-theme
             - jekyll-feed
             - jekyll-sitemap
           EOF
