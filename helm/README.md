@@ -177,7 +177,7 @@ MCPCan consists of the following components:
 
 ### Application Services
 
-- **Web Frontend**: React-based user interface (Port: 3000)
+- **Web Frontend**: Vue.js-based user interface (Port: 3000)
 - **Market Service**: Code package management and marketplace (Port: 8080)
 - **Authorization Service**: User authentication and authorization (Port: 8081)
 - **Gateway Service**: API gateway and routing (Port: 8082)

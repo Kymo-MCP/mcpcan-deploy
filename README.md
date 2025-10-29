@@ -334,14 +334,36 @@ kubectl get svc -n ingress-nginx
 
 ## Software Architecture Design
 
-Based on Kubernetes microservice architecture, including the following core components:
+MCPCan is built on a modern Kubernetes microservice architecture, providing comprehensive MCP service lifecycle management capabilities. The platform consists of the following core components:
 
-1. **Gateway Service** - MCP gateway service, responsible for request routing and authentication
-2. **Authz Service** - Authentication and authorization service
-3. **Market Service** - Market service
-4. **Web Service** - Frontend service
-5. **MySQL** - Database service
-6. **Redis** - Cache service
+### Core Services
+
+1. **MCPCan-Web** - Vue.js-based frontend service providing modern web interface for MCP service management
+2. **MCPCan-Gateway** - MCP gateway service responsible for request routing, protocol conversion, and authentication
+3. **MCPCan-Authz** - Authentication and authorization service handling user management and access control
+4. **MCPCan-Market** - MCP service marketplace for discovering, publishing, and managing MCP services
+5. **MCPCan-Init** - Initialization service for system setup and configuration
+
+### Data Storage
+
+6. **MySQL** - Primary database service for persistent data storage
+7. **Redis** - Cache service for session management and performance optimization
+
+### Technology Stack
+
+**Frontend:**
+- Framework: Vue.js 3.5+ (Composition API)
+- Language: TypeScript
+- Styling: UnoCSS, SCSS
+- UI Components: Element Plus
+- State Management: Pinia
+- Build Tool: Vite
+
+**Backend:**
+- Language: Go 1.24.2+
+- Framework: Gin, gRPC
+- Database: MySQL, Redis
+- Containerization: Docker, Kubernetes
 
 ## Important Notes
 
