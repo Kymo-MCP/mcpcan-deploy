@@ -79,6 +79,63 @@
             color: #667eea;
         }
 
+        /* Repository Links */
+        .repo-links {
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 1rem 0;
+        }
+
+        .repo-links-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .repo-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .repo-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .repo-icon {
+            font-size: 1.2rem;
+        }
+
+        .repo-text {
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .repo-links-container {
+                gap: 1rem;
+            }
+            
+            .repo-link {
+                padding: 0.4rem 0.8rem;
+            }
+            
+            .repo-text {
+                font-size: 0.8rem;
+            }
+        }
+
         /* Hero Section */
         .hero {
             padding: 4rem 0;
@@ -354,6 +411,26 @@
         </nav>
     </header>
 
+    <!-- Repository Links -->
+    <section class="repo-links">
+        <div class="container">
+            <div class="repo-links-container">
+                <a href="https://github.com/Kymo-MCP/mcpcan" class="repo-link" target="_blank">
+                    <span class="repo-icon">📦</span>
+                    <span class="repo-text">Main Project</span>
+                </a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" class="repo-link" target="_blank">
+                    <span class="repo-icon">🚀</span>
+                    <span class="repo-text">Deploy Repository</span>
+                </a>
+                <a href="https://kymo-mcp.github.io/mcpcan-deploy/" class="repo-link" target="_blank">
+                    <span class="repo-icon">⎈</span>
+                    <span class="repo-text">Helm Charts</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
@@ -563,21 +640,6 @@ kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
                         <a href="mailto:opensource@kymo.cn" class="btn btn-primary" style="margin-top: 1rem;">Contact Us</a>
                     </div>
                 </div>
-
-                <h3>Quick Links</h3>
-                <div class="code-block">
-                    <pre>
-# Main project repository
-https://github.com/Kymo-MCP/mcpcan              
-
-# Deploy project repository
-https://github.com/Kymo-MCP/mcpcan-deploy
-
-# Helm Charts repository
-https://kymo-mcp.github.io/mcpcan-deploy/
-
-</pre>
-                </div>
             </div>
         </section>
     </main>
@@ -592,7 +654,7 @@ https://kymo-mcp.github.io/mcpcan-deploy/
                 <a href="https://github.com/Kymo-MCP/mcpcan-deploy/issues" target="_blank">Issue Reporting</a>
                 <a href="mailto:opensource@kymo.cn">Contact Us</a>
             </div>
-            <p>&copy; 2024 MCPCan Project. Licensed under Apache License 2.0</p>
+            <p>&copy; 2024 MCPCan Project. Licensed under GPL-3.0 License</p>
             <p>🚀 Microservices Container Platform built for Kubernetes</p>
         </div>
     </footer>
