@@ -86,8 +86,8 @@ jobs:
           # 创建标签
           git tag -a "$TAG_NAME" -m "从分支 $BRANCH_NAME 创建发布标签 $TAG_NAME"
           
-          # 推送标签
-          git push origin "$TAG_NAME"
+          # 使用完整引用路径推送标签，避免与同名分支冲突
+          git push origin "refs/tags/$TAG_NAME"
           
           echo "✅ 成功创建并推送标签: $TAG_NAME"
           echo "📍 来源分支: $BRANCH_NAME"
