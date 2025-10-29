@@ -46,4 +46,12 @@ release-notes-header: |
   This release includes the following changes to the MCPCan Helm Chart:
 
 # Dependency update configuration
+
+# GitHub Pages integration
+pages-workflow: true
+pages-workflow-file: ".github/workflows/gh-pages.yml"
+
+# Custom index page configuration
+custom-index: true
+index-template: "helm/README.md"
 update-dependencies: true
