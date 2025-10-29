@@ -4,7 +4,7 @@ name: Release Tag
 on:
   push:                 # 自动触发
     branches:
-      - 'v[0-9]+.[0-9]+.[0-9]+'  # 只监听 v*.*.* 格式的分支
+      - 'v[0-9]+\.[0-9]+\.[0-9]+'  # 只监听 v*.*.* 格式的分支
   workflow_dispatch:       # 手动触发
     inputs:
       ReleaseTag:
