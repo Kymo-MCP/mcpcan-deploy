@@ -64,9 +64,15 @@ jobs:
             exit 1
           fi
           
-          # Copy homepage
-          echo "🏠 Copying homepage..."
+          # Copy homepage and index.yaml
+          echo "🏠 Copying homepage and index files..."
           cp index.html _site/
+          
+          # Ensure index.yaml exists in root for fallback
+          if [ -f "index.yaml" ]; then
+            echo "📋 Using existing index.yaml as fallback"
+            cp index.yaml _site/index.yaml.backup
+          fi
           
           # Disable Jekyll
           touch _site/.nojekyll
