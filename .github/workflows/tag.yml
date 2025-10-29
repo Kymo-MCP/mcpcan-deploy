@@ -7,7 +7,7 @@ on:
         description: '是否创建发布标签'
         required: true
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
