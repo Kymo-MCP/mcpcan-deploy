@@ -436,11 +436,18 @@ helm install mcpcan mcpcan/mcpcan
 # 或从本地 Chart 安装
 helm install mcpcan ./helm/
 
-# 自定义安装
+# 公网IP自定义安装
+helm install mcpcan ./helm/ \
+  --set global.publicIP=192.168.1.100 \
+  --set infrastructure.mysql.auth.rootPassword=secure-password \
+  --set infrastructure.redis.auth.password=secure-password
+
+# 域名自定义安装
 helm install mcpcan ./helm/ \
   --set global.domain=mcp.example.com \
-  --set global.publicIP=192.168.1.100 \
-  --set infrastructure.mysql.auth.rootPassword=secure-password</pre>
+  --set infrastructure.mysql.auth.rootPassword=secure-password \
+  --set infrastructure.redis.auth.password=secure-password
+</pre>
                 </div>
 
                 <h3>验证安装</h3>
@@ -545,14 +552,18 @@ kubectl get services -l app.kubernetes.io/instance=mcpcan</pre>
 
                 <h3>快速链接</h3>
                 <div class="code-block">
-                    <pre># Helm 仓库地址
-https://kymo-mcp.github.io/mcpcan-deploy/
+                    <pre>
+# 主项目仓库地址
+https://github.com/Kymo-MCP/mcpcan              
 
-# GitHub 仓库
+# Deploy 项目仓库地址
 https://github.com/Kymo-MCP/mcpcan-deploy
 
-# 主项目仓库
-https://github.com/Kymo-MCP/mcpcan</pre>
+# Helm Charts仓库地址
+https://kymo-mcp.github.io/mcpcan-deploy/
+
+
+</pre>
                 </div>
             </div>
         </section>
