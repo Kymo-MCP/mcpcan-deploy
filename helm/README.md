@@ -531,4 +531,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../LIC
 
 ---
 
-**Note**: This chart is designed for Kubernetes environments. For Docker Compose deployment, please refer to the main repository documentation.
+**Note**: This chart is designed for Kubernetes environments. For Docker Compose deployment, please refer to the main repository documentation.# Test trigger
