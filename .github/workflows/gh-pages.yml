@@ -19,207 +19,44 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
-env:
-  HELM_VERSION: '3.12.0'
-  PAGES_URL: 'https://kymo-mcp.github.io/mcpcan-deploy/'
-  RETRY_COUNT: 3
-  RETRY_DELAY: 10
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      deployment-status: ${{ steps.build-status.outputs.status }}
-      artifact-url: ${{ steps.upload-artifact.outputs.artifact-url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        timeout-minutes: 5
 
-      - name: 📊 Setup Pages Configuration
-        id: setup-pages
+      - name: 📊 Setup Pages
         uses: actions/configure-pages@v4
-        timeout-minutes: 2
 
       - name: 🔧 Setup Helm
-        id: setup-helm
         uses: azure/setup-helm@v3
         with:
-          version: ${{ env.HELM_VERSION }}
-        timeout-minutes: 5
+          version: '3.12.0'
 
-      - name: ✅ Verify Helm Installation
+      - name: 📦 Package Helm Chart
         run: |
-          echo "::group::Helm Version Information"
-          helm version --short
-          echo "::endgroup::"
-          
-          echo "::group::Helm Environment"
-          helm env
-          echo "::endgroup::"
-
-      - name: 🔍 Validate Helm Chart
-        id: validate-chart
-        run: |
-          echo "::group::Helm Chart Validation"
-          
-          # Check if Chart.yaml exists
-          if [[ ! -f "helm/Chart.yaml" ]]; then
-            echo "::error::Chart.yaml not found in helm/ directory"
-            exit 1
-          fi
-          
-          # Validate chart syntax
-          echo "Validating Helm chart syntax..."
-          helm lint helm/ || {
-            echo "::error::Helm chart validation failed"
-            exit 1
-          }
-          
-          # Check chart dependencies
-          echo "Checking chart dependencies..."
-          if [[ -f "helm/Chart.lock" ]]; then
-            helm dependency update helm/ || {
-              echo "::warning::Failed to update dependencies, continuing..."
-            }
-          fi
-          
-          echo "::endgroup::"
-        continue-on-error: false
-
-      - name: 📦 Package Helm Chart with Retry
-        id: package-chart
-        run: |
-          echo "::group::Packaging Helm Chart"
-          
-          # Create output directory
           mkdir -p .cr-release-packages
-          
-          # Package with retry logic
-          for i in $(seq 1 ${{ env.RETRY_COUNT }}); do
-            echo "Attempt $i of ${{ env.RETRY_COUNT }}"
-            
-            if helm package helm/ --destination .cr-release-packages/; then
-              echo "✅ Helm chart packaged successfully"
-              
-              # List packaged files
-              echo "Packaged files:"
-              ls -la .cr-release-packages/
-              
-              # Verify package integrity
-              for pkg in .cr-release-packages/*.tgz; do
-                if [[ -f "$pkg" ]]; then
-                  echo "Verifying package: $(basename "$pkg")"
-                  helm show chart "$pkg" > /dev/null || {
-                    echo "::error::Package verification failed for $pkg"
-                    exit 1
-                  }
-                fi
-              done
-              
-              echo "::endgroup::"
-              exit 0
-            else
-              echo "::warning::Packaging attempt $i failed"
-              if [[ $i -lt ${{ env.RETRY_COUNT }} ]]; then
-                echo "Retrying in ${{ env.RETRY_DELAY }} seconds..."
-                sleep ${{ env.RETRY_DELAY }}
-              fi
-            fi
-          done
-          
-          echo "::error::All packaging attempts failed"
-          echo "::endgroup::"
-          exit 1
+          helm package helm/ --destination .cr-release-packages/
 
-      - name: 📋 Generate Helm Repository Index with Retry
-        id: generate-index
+      - name: 📋 Generate Repository Index
         run: |
-          echo "::group::Generating Helm Repository Index"
-          
-          # Generate index with retry logic
-          for i in $(seq 1 ${{ env.RETRY_COUNT }}); do
-            echo "Attempt $i of ${{ env.RETRY_COUNT }}"
-            
-            if helm repo index .cr-release-packages/ --url ${{ env.PAGES_URL }}; then
-              echo "✅ Repository index generated successfully"
-              
-              # Verify index file
-              if [[ -f ".cr-release-packages/index.yaml" ]]; then
-                echo "Index file size: $(wc -c < .cr-release-packages/index.yaml) bytes"
-                echo "Index entries:"
-                grep -c "name:" .cr-release-packages/index.yaml || echo "No entries found"
-              else
-                echo "::error::Index file not generated"
-                exit 1
-              fi
-              
-              echo "::endgroup::"
-              exit 0
-            else
-              echo "::warning::Index generation attempt $i failed"
-              if [[ $i -lt ${{ env.RETRY_COUNT }} ]]; then
-                echo "Retrying in ${{ env.RETRY_DELAY }} seconds..."
-                sleep ${{ env.RETRY_DELAY }}
-              fi
-            fi
-          done
-          
-          echo "::error::All index generation attempts failed"
-          echo "::endgroup::"
-          exit 1
+          helm repo index .cr-release-packages/ --url https://kymo-mcp.github.io/mcpcan-deploy/
 
-      - name: 🌐 Prepare GitHub Pages Content with Error Handling
-        id: prepare-content
+      - name: 🌐 Prepare GitHub Pages Content
         run: |
-          echo "::group::Preparing GitHub Pages Content"
-          
-          # Create the pages directory structure
           mkdir -p _site
           
-          # Verify required files exist
-          if [[ ! -f ".cr-release-packages/index.yaml" ]]; then
-            echo "::error::Repository index file not found"
-            exit 1
-          fi
+          # Copy repository index and charts
+          cp .cr-release-packages/index.yaml _site/
+          cp .cr-release-packages/*.tgz _site/ 2>/dev/null || true
           
-          # Copy the Helm repository index with verification
-          echo "Copying repository index..."
-          cp .cr-release-packages/index.yaml _site/ || {
-            echo "::error::Failed to copy repository index"
-            exit 1
-          }
-          
-          # Copy packaged charts with error handling
-          echo "Copying packaged charts..."
-          chart_count=0
-          for chart in .cr-release-packages/*.tgz; do
-            if [[ -f "$chart" ]]; then
-              cp "$chart" _site/ || {
-                echo "::warning::Failed to copy chart: $(basename "$chart")"
-                continue
-              }
-              ((chart_count++))
-              echo "Copied: $(basename "$chart")"
-            fi
-          done
-          
-          if [[ $chart_count -eq 0 ]]; then
-            echo "::warning::No chart packages found to copy"
-          else
-            echo "Successfully copied $chart_count chart package(s)"
-          fi
-          
-          # Verify Helm README exists
-          if [[ ! -f "helm/README.md" ]]; then
-            echo "::error::helm/README.md not found"
-            exit 1
-          fi
-          
-          # Convert Helm README to HTML for the main page
+          # Create simple HTML page
           cat > _site/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -236,331 +73,78 @@ jobs:
                       margin: 0 auto;
                       padding: 45px;
                   }
-                  @media (max-width: 767px) {
-                      .markdown-body {
-                          padding: 15px;
-                      }
+                  .header {
+                      text-align: center;
+                      margin-bottom: 2rem;
                   }
-                  .header-nav {
-                      background: #f6f8fa;
-                      border-bottom: 1px solid #d0d7de;
-                      padding: 16px 0;
-                      margin: -45px -45px 45px -45px;
-                  }
-                  .header-nav .container {
-                      max-width: 980px;
-                      margin: 0 auto;
-                      padding: 0 45px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: space-between;
-                  }
-                  .header-nav h1 {
-                      margin: 0;
-                      font-size: 24px;
-                      color: #24292f;
-                  }
-                  .nav-links a {
-                      color: #0969da;
-                      text-decoration: none;
-                      margin-left: 16px;
-                  }
-                  .nav-links a:hover {
-                      text-decoration: underline;
-                  }
-                  .chart-info {
+                  .install-box {
                       background: #f6f8fa;
                       border: 1px solid #d0d7de;
                       border-radius: 6px;
-                      padding: 16px;
-                      margin: 16px 0;
+                      padding: 1rem;
+                      margin: 1rem 0;
                   }
-                  .chart-info h3 {
-                      margin-top: 0;
-                      color: #24292f;
-                  }
-                  .install-command {
-                      background: #f6f8fa;
-                      border: 1px solid #d0d7de;
+                  .install-box pre {
+                      background: #24292f;
+                      color: #f0f6fc;
+                      padding: 1rem;
                       border-radius: 6px;
-                      padding: 16px;
-                      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-                      font-size: 14px;
                       overflow-x: auto;
                   }
               </style>
           </head>
           <body>
-              <div class="header-nav">
-                  <div class="container">
-                      <h1>MCPCan Helm Charts</h1>
-                      <div class="nav-links">
-                          <a href="https://github.com/Kymo-MCP/mcpcan-deploy">GitHub</a>
-                          <a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Project</a>
-                          <a href="index.yaml">Repository Index</a>
-                      </div>
-                  </div>
-              </div>
               <div class="markdown-body">
-          EOF
-          
-          # Convert markdown to HTML content (simplified conversion)
-          # In a real scenario, you might want to use a proper markdown processor
-          echo "Converting README.md to HTML..."
-          python3 << 'PYTHON_EOF'
-          import re
-          import html
-          import sys
-          import traceback
-          
-          try:
-              # Read the Helm README
-              with open('helm/README.md', 'r', encoding='utf-8') as f:
-                  content = f.read()
-              
-              # Simple markdown to HTML conversion
-              # Convert headers
-              content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
-              content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
-              content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
-              content = re.sub(r'^#### (.+)$', r'<h4>\1</h4>', content, flags=re.MULTILINE)
-              
-              # Convert code blocks
-              content = re.sub(r'```(\w+)?\n(.*?)\n```', r'<pre><code>\2</code></pre>', content, flags=re.DOTALL)
-              content = re.sub(r'`([^`]+)`', r'<code>\1</code>', content)
-              
-              # Convert links
-              content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', content)
-              
-              # Convert bold and italic
-              content = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', content)
-              content = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', content)
-              
-              # Convert tables (basic)
-              lines = content.split('\n')
-              in_table = False
-              result_lines = []
-              
-              for i, line in enumerate(lines):
-                  if '|' in line and line.strip().startswith('|') and line.strip().endswith('|'):
-                      if not in_table:
-                          result_lines.append('<table>')
-                          in_table = True
-                      
-                      # Check if this is a header separator line
-                      if re.match(r'^\|[\s\-\|:]+\|$', line.strip()):
-                          continue
-                      
-                      # Check if previous line was a header (first table row)
-                      is_header = (i > 0 and '|' in lines[i-1] and 
-                                  i+1 < len(lines) and re.match(r'^\|[\s\-\|:]+\|$', lines[i+1].strip()))
-                      
-                      cells = [cell.strip() for cell in line.strip().split('|')[1:-1]]
-                      tag = 'th' if is_header else 'td'
-                      
-                      if is_header:
-                          result_lines.append('<thead><tr>')
-                      elif i > 0 and re.match(r'^\|[\s\-\|:]+\|$', lines[i-1].strip()):
-                          result_lines.append('</thead><tbody><tr>')
-                      else:
-                          result_lines.append('<tr>')
-                      
-                      for cell in cells:
-                          result_lines.append(f'<{tag}>{cell}</{tag}>')
-                      
-                      result_lines.append('</tr>')
-                  else:
-                      if in_table:
-                          result_lines.append('</tbody></table>')
-                          in_table = False
-                      result_lines.append(line)
-              
-              if in_table:
-                  result_lines.append('</tbody></table>')
-              
-              content = '\n'.join(result_lines)
-              
-              # Convert line breaks to paragraphs
-              paragraphs = content.split('\n\n')
-              content = '\n'.join(f'<p>{p.replace(chr(10), "<br>")}</p>' if p.strip() and not p.strip().startswith('<') else p for p in paragraphs)
-              
-              # Write to HTML file
-              with open('_site/index.html', 'a', encoding='utf-8') as f:
-                  f.write(content)
-              
-              print("✅ README conversion completed successfully")
-              
-          except Exception as e:
-              print(f"::error::Failed to convert README.md: {str(e)}")
-              traceback.print_exc()
-              sys.exit(1)
-          PYTHON_EOF
-          
-          # Verify HTML file was created
-          if [[ ! -f "_site/index.html" ]]; then
-            echo "::error::Failed to create index.html"
-            exit 1
-          fi
-          
-          # Close HTML tags and add additional content
-          cat >> _site/index.html << 'EOF'
-                  <div class="chart-info">
-                      <h3>📦 Quick Installation</h3>
-                      <p>Add this Helm repository and install MCPCan:</p>
-                      <div class="install-command">
-          # Add the repository<br>
-          helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/<br><br>
-          # Update repository<br>
-          helm repo update<br><br>
-          # Install MCPCan<br>
-          helm install mcpcan mcpcan/mcpcan
-                      </div>
+                  <div class="header">
+                      <h1>🚀 MCPCan Helm Charts</h1>
+                      <p>Official Helm repository for MCPCan - Model Context Protocol Container Application Network</p>
                   </div>
                   
-                  <div class="chart-info">
-                      <h3>📋 Available Charts</h3>
+                  <div class="install-box">
+                      <h2>📦 Quick Installation</h2>
+                      <pre><code># Add the repository
+          helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
+
+          # Update repository
+          helm repo update
+
+          # Install MCPCan
+          helm install mcpcan mcpcan/mcpcan</code></pre>
+                  </div>
+                  
+                  <div class="install-box">
+                      <h2>📋 Available Charts</h2>
                       <ul>
                           <li><strong>mcpcan</strong> - Complete MCPCan platform with all services</li>
                       </ul>
-                      <p>View the <a href="index.yaml">repository index</a> for detailed chart information.</p>
+                      <p>📄 <a href="index.yaml">View Repository Index</a></p>
+                      <p>🔗 <a href="https://github.com/Kymo-MCP/mcpcan-deploy">GitHub Repository</a></p>
+                      <p>🏠 <a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Project</a></p>
+                  </div>
+                  
+                  <div class="install-box">
+                      <h2>📖 Documentation</h2>
+                      <p>For detailed documentation and configuration options, please visit:</p>
+                      <ul>
+                          <li><a href="https://github.com/Kymo-MCP/mcpcan-deploy/blob/main/helm/README.md">Helm Chart Documentation</a></li>
+                          <li><a href="https://github.com/Kymo-MCP/mcpcan">MCPCan Main Project</a></li>
+                      </ul>
                   </div>
               </div>
           </body>
           </html>
           EOF
-          
-          # Verify final HTML file
-          if [[ ! -s "_site/index.html" ]]; then
-            echo "::error::Generated HTML file is empty or invalid"
-            exit 1
-          fi
-          
-          # Display site structure
-          echo "Generated site structure:"
-          find _site -type f -exec ls -la {} \;
-          
-          echo "::endgroup::"
-          echo "✅ GitHub Pages content prepared successfully"
 
-      - name: 🔍 Validate Generated Content
-        id: validate-content
-        run: |
-          echo "::group::Validating Generated Content"
-          
-          # Check required files
-          required_files=("_site/index.html" "_site/index.yaml")
-          for file in "${required_files[@]}"; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file missing: $file"
-              exit 1
-            fi
-            echo "✅ Found: $file ($(wc -c < "$file") bytes)"
-          done
-          
-          # Validate HTML structure
-          if ! grep -q "<html" "_site/index.html"; then
-            echo "::error::Invalid HTML structure in index.html"
-            exit 1
-          fi
-          
-          # Validate YAML structure
-          if ! python3 -c "import yaml; yaml.safe_load(open('_site/index.yaml'))"; then
-            echo "::error::Invalid YAML structure in index.yaml"
-            exit 1
-          fi
-          
-          echo "::endgroup::"
-          echo "✅ Content validation completed successfully"
-
-      - name: 📤 Upload Artifact with Retry
-        id: upload-artifact
+      - name: 📤 Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '_site'
-        timeout-minutes: 10
 
-      - name: 📊 Set Build Status
-        id: build-status
-        if: always()
-        run: |
-          if [[ "${{ job.status }}" == "success" ]]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "✅ Build completed successfully"
-          else
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "❌ Build failed"
-          fi
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 15
-    if: needs.build.outputs.deployment-status == 'success' || needs.build.result == 'success'
-    steps:
-      - name: 🚀 Deploy to GitHub Pages with Retry
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        timeout-minutes: 10
 
-      - name: 🔍 Verify Deployment
-        if: steps.deployment.outcome == 'success'
+      - name: ✅ Deployment Complete
         run: |
-          echo "::group::Verifying Deployment"
-          
-          deployment_url="${{ steps.deployment.outputs.page_url }}"
-          if [[ -z "$deployment_url" ]]; then
-            echo "::warning::Deployment URL not available for verification"
-            exit 0
-          fi
-          
-          echo "Waiting for site to be available..."
-          sleep 30
-          
-          # Check if site is accessible (with retry)
-          for i in $(seq 1 5); do
-            echo "Verification attempt $i of 5"
-            
-            if curl -s -f -L "$deployment_url" > /dev/null; then
-              echo "✅ Site is accessible at: $deployment_url"
-              echo "::endgroup::"
-              exit 0
-            else
-              echo "::warning::Site not yet accessible, retrying..."
-              sleep 15
-            fi
-          done
-          
-          echo "::warning::Site verification failed, but deployment may still be in progress"
-          echo "::endgroup::"
-
-  notify:
-    runs-on: ubuntu-latest
-    needs: [build, deploy]
-    if: always()
-    timeout-minutes: 5
-    steps:
-      - name: 📢 Deployment Notification
-        run: |
-          echo "::group::Deployment Summary"
-          
-          build_status="${{ needs.build.result }}"
-          deploy_status="${{ needs.deploy.result }}"
-          
-          echo "Build Status: $build_status"
-          echo "Deploy Status: $deploy_status"
-          
-          if [[ "$build_status" == "success" && "$deploy_status" == "success" ]]; then
-            echo "🎉 GitHub Pages deployment completed successfully!"
-            echo "🌐 Site URL: ${{ needs.deploy.outputs.page_url || env.PAGES_URL }}"
-          elif [[ "$build_status" == "success" && "$deploy_status" != "success" ]]; then
-            echo "⚠️ Build succeeded but deployment failed"
-            echo "Please check the deployment logs for details"
-          elif [[ "$build_status" != "success" ]]; then
-            echo "❌ Build failed - deployment was skipped"
-            echo "Please check the build logs for details"
-          fi
-          
-          echo "::endgroup::"
+          echo "🎉 GitHub Pages deployed successfully!"
+          echo "🌐 Site URL: ${{ steps.deployment.outputs.page_url }}"
