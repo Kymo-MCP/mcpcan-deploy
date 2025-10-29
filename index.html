@@ -429,25 +429,39 @@ helm repo update</pre>
                 </div>
 
                 <h3>Install MCPCan</h3>
+                
+                <h4>Option 1: Install from Helm Repository (Recommended)</h4>
                 <div class="code-block">
-                    <pre># Install with default configuration
-helm install mcpcan mcpcan/mcpcan
-
-# Or install from local Chart
-helm install mcpcan ./helm/
+                    <pre># Install stable release from remote repository
+helm install mcpcan mcpcan/mcpcan-deploy
 
 # Custom installation with public IP
-helm install mcpcan ./helm/ \
+helm install mcpcan mcpcan/mcpcan-deploy \
   --set global.publicIP=192.168.1.100 \
   --set infrastructure.mysql.auth.rootPassword=secure-password \
   --set infrastructure.redis.auth.password=secure-password
 
 # Custom installation with domain
-helm install mcpcan ./helm/ \
+helm install mcpcan mcpcan/mcpcan-deploy \
   --set global.domain=mcp.example.com \
   --set infrastructure.mysql.auth.rootPassword=secure-password \
-  --set infrastructure.redis.auth.password=secure-password
-</pre>
+  --set infrastructure.redis.auth.password=secure-password</pre>
+                </div>
+
+                <h4>Option 2: Install from Local Chart (Development)</h4>
+                <div class="code-block">
+                    <pre># Clone repository first
+git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
+cd mcpcan-deploy
+
+# Install from local Chart directory
+helm install mcpcan ./helm/
+
+# Custom installation with local Chart
+helm install mcpcan ./helm/ \
+  --set global.publicIP=192.168.1.100 \
+  --set infrastructure.mysql.auth.rootPassword=secure-password \
+  --set infrastructure.redis.auth.password=secure-password</pre>
                 </div>
 
                 <h3>Verify Installation</h3>
