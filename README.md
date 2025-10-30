@@ -8,9 +8,9 @@ Before starting deployment, please ensure your environment meets the following r
 - **Helm**: 3.0 or higher
 - **NGINX Ingress Controller**: Required if ingress is enabled (for domain access)
 - **Persistent Storage**: For data persistence
-- **Resource Requirements**: At least 2GB RAM and 2 CPU cores
+- **Resource Requirements**: At least 4GB RAM and 2 CPU cores
 
-## Quick Start
+## Quick Start ([View Helm Chart Repository:https://kymo-mcp.github.io/mcpcan-deploy/](https://kymo-mcp.github.io/mcpcan-deploy/))
 
 ### 1. Clone Repository
 
@@ -254,82 +254,45 @@ helm install mcpcan-prod ./helm -f helm/values-prod.yaml \
 
 ## Environment Dependencies Installation Guide
 
-### 1. Kubernetes Cluster
+### One-Click Runtime Environment Installation (Recommended)
 
-**Option A: Using K3s (Recommended for development and testing)**
+For clean environments, we recommend using the provided one-click installation script:
+
 ```bash
-# Install K3s
-curl -sfL https://get.k3s.io | sh -
+# Install complete runtime environment (K3s + Helm + Ingress-Nginx)
+./scripts/install-run-environment.sh
 
-# Or use the script provided by the project (Recommended: installs K3s, ingress-nginx, helm by default)
-./scripts/install-k3s.sh
+# Use China mirror sources for faster installation
+./scripts/install-run-environment.sh --cn
 
-# Verify installation
-kubectl get nodes
+# View all available options
+./scripts/install-run-environment.sh --help
 ```
 
-**Option B: Using Standard Kubernetes**
+**This script automatically installs the following components:**
+- **K3s**: Lightweight Kubernetes distribution
+- **Helm**: Kubernetes package manager
+- **Ingress-Nginx**: Ingress controller for handling external traffic routing
+
+### Manual Installation (Optional)
+
+If you need custom installation or already have some components, you can choose manual installation:
+
+#### 1. Kubernetes Cluster
 - Kubernetes version >= 1.20
-- At least 2GB available memory
-- At least 2 CPU cores
+- At least 2GB available memory and 2 CPU cores
 
-### 2. Required Tools
-
-Ensure the following tools are installed:
-
+#### 2. Helm Package Manager
 ```bash
-# Helm 3.x
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-# kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
-
-# Verify installation
-helm version
-kubectl version --client
 ```
 
-### 3. NGINX Ingress Controller
-
-MCPCan depends on NGINX Ingress Controller to handle external traffic routing. Please ensure it's installed:
-
-**Option A: Install using Helm (Recommended)**
+#### 3. NGINX Ingress Controller
 ```bash
-# Add NGINX Ingress Helm repository
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-
-# Install NGINX Ingress Controller
 helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.service.type=NodePort \
-  --set controller.service.nodePorts.http=30080 \
-  --set controller.service.nodePorts.https=30443
-
-# Verify installation
-kubectl get pods -n ingress-nginx
-kubectl get svc -n ingress-nginx
-```
-
-**Option B: Use project-provided configuration file**
-```bash
-# Use project-provided NGINX Ingress configuration
-kubectl apply -f scripts/nginx-ingress-controller.yaml
-
-# Verify installation
-kubectl get pods -n ingress-nginx
-```
-
-**Verify Ingress Controller Status**
-```bash
-# Check if Ingress Controller is running normally
-kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
-
-# Check service ports
-kubectl get svc -n ingress-nginx
+  --namespace ingress-nginx --create-namespace \
+  --set controller.service.type=NodePort
 ```
 
 ## Software Architecture Design
