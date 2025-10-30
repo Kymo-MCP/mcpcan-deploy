@@ -177,7 +177,20 @@ kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 
 The project provides multiple utility scripts to simplify deployment and management:
 
-### 1. K3s Management Scripts
+### 1. One-Click Runtime Environment Installation Script
+
+```bash
+# Install complete runtime environment (K3s + Helm + Ingress-Nginx)
+./scripts/install-run-environment.sh
+
+# Use China mirror sources for faster installation
+./scripts/install-run-environment.sh --cn
+
+# View all available options
+./scripts/install-run-environment.sh --help
+```
+
+### 2. K3s Management Scripts
 
 ```bash
 # Install K3s
@@ -187,7 +200,21 @@ The project provides multiple utility scripts to simplify deployment and managem
 ./scripts/uninstall-k3s.sh
 ```
 
-### 2. Certificate Generation Script
+### 3. Helm Installation Script
+
+```bash
+# Install Helm package manager
+./scripts/install-helm.sh
+```
+
+### 4. Ingress-Nginx Installation Script
+
+```bash
+# Install Ingress-Nginx controller
+./scripts/install-ingress-nginx.sh
+```
+
+### 5. Certificate Generation Script
 
 ```bash
 # Generate self-signed certificate
@@ -200,7 +227,17 @@ ls certs/
 # tls.key - Private key file
 ```
 
-### 3. Helm Package Management
+### 6. Image Management Scripts
+
+```bash
+# Load offline images
+./scripts/load-images.sh
+
+# Interactive Bash environment
+./scripts/bash.sh
+```
+
+### 7. Helm Package Management
 
 ```bash
 # Push Helm package to GitHub Pages
@@ -279,6 +316,19 @@ For clean environments, we recommend using the provided one-click installation s
 If you need custom installation or already have some components, you can choose manual installation:
 
 #### 1. Kubernetes Cluster
+
+```bash
+# Install K3s using official installation script
+curl -sfL https://get.k3s.io | sh -
+
+# Or install specific version
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.5+k3s1 sh -
+
+# Verify installation
+sudo k3s kubectl get nodes
+```
+
+**Requirements:**
 - Kubernetes version >= 1.20
 - At least 2GB available memory and 2 CPU cores
 

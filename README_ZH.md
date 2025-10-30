@@ -166,17 +166,26 @@ kubectl get events -n mcpcan --sort-by='.lastTimestamp'
 
 # 进入 Pod 调试
 kubectl exec -it <pod-name> -n mcpcan -- /bin/sh
-
-# 端口转发（本地调试）
-kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcpcan
-kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 ```
 
 ## Shell 脚本使用说明
 
 项目提供了多个实用脚本来简化部署和管理：
 
-### 1. K3s 管理脚本
+### 1. 运行环境一键安装脚本
+
+```bash
+# 一键安装完整运行环境 (K3s + Helm + Ingress-Nginx)
+./scripts/install-run-environment.sh
+
+# 使用中国镜像源加速安装
+./scripts/install-run-environment.sh --cn
+
+# 查看所有可用选项
+./scripts/install-run-environment.sh --help
+```
+
+### 2. K3s 管理脚本
 
 ```bash
 # 安装 K3s
@@ -186,7 +195,21 @@ kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 ./scripts/uninstall-k3s.sh
 ```
 
-### 2. 证书生成脚本
+### 3. Helm 安装脚本
+
+```bash
+# 安装 Helm 包管理器
+./scripts/install-helm.sh
+```
+
+### 4. Ingress-Nginx 安装脚本
+
+```bash
+# 安装 Ingress-Nginx 控制器
+./scripts/install-ingress-nginx.sh
+```
+
+### 5. 证书生成脚本
 
 ```bash
 # 生成自签名证书
@@ -199,42 +222,18 @@ ls certs/
 # tls.key - 私钥文件
 ```
 
-
-### 3. Helm 包管理
+### 6. 镜像管理脚本
 
 ```bash
-# 推送 Helm 包到 GitHub Pages
-./scripts/push-helm-pkg-to-github-pages.sh
+# 加载离线镜像
+./scripts/load-images.sh
+
+# 交互式 Bash 环境
+./scripts/bash.sh
 ```
+
 
 ## 高级配置
-
-### 自定义部署参数
-
-可以通过 `--set` 参数覆盖默认配置：
-
-```bash
-# 自定义镜像版本
-helm upgrade --install mcpcan ./helm \
-  --set global.version=v1.2.3 \
-  --namespace mcpcan
-
-# 自定义域名
-helm upgrade --install mcpcan ./helm \
-  --set global.domain=my-custom-domain.com \
-  --namespace mcpcan
-
-# 自定义资源限制
-helm upgrade --install mcpcan ./helm \
-  --set services.gateway.resources.limits.memory=512Mi \
-  --set services.gateway.resources.limits.cpu=500m \
-  --namespace mcpcan
-
-# 禁用某个服务
-helm upgrade --install mcpcan ./helm \
-  --set services.market.enabled=false \
-  --namespace mcpcan
-```
 
 ### 多环境部署
 
@@ -288,9 +287,20 @@ helm install mcpcan-prod ./helm -f helm/values-prod.yaml \
 
 如果您需要自定义安装或已有部分组件，可以选择手动安装：
 
-#### 1. Kubernetes 集群
-- Kubernetes 版本 >= 1.20
-- 至少 2GB 可用内存和 2 CPU 核心
+#### 1.  k3s 安装
+
+```bash
+# 使用官方安装脚本安装 K3s
+curl -sfL https://get.k3s.io | sh -
+
+# 或者指定版本安装
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.5+k3s1 sh -
+
+# 验证安装
+sudo k3s kubectl get nodes
+```
+
+
 
 #### 2. Helm 包管理器
 ```bash
