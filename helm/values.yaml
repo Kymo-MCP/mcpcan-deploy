@@ -264,10 +264,11 @@ services:
       host: ""
       # URL path pattern with regex capture group
       path: /api/market/(.*)
-      # Path matching type
-      pathType: Prefix
-      # Ingress annotations for URL rewriting
+      # Path matching type (ImplementationSpecific required for regex paths)
+      pathType: ImplementationSpecific
+      # Ingress annotations for URL rewriting and regex support
       annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
         nginx.ingress.kubernetes.io/rewrite-target: /market/$1
     
     # ConfigMap configuration (currently disabled)
@@ -315,10 +316,11 @@ services:
       host: ""
       # URL path pattern with regex capture group
       path: /api/authz/(.*)
-      # Path matching type
-      pathType: Prefix
-      # Ingress annotations for URL rewriting
+      # Path matching type (ImplementationSpecific required for regex paths)
+      pathType: ImplementationSpecific
+      # Ingress annotations for URL rewriting and regex support
       annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
         nginx.ingress.kubernetes.io/rewrite-target: /authz/$1
     
     # Resource limits and requests

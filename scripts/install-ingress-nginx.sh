@@ -51,9 +51,16 @@ install_ingress_nginx() {
   
   if [ "$use_china_mirror" = true ]; then
     log "Using China mirror configuration for ingress-nginx..."
-    # Create China mirror configuration file
-    create_china_mirror_config
-    helm_cmd="$helm_cmd -f $(dirname "$0")/ingress-repo-cn.yaml"
+    # Configure China mirror images directly in helm command
+    helm_cmd="$helm_cmd --set controller.image.registry=registry.cn-hangzhou.aliyuncs.com"
+    helm_cmd="$helm_cmd --set controller.image.image=google_containers/nginx-ingress-controller"
+    helm_cmd="$helm_cmd --set controller.image.tag=v1.8.1"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.registry=registry.cn-hangzhou.aliyuncs.com"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.image=google_containers/kube-webhook-certgen"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.tag=v20230407"
+    helm_cmd="$helm_cmd --set defaultBackend.image.registry=registry.cn-hangzhou.aliyuncs.com"
+    helm_cmd="$helm_cmd --set defaultBackend.image.image=google_containers/defaultbackend-amd64"
+    helm_cmd="$helm_cmd --set defaultBackend.image.tag=1.5"
   fi
   
   helm_cmd="$helm_cmd --set controller.service.type=$service_type"
@@ -70,36 +77,6 @@ install_ingress_nginx() {
     --timeout=300s
   
   info "ingress-nginx installed successfully"
-}
-
-# Function to create China mirror configuration
-create_china_mirror_config() {
-  local config_file="$(dirname "$0")/ingress-repo-cn.yaml"
-  
-  cat > "$config_file" <<EOF
-controller:
-  image:
-    registry: registry.cn-hangzhou.aliyuncs.com
-    image: google_containers/nginx-ingress-controller
-    tag: "v1.8.1"
-    digest: ""
-  
-  admissionWebhooks:
-    patch:
-      image:
-        registry: registry.cn-hangzhou.aliyuncs.com
-        image: google_containers/kube-webhook-certgen
-        tag: "v20230407"
-        digest: ""
-
-defaultBackend:
-  image:
-    registry: registry.cn-hangzhou.aliyuncs.com
-    image: google_containers/defaultbackend-amd64
-    tag: "1.5"
-EOF
-  
-  log "Created China mirror configuration file: $config_file"
 }
 
 # Parse command line arguments
