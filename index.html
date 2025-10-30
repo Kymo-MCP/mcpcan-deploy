@@ -24,12 +24,15 @@
             color: #333;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            width: 100%;
         }
 
         /* Header */
@@ -76,10 +79,13 @@
         /* Main Content */
         .main {
             background: white;
-            margin: 2rem 0;
+            margin: 2rem auto;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 20px;
         }
 
         .hero {
@@ -87,6 +93,10 @@
             color: white;
             text-align: center;
             padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .hero h1 {
@@ -99,7 +109,37 @@
             font-size: 1.2rem;
             opacity: 0.9;
             max-width: 600px;
-            margin: 0 auto;
+            margin: 0 auto 2rem auto;
+        }
+
+        .hero-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .hero-link {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-link i {
+            margin-right: 0.5rem;
         }
 
         .content {
@@ -262,6 +302,11 @@
                 gap: 1rem;
             }
 
+            .main {
+                margin: 1rem auto;
+                padding: 0 10px;
+            }
+
             .content {
                 padding: 2rem 1rem;
             }
@@ -293,6 +338,14 @@
         <section class="hero">
             <h1>MCPCan Deployment Guide</h1>
             <p>A comprehensive microservices platform providing MCP service lifecycle management capabilities with modern Kubernetes architecture</p>
+            <div class="hero-links">
+                <a href="https://github.com/Kymo-MCP/mcpcan" target="_blank" class="hero-link">
+                    📦 Main Repository
+                </a>
+                <a href="https://github.com/Kymo-MCP/mcpcan-deploy" target="_blank" class="hero-link">
+                    🚀 Deployment Repository
+                </a>
+            </div>
         </section>
 
         <!-- Content -->
