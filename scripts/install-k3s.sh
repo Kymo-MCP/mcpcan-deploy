@@ -100,32 +100,53 @@ uninstall_kubernetes() {
   fi
 }
 
-# Check if helm is installed
-check_helm_installed() {
-  if command -v helm >/dev/null 2>&1; then
-    local version=$(helm version --short 2>/dev/null | cut -d'+' -f1)
-    echo "Helm is already installed: $version"
-    return 0
+
+
+# Generate external access kubeconfig
+generate_external_kubeconfig() {
+  log "Generating external access kubeconfig configuration file"
+  if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+    # Generate external access kubeconfig based on public IP
+    public_ip=$(auto_detect_node_ips | head -n1)
+    if [ -n "$public_ip" ]; then
+      # Create external access configuration directory
+      sudo mkdir -p /etc/rancher/k3s/external
+      sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/external-access.yaml
+      sudo sed -i "s|https://127.0.0.1:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
+      sudo sed -i "s|https://localhost:6443|https://$public_ip:6443|g" /etc/rancher/k3s/external-access.yaml
+      info "External access kubeconfig generated: /etc/rancher/k3s/external-access.yaml (using $public_ip:6443)"
+    fi
   else
-    echo "Helm is not installed"
-    return 1
+    error "Cannot find default kubeconfig file, external access configuration generation failed"
   fi
 }
 
-# Check if ingress-nginx is installed
-check_ingress_nginx_installed() {
-  if kubectl get namespace ingress-nginx >/dev/null 2>&1; then
-    echo "Ingress-nginx namespace exists"
-    if kubectl get deployment -n ingress-nginx ingress-nginx-controller >/dev/null 2>&1; then
-      echo "Ingress-nginx controller is installed"
-      return 0
-    else
-      echo "Ingress-nginx namespace exists but controller not found"
-      return 1
-    fi
+# Generate container internal kubeconfig
+generate_internal_kubeconfig() {
+  log "Generating container internal kubeconfig configuration file"
+  if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+    # Generate container internal https://kubernetes.default.svc:443 configuration file, kubernetes-internal.yaml
+    sudo cp /etc/rancher/k3s/k3s.yaml /etc/rancher/k3s/kubernetes-internal.yaml
+    sudo sed -i "s|https://127.0.0.1:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
+    sudo sed -i "s|https://localhost:6443|https://kubernetes.default.svc:443|g" /etc/rancher/k3s/kubernetes-internal.yaml
+    info "Container internal kubeconfig generated: /etc/rancher/k3s/kubernetes-internal.yaml"
   else
-    echo "Ingress-nginx is not installed"
-    return 1
+    error "Cannot find default kubeconfig file, internal access configuration generation failed"
+  fi
+}
+
+# Copy kubeconfig to user home directory
+copy_kubeconfig_to_home() {
+  log "Copying kubeconfig to user home directory"
+  if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+    # Copy kubeconfig to user's home directory
+    mkdir -p ~/.kube
+    sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+    sudo chown $(id -u):$(id -g) ~/.kube/config
+    info "Kubeconfig copied to ~/.kube/config"
+    export KUBECONFIG=~/.kube/config
+  else
+    error "Cannot find default kubeconfig file, copy to home directory failed"
   fi
 }
 
@@ -188,7 +209,7 @@ while [[ $# -gt 0 ]]; do
     --force) force_install=true; shift ;;
     --uninstall) uninstall=true; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) error "未知参数: $1"; usage; exit 2 ;;
+    *) error "Unknown parameter: $1"; usage; exit 2 ;;
   esac
 done
 
@@ -417,8 +438,6 @@ if [ "$node_type" = "master" ]; then
   
   # Set KUBECONFIG environment variable
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-  
-
   
   # Generate kubeconfig for external access
   generate_external_kubeconfig
