@@ -393,10 +393,26 @@
                 <div class="code-block">
                     <pre># Step 1: Add MCPCan Helm repository
 helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
-helm repo update
 
-# Step 2: Install MCPCan
-helm install mcpcan mcpcan/mcpcan-deploy --namespace mcpcan --create-namespace --timeout 600s --wait</pre>
+# Step 2: Update Helm repository
+helm repo update mcpcan
+
+# Step 3: Install latest version
+helm install mcpcan mcpcan/mcpcan-deploy --namespace mcpcan --create-namespace --timeout 600s --wait
+
+# Deploy with public IP
+helm install mcpcan mcpcan/mcpcan-deploy \
+  --set global.publicIP=192.168.1.100 \
+  --set infrastructure.mysql.auth.rootPassword=secure-password \
+  --set infrastructure.redis.auth.password=secure-password \
+  --namespace mcpcan --create-namespace --timeout 600s --wait
+
+# Deploy with domain name
+helm install mcpcan mcpcan/mcpcan-deploy \
+  --set global.domain=mcp.example.com \
+  --set infrastructure.mysql.auth.rootPassword=secure-password \
+  --set infrastructure.redis.auth.password=secure-password \
+  --namespace mcpcan --create-namespace --timeout 600s --wait</pre>
                 </div>
 
                 <div class="success">
@@ -407,13 +423,20 @@ helm install mcpcan mcpcan/mcpcan-deploy --namespace mcpcan --create-namespace -
                 <h3>🔧 Custom Domain Deployment</h3>
                 <p>If you have your own domain, you can configure it following these steps:</p>
                 
-                <h4>Step 1: Copy and modify configuration file</h4>
+                <h4>Step 1: Clone the repository (if not using Helm repository)</h4>
+                <div class="code-block">
+                    <pre># Clone the MCPCan deployment repository
+git clone https://github.com/kymo-mcp/mcpcan-deploy.git
+cd mcpcan-deploy</pre>
+                </div>
+                
+                <h4>Step 2: Copy and modify configuration file</h4>
                 <div class="code-block">
                     <pre># Copy default configuration
 cp helm/values.yaml helm/values-custom.yaml</pre>
                 </div>
 
-                <h4>Step 2: Modify domain configuration</h4>
+                <h4>Step 3: Modify domain configuration</h4>
                 <p>Edit <code>helm/values-custom.yaml</code>:</p>
                 <div class="code-block">
                     <pre># Global configuration
@@ -436,7 +459,7 @@ ingress:
       -----END PRIVATE KEY-----</pre>
                 </div>
 
-                <h4>Step 3: Deploy with custom configuration</h4>
+                <h4>Step 4: Deploy with custom configuration</h4>
                 <div class="code-block">
                     <pre># Deploy with custom configuration
 helm install mcpcan ./helm -f helm/values-custom.yaml \
