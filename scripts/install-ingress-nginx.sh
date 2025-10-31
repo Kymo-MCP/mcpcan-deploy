@@ -43,17 +43,9 @@ install_ingress_nginx() {
   log "Adding ingress-nginx helm repository..."
   local chart_name="ingress-nginx/ingress-nginx"
   
-  if [ "$use_china_mirror" = true ]; then
-    # Use Aliyun mirror for China users - try the official ingress-nginx chart with mirror images
-    # First try to add the official repo but with timeout, fallback to mirror if fails
-    if ! timeout 10 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null; then
-      log "Official repository failed, using Aliyun mirror repository..."
-      helm repo add aliyun https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts
-      chart_name="aliyun/nginx-ingress"
-    fi
-  else
-    # Use official repository
-    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  # Add official repository (chart is always from official source, only images may use mirrors)
+  if ! helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null; then
+    log "Repository might already exist, continuing..."
   fi
   helm repo update
   
@@ -64,16 +56,17 @@ install_ingress_nginx() {
   
   if [ "$use_china_mirror" = true ]; then
     log "Using China mirror configuration for ingress-nginx..."
-    # Configure China mirror images directly in helm command
-    # Use the correct Aliyun mirror registry and image names
-    helm_cmd="$helm_cmd --set controller.image.registry=registry.cn-hangzhou.aliyuncs.com"
-    helm_cmd="$helm_cmd --set controller.image.image=google_containers/nginx-ingress-controller"
-    helm_cmd="$helm_cmd --set controller.image.tag=v1.9.4"
-    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.registry=registry.cn-hangzhou.aliyuncs.com"
-    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.image=google_containers/kube-webhook-certgen"
-    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.tag=v20231011-8b53cabe0"
-    helm_cmd="$helm_cmd --set defaultBackend.image.registry=registry.cn-hangzhou.aliyuncs.com"
-    helm_cmd="$helm_cmd --set defaultBackend.image.image=google_containers/defaultbackend-amd64"
+    # Configure China mirror images using dockerproxy.com (k8s.dockerproxy.com)
+    # This is a reliable proxy for registry.k8s.io, providing official images with China network acceleration
+    # Reference: https://dockerproxy.com/docs and https://cloud.tencent.com/developer/article/2370680
+    helm_cmd="$helm_cmd --set controller.image.registry=k8s.dockerproxy.com"
+    helm_cmd="$helm_cmd --set controller.image.image=ingress-nginx/controller"
+    helm_cmd="$helm_cmd --set controller.image.tag=v1.11.2"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.registry=k8s.dockerproxy.com"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.image=ingress-nginx/kube-webhook-certgen"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.tag=v1.4.3"
+    helm_cmd="$helm_cmd --set defaultBackend.image.registry=k8s.dockerproxy.com"
+    helm_cmd="$helm_cmd --set defaultBackend.image.image=defaultbackend-amd64"
     helm_cmd="$helm_cmd --set defaultBackend.image.tag=1.5"
   fi
   
