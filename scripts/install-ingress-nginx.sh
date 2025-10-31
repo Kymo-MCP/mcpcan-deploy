@@ -41,7 +41,17 @@ install_ingress_nginx() {
   
   # Add ingress-nginx helm repository
   log "Adding ingress-nginx helm repository..."
-  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  if [ "$use_china_mirror" = true ]; then
+    # Use Aliyun mirror for China users - try the official ingress-nginx chart with mirror images
+    # First try to add the official repo but with timeout, fallback to mirror if fails
+    if ! timeout 10 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null; then
+      log "Official repository failed, using Aliyun mirror repository..."
+      helm repo add ingress-nginx https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts
+    fi
+  else
+    # Use official repository
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  fi
   helm repo update
   
   # Prepare helm install command
@@ -52,12 +62,13 @@ install_ingress_nginx() {
   if [ "$use_china_mirror" = true ]; then
     log "Using China mirror configuration for ingress-nginx..."
     # Configure China mirror images directly in helm command
+    # Use the correct Aliyun mirror registry and image names
     helm_cmd="$helm_cmd --set controller.image.registry=registry.cn-hangzhou.aliyuncs.com"
     helm_cmd="$helm_cmd --set controller.image.image=google_containers/nginx-ingress-controller"
-    helm_cmd="$helm_cmd --set controller.image.tag=v1.8.1"
+    helm_cmd="$helm_cmd --set controller.image.tag=v1.9.4"
     helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.registry=registry.cn-hangzhou.aliyuncs.com"
     helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.image=google_containers/kube-webhook-certgen"
-    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.tag=v20230407"
+    helm_cmd="$helm_cmd --set controller.admissionWebhooks.patch.image.tag=v20231011-8b53cabe0"
     helm_cmd="$helm_cmd --set defaultBackend.image.registry=registry.cn-hangzhou.aliyuncs.com"
     helm_cmd="$helm_cmd --set defaultBackend.image.image=google_containers/defaultbackend-amd64"
     helm_cmd="$helm_cmd --set defaultBackend.image.tag=1.5"
