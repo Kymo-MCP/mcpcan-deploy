@@ -41,12 +41,15 @@ install_ingress_nginx() {
   
   # Add ingress-nginx helm repository
   log "Adding ingress-nginx helm repository..."
+  local chart_name="ingress-nginx/ingress-nginx"
+  
   if [ "$use_china_mirror" = true ]; then
     # Use Aliyun mirror for China users - try the official ingress-nginx chart with mirror images
     # First try to add the official repo but with timeout, fallback to mirror if fails
     if ! timeout 10 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null; then
       log "Official repository failed, using Aliyun mirror repository..."
-      helm repo add ingress-nginx https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts
+      helm repo add aliyun https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts
+      chart_name="aliyun/nginx-ingress"
     fi
   else
     # Use official repository
@@ -55,7 +58,7 @@ install_ingress_nginx() {
   helm repo update
   
   # Prepare helm install command
-  local helm_cmd="helm install ingress-nginx ingress-nginx/ingress-nginx"
+  local helm_cmd="helm install ingress-nginx $chart_name"
   helm_cmd="$helm_cmd --namespace $namespace"
   helm_cmd="$helm_cmd --create-namespace"
   
