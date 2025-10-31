@@ -29,15 +29,27 @@ check_ingress_installed() {
   return 1
 }
 
-# Function to download deployment manifest
+# Function to download deployment manifest with progress
 download_manifest() {
   local manifest_url="$1"
   local output_file="$2"
   
   log "Downloading manifest from: $manifest_url"
-  if ! wget -q --timeout=30 --tries=3 -O "$output_file" "$manifest_url"; then
-    error "Failed to download manifest from $manifest_url"
-    return 1
+  
+  # Use curl with progress bar as fallback if wget fails
+  if command -v wget >/dev/null 2>&1; then
+    if ! wget --progress=bar:force --timeout=30 --tries=3 -O "$output_file" "$manifest_url" 2>&1; then
+      log "wget failed, trying curl..."
+      if ! curl -L --connect-timeout 30 --max-time 60 --progress-bar -o "$output_file" "$manifest_url"; then
+        error "Failed to download manifest from $manifest_url"
+        return 1
+      fi
+    fi
+  else
+    if ! curl -L --connect-timeout 30 --max-time 60 --progress-bar -o "$output_file" "$manifest_url"; then
+      error "Failed to download manifest from $manifest_url"
+      return 1
+    fi
   fi
   
   if [ ! -s "$output_file" ]; then
@@ -49,24 +61,68 @@ download_manifest() {
   return 0
 }
 
+# Function to test mirror availability
+test_mirror_availability() {
+  local mirror="$1"
+  local timeout=5
+  
+  if curl -s --connect-timeout "$timeout" --max-time "$timeout" -I "https://$mirror" >/dev/null 2>&1; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Function to get the best available mirror
+get_best_mirror() {
+  local mirrors=("k8s.nju.edu.cn" "registry.cn-hangzhou.aliyuncs.com" "k8s.dockerproxy.com")
+  
+  log "🔍 Searching for the best available mirror..." >&2
+  
+  for mirror in "${mirrors[@]}"; do
+    log "Testing mirror availability: $mirror" >&2
+    if test_mirror_availability "$mirror" >/dev/null 2>&1; then
+      log "✅ Mirror $mirror is accessible" >&2
+      echo "$mirror"
+      return 0
+    else
+      log "❌ Mirror $mirror is not accessible" >&2
+    fi
+  done
+  
+  log "⚠️ No mirrors are accessible, using default: k8s.dockerproxy.com" >&2
+  echo "k8s.dockerproxy.com"
+  return 1
+}
+
 # Function to replace images with China mirror
 replace_images_with_china_mirror() {
   local manifest_file="$1"
   
-  log "Replacing images with China mirror (k8s.dockerproxy.com)..."
+  # Get the best available mirror
+  local best_mirror
+  best_mirror=$(get_best_mirror | tail -1)
   
-  # Replace registry.k8s.io with k8s.dockerproxy.com
-  # This covers all ingress-nginx related images
-  sed -i.bak 's|registry\.k8s\.io/|k8s.dockerproxy.com/|g' "$manifest_file"
+  log "🔄 Replacing images with China mirror: $best_mirror"
   
-  # Also handle any k8s.gcr.io references (legacy)
-  sed -i.bak2 's|k8s\.gcr\.io/|k8s.dockerproxy.com/|g' "$manifest_file"
+  # Handle different mirror formats
+  if [[ "$best_mirror" == "registry.cn-hangzhou.aliyuncs.com" ]]; then
+    log "Using Aliyun mirror format..."
+    # Aliyun uses a different path structure
+    sed -i.bak "s|registry\.k8s\.io/|$best_mirror/google_containers/|g" "$manifest_file"
+    sed -i.bak2 "s|k8s\.gcr\.io/|$best_mirror/google_containers/|g" "$manifest_file"
+  else
+    log "Using standard mirror format..."
+    # Standard format for other mirrors
+    sed -i.bak "s|registry\.k8s\.io/|$best_mirror/|g" "$manifest_file"
+    sed -i.bak2 "s|k8s\.gcr\.io/|$best_mirror/|g" "$manifest_file"
+  fi
   
-  log "Image replacement completed"
+  log "✅ Image replacement completed using mirror: $best_mirror"
   
   # Show what images will be used
-  log "Images that will be used:"
-  grep -E "image: k8s\.dockerproxy\.com/" "$manifest_file" | sort | uniq | while read -r line; do
+  log "📋 Images that will be used:"
+  grep -E "image: " "$manifest_file" | grep -v "registry\.k8s\.io\|k8s\.gcr\.io" | sort | uniq | while read -r line; do
     log "  $line"
   done
 }
@@ -136,19 +192,32 @@ install_ingress_nginx() {
   
   # Apply the manifest
   log "Applying ingress-nginx manifest..."
-  if ! kubectl apply -f "$manifest_file"; then
-    error "Failed to apply ingress-nginx manifest"
+  log "This may take a few minutes, please wait..."
+  
+  # Check if kubectl can connect to cluster first
+  if ! kubectl cluster-info >/dev/null 2>&1; then
+    error "Cannot connect to Kubernetes cluster. Please check your kubeconfig."
     return 1
   fi
   
-  # Wait for deployment to be ready
-  log "Waiting for ingress-nginx deployment to be ready..."
-  if ! kubectl wait --namespace "$namespace" \
+  # Apply with timeout
+  if ! timeout 300 kubectl apply -f "$manifest_file"; then
+    error "Failed to apply ingress-nginx manifest (timeout after 5 minutes)"
+    log "You can try applying manually: kubectl apply -f $manifest_file"
+    return 1
+  fi
+  
+  log "Manifest applied successfully"
+  
+  # Wait for deployment to be ready (optional, with shorter timeout)
+  log "Checking if deployment is ready (this may take a few minutes)..."
+  if kubectl wait --namespace "$namespace" \
     --for=condition=ready pod \
     --selector=app.kubernetes.io/component=controller \
-    --timeout=300s; then
-    error "Timeout waiting for ingress-nginx to be ready"
-    return 1
+    --timeout=180s 2>/dev/null; then
+    log "✅ Ingress-nginx deployment is ready"
+  else
+    warn "⚠️ Deployment may still be starting. Check status with: kubectl get pods -n $namespace"
   fi
   
   # Clean up temporary files
