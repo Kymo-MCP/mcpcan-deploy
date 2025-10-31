@@ -142,6 +142,7 @@ copy_kubeconfig_to_home() {
     # Copy kubeconfig to user's home directory
     mkdir -p ~/.kube
     sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+    sudo chmod 600 ~/.kube/config
     sudo chown $(id -u):$(id -g) ~/.kube/config
     info "Kubeconfig copied to ~/.kube/config"
     export KUBECONFIG=~/.kube/config
