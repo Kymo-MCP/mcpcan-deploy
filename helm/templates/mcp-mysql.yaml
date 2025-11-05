@@ -112,7 +112,7 @@ spec:
           readOnly: true
         {{- if .Values.infrastructure.mysql.hostPath.enabled }}
         - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
-          mountPath: {{ .Values.infrastructure.mysql.hostPath.mountPath | default "/var/lib/mysql" }}
+          mountPath: {{ .Values.global.hostStorage.mysqlPath | default "/var/lib/mysql" }}
         {{- end }}
       volumes:
       - name: mysql-config-volume
@@ -124,7 +124,7 @@ spec:
       {{- if .Values.infrastructure.mysql.hostPath.enabled }}
       - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
         hostPath:
-          path: {{ .Values.infrastructure.mysql.hostPath.path | default "/data/mcpcan/mysql" }}
+          path: {{ .Values.global.hostStorage.mysqlPath | default "/data/mcpcan/mysql" }}
           type: {{ .Values.infrastructure.mysql.hostPath.type | default "DirectoryOrCreate" }}
       {{- end }}
 ---

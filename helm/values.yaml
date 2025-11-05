@@ -115,12 +115,8 @@ infrastructure:
       enabled: true
       # Volume name
       name: mysql-hostpath
-      # Host directory path
-      path: /data/mcpcan/mysql
       # Directory creation type
       type: DirectoryOrCreate
-      # Container mount path
-      mountPath: /var/lib/mysql
     
     # Resource limits and requests
     resources:
@@ -175,12 +171,8 @@ infrastructure:
       enabled: true
       # Volume name
       name: redis-hostpath
-      # Host directory path
-      path: /data/mcpcan/redis
       # Directory creation type
       type: DirectoryOrCreate
-      # Container mount path
-      mountPath: /data/redis
     
     # Resource limits and requests
     resources:
