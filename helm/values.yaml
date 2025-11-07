@@ -28,7 +28,7 @@ global:
   # All service images will be pulled from this registry
   registry: 77kymo
 
-  registryForMirrorCN: ccr.ccs.tencent.com/itqm-private
+  registryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
   
   # Image pull policy for all containers
   # Options: Always, IfNotPresent, Never
