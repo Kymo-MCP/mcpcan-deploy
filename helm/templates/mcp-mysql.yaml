@@ -112,7 +112,7 @@ spec:
           readOnly: true
         {{- if .Values.infrastructure.mysql.hostPath.enabled }}
         - name: {{ .Values.infrastructure.mysql.hostPath.name | default "mysql-data-hostpath" }}
-          mountPath: {{ .Values.global.hostStorage.mysqlPath | default "/var/lib/mysql" }}
+          mountPath: {{ .Values.global.mountStorage.mysqlPath | default "/var/lib/mysql" }}
         {{- end }}
       volumes:
       - name: mysql-config-volume
