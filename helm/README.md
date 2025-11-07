@@ -72,7 +72,7 @@ The following table lists the configurable parameters and their default values:
 |-----------|-------------|---------|
 | `global.domain` | Domain name for the application | `""` |
 | `global.publicIP` | Public IP address for external access | `"192.168.1.100"` |
-| `global.version` | Application version tag | `v1.0.0` |
+| `global.version` | Application version tag | `v1.2.0` |
 | `global.registry` | Container registry URL | `ccr.ccs.tencentyun.com/itqm-private` |
 | `global.imagePullPolicy` | Image pull policy | `Always` |
 | `global.appSecret` | Application secret key | `dev-app-secret` |
