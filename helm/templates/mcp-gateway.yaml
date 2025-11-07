@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.services.gateway.name | default "mcp-gateway" }}
-        image: {{ .Values.global.registry }}/{{ .Values.services.gateway.name | default "mcp-gateway" }}:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.gateway.name | default "mcp-gateway" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.gateway.service.port }}
         ports:

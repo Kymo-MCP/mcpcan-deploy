@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.services.web.name | default "mcp-web" }}
-        image: {{ .Values.global.registry }}/mcp-web:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/mcp-web:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.web.service.port }}
         ports:

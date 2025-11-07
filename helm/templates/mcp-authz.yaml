@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.services.authz.name | default "mcp-authz" }}
-        image: {{ .Values.global.registry }}/{{ .Values.services.authz.name | default "mcp-authz" }}:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.authz.name | default "mcp-authz" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.authz.service.port }}
         ports:

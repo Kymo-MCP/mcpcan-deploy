@@ -9,6 +9,7 @@
 # =============================================================================
 # Global settings that apply to all components of the MCPCan system
 global:
+  cn: false
   # Domain name for the application (optional)
   # If not set, publicIP will be used for access
   # Example: "mcpcan.example.com"

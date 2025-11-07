@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
-        image: {{ .Values.global.registry }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.init.resources }}
         resources:

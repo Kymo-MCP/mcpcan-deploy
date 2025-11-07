@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.services.market.name | default "mcp-market" }}
-        image: {{ .Values.global.registry }}/{{ .Values.services.market.name | default "mcp-market" }}:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.market.name | default "mcp-market" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.market.service.port }}
         ports:
