@@ -244,7 +244,7 @@ helm upgrade mcpcan ./helm/
 helm upgrade mcpcan ./helm/ -f new-values.yaml
 
 # Upgrade with specific version
-helm upgrade mcpcan ./helm/ --version 1.1.0
+helm upgrade mcpcan ./helm/ --version v1.2.0
 ```
 
 ### Rolling Updates
@@ -253,7 +253,7 @@ The chart supports rolling updates for all services. To update a specific servic
 
 ```bash
 # Update web service image
-helm upgrade mcpcan ./helm/ --set global.version=v1.1.0
+helm upgrade mcpcan ./helm/ --set global.version=v1.2.0
 
 # Update with zero downtime
 helm upgrade mcpcan ./helm/ --wait --timeout=600s
