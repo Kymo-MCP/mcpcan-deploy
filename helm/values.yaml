@@ -22,7 +22,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.2.1
+  version: v1.2.1-dev
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -444,7 +444,8 @@ ingress:
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
     # Allow credentials in CORS requests
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-  
+    # Upload max size
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
   # TLS/SSL configuration
   tls:
     # Enable/disable TLS encryption
