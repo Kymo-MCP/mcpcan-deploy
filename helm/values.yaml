@@ -39,6 +39,10 @@ global:
   # Change this in production environments
   appSecret: dev-app-secret
   
+  # Run mode for the application
+  # Options: "demo", "prod"
+  runMode: "prod"
+
   # Host storage configuration
   # Defines where data is stored on the host system
   hostStorage:

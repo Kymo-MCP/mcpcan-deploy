@@ -53,6 +53,7 @@ data:
 {{- end }}
 {{- if .Values.services.market.enabled }}
   market.yaml: |-
+    runMode: {{ .Values.global.runMode }}
     server:
       httpPort: {{ .Values.services.market.service.port }}
     domain: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.global.domain | default .Values.global.publicIP }}
