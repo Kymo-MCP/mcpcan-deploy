@@ -22,7 +22,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.2.0
+  version: v1.2.1
   
   # Container registry URL
   # All service images will be pulled from this registry
