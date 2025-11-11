@@ -265,6 +265,7 @@ services:
       annotations:
         nginx.ingress.kubernetes.io/use-regex: "true"
         nginx.ingress.kubernetes.io/rewrite-target: /market/$1
+        nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     
     # ConfigMap configuration (currently disabled)
     config:
@@ -444,8 +445,6 @@ ingress:
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
     # Allow credentials in CORS requests
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    # Upload max size
-    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
   # TLS/SSL configuration
   tls:
     # Enable/disable TLS encryption
