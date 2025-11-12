@@ -32,11 +32,6 @@ spec:
         - containerPort: {{ .Values.services.web.service.port }}
           protocol: TCP
         {{- end }}
-        {{- if eq .Values.global.runMode "demo" }}
-        env:
-        - name: VITE_DEMO
-          value: "true"
-        {{- end }}
         {{- if .Values.services.web.resources }}
         resources:
           {{- toYaml .Values.services.web.resources | nindent 10 }}
