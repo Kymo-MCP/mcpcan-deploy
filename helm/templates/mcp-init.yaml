@@ -2,10 +2,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.services.init.name | default "mcp-init" }}-{{ .Release.Revision }}
+  name: {{ .Values.services.init.name | default "mcp-init" }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.init.name | default "mcp-init" }}
+    app.kubernetes.io/name: {{ .Values.services.init.name | default "mcp-init" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: web
+    app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
   template:

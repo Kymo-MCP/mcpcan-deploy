@@ -3,10 +3,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.market.name | default "mcp-market" }}-{{ .Release.Revision }}
+  name: {{ .Values.services.market.name | default "mcp-market" }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.market.name | default "mcp-market" }}
+    app.kubernetes.io/name: {{ .Values.services.market.name | default "mcp-market" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: market
+    app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
     deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
@@ -19,8 +23,14 @@ spec:
     metadata:
       labels:
         app: {{ .Values.services.market.name | default "mcp-market" }}
+        app.kubernetes.io/name: {{ .Values.services.market.name | default "mcp-market" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: market
+        app.kubernetes.io/version: {{ .Values.global.version }}
         {{- include "mcpcan.selectorLabels" . | nindent 8 }}
       annotations:
+        mcpcan.io/version: {{ .Values.global.version }}
+        mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
