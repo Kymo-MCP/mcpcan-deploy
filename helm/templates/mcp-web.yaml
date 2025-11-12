@@ -35,7 +35,7 @@ spec:
         {{- if eq .Values.global.runMode "demo" }}
         env:
         - name: VITE_DEMO
-          value: true
+          value: "true"
         {{- end }}
         {{- if .Values.services.web.resources }}
         resources:
