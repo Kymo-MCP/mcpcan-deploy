@@ -22,7 +22,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.2.1-dev
+  version: v1.2.1
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -205,7 +205,7 @@ services:
     name: mcp-web
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
