@@ -7,7 +7,7 @@ metadata:
     {{- include "mcpcan.labels" . | nindent 4 }}
 data:
   env.js: |-
-    window.__APP_CONFIG__ = {{- $isDemo := eq $.Values.global.runMode "demo" -}}{{ toJson (dict "VITE_DEMO" $isDemo) }}
+    window.__APP_CONFIG__ = {{- $isDemo := eq $.Values.global.runMode "demo" -}}{{ toJson (dict "VITE_DEMO" (printf "%v" $isDemo)) }}
 {{- if .Values.services.gateway.enabled }}
   gateway.yaml: |-
     server:
