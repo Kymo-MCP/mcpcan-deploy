@@ -50,7 +50,7 @@ spec:
         - name: data-volume
           mountPath: "/app/static"
         - name: config-volume
-          mountPath: "/app/config/env.js"
+          mountPath: "/app/env.js"
           subPath: env.js
       volumes:
       - name: data-volume
