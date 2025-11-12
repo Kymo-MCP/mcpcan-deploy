@@ -122,5 +122,5 @@ data:
       format: json
 {{- end }}
   {{- $isDemo := eq .Values.global.runMode "demo" -}}
-  web.yaml: |-
+  env.js: |-
     window.__APP_CONFIG__ = {{ toJson (dict "VITE_DEMO" $isDemo) }}
