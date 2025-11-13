@@ -380,6 +380,10 @@ services:
     enabled: true
     # Service name for Kubernetes resources
     name: mcp-init
+
+    # Path to kubeconfig file
+    kubeconfigPath: "/etc/kube/kubeconfig.yaml"
+
     # Number of pod replicas
     replicas: 1
     
@@ -391,22 +395,6 @@ services:
       port: 8083
       # Service type (ClusterIP for internal access)
       type: "ClusterIP"
-    
-    # Kubernetes host path volume configuration
-    # Used to access K3s configuration files
-    k8sHostPath:
-      # Enable/disable host path volume
-      enabled: true
-      # Volume name
-      name: k8s-init-hostpath
-      # Host directory path (K3s config location)
-      path: /etc/rancher/k3s
-      # Directory creation type
-      type: DirectoryOrCreate
-      # Container mount path
-      mountPath: /app/config/kube
-      # ConfigMap key for Kubernetes config
-      configMapKey: kubernetes-internal.yaml
     
     # Resource limits and requests
     resources:

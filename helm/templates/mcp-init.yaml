@@ -30,9 +30,10 @@ spec:
         - name: config-volume
           mountPath: "/app/config"
           readOnly: true
-        - name: k8s-config-volume
-          mountPath: {{ .Values.services.init.k8sHostPath.mountPath | default "/app/config/kube" }}
-          readOnly: {{ .Values.services.init.k8sHostPath.readOnly | default true }}
+        - name: kubeconfig-volume
+          mountPath: "/etc/kube"
+          subPath: "kubeconfig.yaml"
+          readOnly: true
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
       volumes:
@@ -42,10 +43,12 @@ spec:
           items:
           - key: "init.yaml"
             path: "init.yaml"
-      - name: k8s-config-volume
-        hostPath:
-          path: {{ .Values.services.init.k8sHostPath.path }}
-          type: {{ .Values.services.init.k8sHostPath.type }}
+      - name: kubeconfig-volume
+        configMap:
+          name: mcp-kubeconfig
+          items:
+          - key: "kubeconfig.yaml"
+            path: "kubeconfig.yaml"
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}

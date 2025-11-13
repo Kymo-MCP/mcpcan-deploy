@@ -102,7 +102,7 @@ data:
       admin_data_scope: all
     kubernetes:
       namespace: {{ .Release.Namespace }}
-      defaultConfigFilePath: {{ .Values.services.init.k8sHostPath.mountPath | default "/app/config/kube" }}/{{ .Values.services.init.k8sHostPath.configMapKey | default "kubernetes-internal.yaml" }}
+      defaultConfigFilePath: {{ .Values.services.init.kubeconfigPath | default "/etc/kube/kubeconfig.yaml" }}
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}

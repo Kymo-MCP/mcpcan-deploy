@@ -51,9 +51,6 @@ spec:
         - name: config-volume
           mountPath: "/app/config"
           readOnly: true
-        - name: kubeconfig-volume
-          mountPath: "/app/config/kube"
-          readOnly: true
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
       volumes:
@@ -63,12 +60,6 @@ spec:
           items:
           - key: "market.yaml"
             path: "market.yaml"
-      - name: kubeconfig-volume
-        configMap:
-          name: mcp-kubeconfig
-          items:
-          - key: "kubeconfig.yaml"
-            path: "kubeconfig.yaml"
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}
