@@ -2,10 +2,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mcp-config
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "mcpcan.labels" . | nindent 4 }}
 data:
+  env.js: |-
+    window.__APP_CONFIG__ = {{- $isDemo := eq $.Values.global.runMode "demo" -}}{{ toJson (dict "VITE_DEMO" (printf "%v" $isDemo)) }}
 {{- if .Values.services.gateway.enabled }}
   gateway.yaml: |-
     server:
@@ -53,6 +55,7 @@ data:
 {{- end }}
 {{- if .Values.services.market.enabled }}
   market.yaml: |-
+    runMode: {{ .Values.global.runMode }}
     server:
       httpPort: {{ .Values.services.market.service.port }}
     domain: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.global.domain | default .Values.global.publicIP }}

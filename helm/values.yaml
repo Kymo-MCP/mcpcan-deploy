@@ -22,7 +22,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.2.0
+  version: v1.2.1
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -39,6 +39,10 @@ global:
   # Change this in production environments
   appSecret: dev-app-secret
   
+  # Run mode for the application
+  # Options: "demo", "prod"
+  runMode: "prod"
+
   # Host storage configuration
   # Defines where data is stored on the host system
   hostStorage:
@@ -201,7 +205,7 @@ services:
     name: mcp-web
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
@@ -265,6 +269,7 @@ services:
       annotations:
         nginx.ingress.kubernetes.io/use-regex: "true"
         nginx.ingress.kubernetes.io/rewrite-target: /market/$1
+        nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     
     # ConfigMap configuration (currently disabled)
     config:
@@ -444,7 +449,6 @@ ingress:
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
     # Allow credentials in CORS requests
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-  
   # TLS/SSL configuration
   tls:
     # Enable/disable TLS encryption

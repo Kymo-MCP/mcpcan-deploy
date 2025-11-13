@@ -3,10 +3,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.services.web.name | default "mcp-web" }}-{{ .Release.Revision }}
+  name: {{ .Values.services.web.name | default "mcp-web" }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.services.web.name | default "mcp-web" }}
+    app.kubernetes.io/name: {{ .Values.services.web.name | default "mcp-web" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: web
+    app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
     deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
@@ -19,8 +23,14 @@ spec:
     metadata:
       labels:
         app: {{ .Values.services.web.name | default "mcp-web" }}
+        app.kubernetes.io/name: {{ .Values.services.web.name | default "mcp-web" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: web
+        app.kubernetes.io/version: {{ .Values.global.version }}
         {{- include "mcpcan.selectorLabels" . | nindent 8 }}
       annotations:
+        mcpcan.io/version: {{ .Values.global.version }}
+        mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
@@ -39,11 +49,20 @@ spec:
         volumeMounts:
         - name: data-volume
           mountPath: "/app/static"
+        - name: config-volume
+          mountPath: "/app/env.js"
+          subPath: env.js
       volumes:
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.staticPath | default "/data/static" }}
           type: DirectoryOrCreate
+      - name: config-volume
+        configMap:
+          name: mcp-config
+          items:
+          - key: env.js
+            path: env.js
 ---
 {{- if .Values.services.web.service.port }}
 apiVersion: v1
