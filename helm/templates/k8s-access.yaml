@@ -1,0 +1,57 @@
+# 1. 集群级 ServiceAccount（可在任意命名空间，示例：default）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+
+# 2. 集群级全资源权限角色（授权所有资源+所有操作）
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.rbac.clusterRoleName }}
+rules:
+  # 核心资源组（Pod、SVC、ConfigMap、Namespace 等）
+  - apiGroups: [""]
+    resources: ["*"]  # 所有核心资源
+    verbs: ["*"]     # 所有操作（创建、查询、更新、删除等）
+  # Apps 资源组（Deployment、StatefulSet、DaemonSet 等）
+  - apiGroups: ["apps", "extensions"]
+    resources: ["*"]
+    verbs: ["*"]
+  # 网络资源组（Ingress、NetworkPolicy 等）
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  # 批处理资源组（Job、CronJob 等）
+  - apiGroups: ["batch"]
+    resources: ["*"]
+    verbs: ["*"]
+  # RBAC 资源组（Role、ClusterRole、ServiceAccounts 等）
+  - apiGroups: ["rbac.authorization.k8s.io", "authorization.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  # 存储资源组（PVC、StorageClass 等）
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  # 其他常用资源组（覆盖几乎所有 K8s 资源）
+  - apiGroups: ["apiextensions.k8s.io", "customresourcedefinitions.apiextensions.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+
+# 3. 绑定 SA 与集群级角色（全集群生效）
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.rbac.clusterRoleBindingName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.rbac.clusterRoleName }}
+  apiGroup: rbac.authorization.k8s.io
