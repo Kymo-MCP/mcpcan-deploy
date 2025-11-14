@@ -70,6 +70,21 @@ global:
     mysqlPath: /var/lib/mysql
     # Redis data mount point
     redisPath: /data/redis
+  
+  LoginUser:
+    username: admin
+    password: admin123
+
+# =============================================================================
+# Kubernetes Access Configuration
+# =============================================================================
+kubeAccess:
+  # Service account name used for image pull job
+  serviceAccountName: mcpcan-user
+  # Cluster role binding name used for image pull job
+  clusterRoleBindingName: mcpcan-user-cluster-role-binding
+  # Cluster role name used for image pull job
+  clusterRoleName: mcpcan-user-cluster-role
 
 # =============================================================================
 # Infrastructure Configuration
@@ -480,17 +495,10 @@ imagePull:
       cpu: 100m
       memory: 128Mi
   
-serviceAccount:
-  name: mcpcan-user
+# Node selector for scheduling image pull job
+# Empty means no specific node requirements
+nodeSelector: {}
 
-rbac:
-  clusterRoleBindingName: mcpcan-user-cluster-role-binding
-  clusterRoleName: mcpcan-user-cluster-role
-
-  # Node selector for scheduling image pull job
-  # Empty means no specific node requirements
-  nodeSelector: {}
-  
-  # Tolerations for scheduling image pull job
-  # Empty means no specific tolerations
-  tolerations: []
+# Tolerations for scheduling image pull job
+# Empty means no specific tolerations
+tolerations: []

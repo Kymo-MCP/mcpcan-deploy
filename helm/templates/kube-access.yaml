@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .Values.serviceAccount.name }}
+  name: {{ .Values.kubeAccess.serviceAccountName }}
   namespace: {{ .Release.Namespace }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
@@ -13,7 +13,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.rbac.clusterRoleName }}
+  name: {{ .Values.kubeAccess.clusterRoleName }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "-100"
@@ -58,11 +58,11 @@ metadata:
     helm.sh/hook-weight: "-100"
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount.name }}
+    name: {{ .Values.kubeAccess.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ .Values.rbac.clusterRoleName }}
+  name: {{ .Values.kubeAccess.clusterRoleName }}
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
