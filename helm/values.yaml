@@ -70,10 +70,6 @@ global:
     mysqlPath: /var/lib/mysql
     # Redis data mount point
     redisPath: /data/redis
-  
-  LoginUser:
-    username: admin
-    password: admin123
 
 # =============================================================================
 # Kubernetes Access Configuration
@@ -396,6 +392,11 @@ services:
     # Service name for Kubernetes resources
     name: mcp-init
 
+    # Login user credentials for initialization
+    loginUser:
+      username: admin
+      password: admin123
+      
     # Path to kubeconfig file
     kubeconfigPath: "/etc/kube/kubeconfig.yaml"
 

@@ -96,8 +96,8 @@ data:
 {{- if .Values.services.init.enabled }}
   init.yaml: |-
     init:
-      admin_username: {{ .Values.kubeAccess.LoginUser.username }}
-      admin_password: {{ .Values.kubeAccess.LoginUser.password }}
+      admin_username: {{ .Values.services.init.loginUser.username }}
+      admin_password: {{ .Values.services.init.loginUser.password }}
       admin_nickname: admin
       admin_role_name: admin
       admin_role_description: admin role
