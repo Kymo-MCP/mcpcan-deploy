@@ -32,7 +32,6 @@ spec:
         mcpcan.io/version: {{ .Values.global.version }}
         mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: {{ .Values.services.market.name | default "mcp-market" }}

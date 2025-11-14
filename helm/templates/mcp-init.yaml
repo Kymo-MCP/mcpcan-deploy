@@ -17,7 +17,10 @@ spec:
       labels:
         app: {{ .Values.services.init.name | default "mcp-init" }}
         {{- include "mcpcan.selectorLabels" . | nindent 8 }}
-    spec:
+      annotations:
+        mcpcan.io/version: {{ .Values.global.version }}
+        mcpcan.io/revision: "{{ .Release.Revision }}"
+        checksum/config: {{ include (print $.Template.BasePath "/kube-access.yaml") . | sha256sum }}
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}

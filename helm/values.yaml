@@ -480,6 +480,13 @@ imagePull:
       cpu: 100m
       memory: 128Mi
   
+serviceAccount:
+  name: mcpcan-user
+
+rbac:
+  clusterRoleBindingName: mcpcan-user-cluster-role-binding
+  clusterRoleName: mcpcan-user-cluster-role
+
   # Node selector for scheduling image pull job
   # Empty means no specific node requirements
   nodeSelector: {}
