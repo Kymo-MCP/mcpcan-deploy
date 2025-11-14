@@ -6,8 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-10"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-100"
 
 # 2. 集群级全资源权限角色（授权所有资源+所有操作）
 ---
@@ -17,8 +16,7 @@ metadata:
   name: {{ .Values.rbac.clusterRoleName }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-10"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-100"
 rules:
   # 核心资源组（Pod、SVC、ConfigMap、Namespace 等）
   - apiGroups: [""]
@@ -57,8 +55,7 @@ metadata:
   name: {{ .Values.rbac.clusterRoleBindingName }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-10"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-100"
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name }}
@@ -75,8 +72,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-5"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-80"
 data:
   kubeconfig.yaml: |
     apiVersion: v1

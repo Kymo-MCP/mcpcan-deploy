@@ -90,6 +90,9 @@ metadata:
   labels:
     app: redis
     {{- include "mcpcan.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-65"
 spec:
   serviceName: {{ .Values.infrastructure.redis.name | default "redis" }}
   replicas: 1
@@ -157,6 +160,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/resource-policy": "keep"
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-65"
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     {{- include "mcpcan.labels" . | nindent 4 }}
@@ -177,6 +182,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/resource-policy": "keep"
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-65"
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     service-type: nodeport

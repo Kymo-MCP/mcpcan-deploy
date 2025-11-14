@@ -12,6 +12,7 @@ metadata:
     app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
 spec:
+  ttlSecondsAfterFinished: 300
   template:
     metadata:
       labels:
@@ -21,6 +22,17 @@ spec:
         mcpcan.io/version: {{ .Values.global.version }}
         mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/kube-access.yaml") . | sha256sum }}
+    spec:
+      {{- if .Values.rbac.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.rbac.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.rbac.tolerations }}
+      tolerations:
+        {{- toYaml .Values.rbac.tolerations | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default "mcpcan-user" }}
+      restartPolicy: OnFailure
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
@@ -56,6 +68,5 @@ spec:
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}
           type: DirectoryOrCreate
-      restartPolicy: OnFailure
   backoffLimit: {{ .Values.services.init.backoffLimit | default 3 }}
 {{- end }}
