@@ -51,21 +51,32 @@ echo "Loading images from: $IMAGES_DIR"
 loaded_count=0
 failed_count=0
 
-# Process all .tar and .tar.gz files in images directory
-for image_file in "$IMAGES_DIR"/*.tar "$IMAGES_DIR"/*.tar.gz; do
+# List all files in images directory for debugging
+echo "Available files in $IMAGES_DIR:"
+ls -la "$IMAGES_DIR"
+
+# Process all files in images directory that might be image archives
+for image_file in "$IMAGES_DIR"/*; do
     # Skip if no matching files
     [ ! -f "$image_file" ] && continue
     
     filename=$(basename "$image_file")
     echo "Processing: $filename"
     
+    # Skip directories and non-regular files
+    if [ ! -f "$image_file" ]; then
+        echo "Skipping non-file: $filename"
+        continue
+    fi
+    
     # Extract image name and tag from filename
-    # Remove .tar or .tar.gz extension
+    # Remove common image archive extensions
     image_name_tag="${filename%.tar.gz}"
     image_name_tag="${image_name_tag%.tar}"
+    image_name_tag="${image_name_tag%.tar.xz}"
+    image_name_tag="${image_name_tag%.tar.bz2}"
     
-    # Replace : with _ if it was encoded in filename
-    image_name_tag="${image_name_tag//_/:}"
+    # No need to replace underscores as per new naming convention
     
     echo "  Image: $image_name_tag"
     

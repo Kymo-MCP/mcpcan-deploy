@@ -461,13 +461,13 @@ ingress:
     secretName: "domain-tls"
     # TLS certificate content (PEM format)
     # Base64 encoded certificate data
-    crt: -|
+    crt: |
       -----BEGIN CERTIFICATE-----
       ...
       -----END CERTIFICATE-----
     # TLS private key content (PEM format)
     # Base64 encoded private key data
-    key: -|
+    key: |
       -----BEGIN PRIVATE KEY-----
       ...
       -----END PRIVATE KEY-----
