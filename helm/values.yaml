@@ -471,30 +471,6 @@ ingress:
       -----BEGIN PRIVATE KEY-----
       ...
       -----END PRIVATE KEY-----
-
-# =============================================================================
-# Image Pre-Pull Configuration
-# =============================================================================
-# Configuration for offline image pre-pulling functionality
-# Useful for air-gapped environments or slow network conditions
-imagePull:
-  # Enable/disable image pre-pull job
-  enabled: false
-  # Container image used for importing images
-  importerImage: "alpine:3.18"
-  # Path where image files are stored
-  imagesPath: "/opt/mcpcan/images"
-  
-  # Resource limits and requests for image pull job
-  resources:
-    # Maximum allowed resources
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    # Minimum guaranteed resources
-    requests:
-      cpu: 100m
-      memory: 128Mi
   
 # Node selector for scheduling image pull job
 # Empty means no specific node requirements
