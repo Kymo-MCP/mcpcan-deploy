@@ -66,6 +66,8 @@ global:
     staticPath: /data/mcpcan/static
     # Code packages mount point
     codePackagePath: /data/mcpcan/code-package
+    # openapi mount point
+    openapiFilePath: /data/mcpcan/openapi-file
     # MySQL data mount point (standard MySQL path)
     mysqlPath: /var/lib/mysql
     # Redis data mount point
