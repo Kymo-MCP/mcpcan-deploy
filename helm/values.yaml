@@ -452,7 +452,7 @@ ingress:
     # Allowed request headers
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,API-Key,X-API-Key,X-Auth-Key,X-Forwarded-For,X-Real-IP,Accept-Language"
     # Headers exposed to the client
-    nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range,Mcp-Session-Id,Date,Set-Cookie,Location,Content-Type,Connection,Transfer-Encoding,X-Accel-Buffering"
     # Allow credentials in CORS requests
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
   # TLS/SSL configuration
