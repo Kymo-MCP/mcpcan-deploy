@@ -89,7 +89,7 @@ copy_and_adjust_values() {
 
 helm_install() {
   local ns="mcpcan"
-  log "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s (this step nees a few minutes)"
+  log "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s (this step needs a few minutes)"
   helm install mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --create-namespace --timeout 600s --wait || {
     err "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s --wait failed"
     exit 1
