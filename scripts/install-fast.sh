@@ -81,7 +81,7 @@ copy_and_adjust_values() {
   log "Copied parameter template to $dst"
   if [ "$CN" = true ]; then
     log "Applying China mirror adjustments to $dst"
-    sed -i 's/^\s*cn:\s*false/cn: true/' "$dst"
+    sed -i -E 's/^([[:space:]]*)cn:[[:space:]]*false/\1cn: true/' "$dst"
   fi
 }
 
