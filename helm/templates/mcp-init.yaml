@@ -41,12 +41,6 @@ spec:
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.init.resources }}
-        command:
-        - "/app/init"
-        - "&&"
-        - "tail"
-        - "-f"
-        - "/dev/null"
         resources:
           {{- toYaml .Values.services.init.resources | nindent 10 }}
         {{- end }}

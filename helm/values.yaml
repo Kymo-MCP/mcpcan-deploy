@@ -15,11 +15,6 @@ global:
   # Example: "mcpcan.example.com"
   domain: ""
   
-  # Public IP address for external access
-  # Used when domain is not configured
-  # Must be accessible from client networks
-  publicIP: "192.168.1.100"
-  
   # Application version tag
   # Used for image tags and deployment tracking
   version: v1.3.1-dev
