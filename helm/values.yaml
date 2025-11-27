@@ -34,7 +34,7 @@ global:
   # Image tags for all services
   # Used to override default image tags
   images:
-    buybox: "busybox:1.36"
+    busybox: "busybox:1.36"
     mysql: "mysql:8.0.30"
     redis: "redis:6-alpine"
     mcpInit: "mcp-init:v1.3.1-dev"
