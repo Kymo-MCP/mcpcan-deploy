@@ -107,7 +107,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.infrastructure.redis.name | default "redis" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}/{{ end }}{{ .Values.infrastructure.redis.image.repository | default "redis" }}:{{ .Values.infrastructure.redis.image.tag | default "6-alpine" }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.redis }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: {{ .Values.infrastructure.redis.service.port | default 6379 }}
