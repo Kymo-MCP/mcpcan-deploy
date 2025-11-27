@@ -36,6 +36,8 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+source "$(dirname "$0")/bash.sh"
+
 install_environment() {
   log "Installing runtime environment (K3s + Helm + Ingress)"
   local env_script="$ROOT_DIR/scripts/install-run-environment.sh"
@@ -97,28 +99,27 @@ helm_install() {
 
 verify_pods() {
   local ns="mcpcan"
-  log "Verifying required pods are Running"
+  log "Verifying Helm release status"
   local start_ts=$(date +%s)
   local timeout=$((start_ts + 600))
   while true; do
     local now=$(date +%s)
     if [ "$now" -ge "$timeout" ]; then
-      err "Timeout waiting for required pods to be Running"
-      kubectl get pods -A || true
+      err "Timeout waiting for Helm release to be deployed"
+      helm status mcpcan --namespace "$ns" || true
       exit 1
     fi
-    local out=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null || true)
-    local authz=$(echo "$out" | awk '/^mcp-authz/{print $2" "$3}' | head -n1)
-    local gateway=$(echo "$out" | awk '/^mcp-gateway/{print $2" "$3}' | head -n1)
-    local market=$(echo "$out" | awk '/^mcp-market/{print $2" "$3}' | head -n1)
-    local web=$(echo "$out" | awk '/^mcp-web/{print $2" "$3}' | head -n1)
-    local mysql=$(echo "$out" | awk '/^mysql-/{print $2" "$3}' | head -n1)
-    local redis=$(echo "$out" | awk '/^redis-/{print $2" "$3}' | head -n1)
-    if [[ "$authz" == "1/1 Running" && "$gateway" == "1/1 Running" && "$market" == "1/1 Running" && "$web" == "1/1 Running" && "$mysql" == "1/1 Running" && "$redis" == "1/1 Running" ]]; then
-      log "Installation succeeded: required pods are Running"
-      kubectl get pods -A || true
-      local dst="helm/values-custom.yaml"
-      local public_ip=$(grep -E '^\s*publicIP:' "$dst" | awk '{print $2}' | tr -d '"')
+    local status_out
+    status_out=$(helm status mcpcan --namespace "$ns" 2>/dev/null || true)
+    if echo "$status_out" | grep -qE '^STATUS: (deployed|superseded)'; then
+      log "Installation succeeded: Helm release is deployed"
+      local public_ip=""
+      if command -v auto_detect_node_ips >/dev/null 2>&1; then
+        public_ip=$(auto_detect_node_ips 2>/dev/null || true)
+      fi
+      if ! echo "$public_ip" | grep -Eq '^[0-9]{1,3}(\.[0-9]{1,3}){3}$'; then
+        public_ip=""
+      fi
       if [ -n "$public_ip" ]; then
         log "Access URL: http://$public_ip"
       else
@@ -126,19 +127,9 @@ verify_pods() {
       fi
       exit 0
     fi
-    log "Waiting for pods... authz='$authz' gateway='$gateway' market='$market' web='$web' mysql='$mysql' redis='$redis'"
+    log "Waiting for Helm release..."
     sleep 5
   done
-}
-
-print_access_url() {
-  local dst="helm/values-custom.yaml"
-  local public_ip=$(grep -E '^\s*publicIP:' "$dst" | awk '{print $2}' | tr -d '"')
-  if [ -z "$public_ip" ]; then
-    warn "publicIP not found in $dst"
-  else
-    log "Access URL: http://$public_ip"
-  fi
 }
 
 main() {
@@ -148,7 +139,6 @@ main() {
   copy_and_adjust_values
   helm_install
   verify_pods
-  print_access_url
   log "Fast installation finished"
 }
 
