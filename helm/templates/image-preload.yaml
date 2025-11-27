@@ -39,7 +39,7 @@ spec:
       {{- end }}
       containers:
       - name: exec
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.buybox }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.busybox }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         command:
         - sh
