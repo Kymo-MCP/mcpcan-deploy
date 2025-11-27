@@ -30,24 +30,16 @@ spec:
       initContainers:
       {{- range $name, $img := .Values.global.images }}
       - name: preload-{{ $name }}
-        image: {{- if or (hasPrefix "busybox:" $img) (hasPrefix "mysql:" $img) (hasPrefix "redis:" $img) -}}
-                {{ $img }}
-                {{- else -}}
-                  {{- if $.Values.global.cn -}}
-                    {{ $.Values.global.registryForMirrorCN }}/{{ $img }}
-                  {{- else -}}
-                    {{ $.Values.global.registry }}/{{ $img }}
-                  {{- end -}}
-                {{- end }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ $img }}
         imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
         command:
         - /bin/sh
         - -c
-        - echo preload {{ $img }}
+        - echo preload {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ $img }}
       {{- end }}
       containers:
       - name: exec
-        image: {{ .Values.global.images.busybox }}
+        image: {{ .Values.global.images.buybox }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         command:
         - sh
