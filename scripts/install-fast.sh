@@ -89,12 +89,64 @@ copy_and_adjust_values() {
 
 helm_install() {
   local ns="mcpcan"
-  log "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s (this step needs a few minutes)"
-  helm install mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --create-namespace --timeout 600s --wait || {
-    err "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s --wait failed"
-    exit 1
-  }
-  log "Running Helm install mcpcan finished"
+  log "Checking Helm release status"
+  local status_out=""
+  if status_out=$(helm status mcpcan --namespace "$ns" 2>/dev/null); then
+    local status
+    status=$(echo "$status_out" | awk -F': ' '/^STATUS:/{print $2}')
+    if [ -n "$status" ]; then
+      if [ "$status" = "deployed" ] || [ "$status" = "superseded" ]; then
+        warn "Helm release 'mcpcan' already exists with status: $status"
+        read -r -p "Force upgrade to latest chart? [y/N]: " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+          log "Running Helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --timeout 600s --wait"
+          helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --timeout 600s --wait || {
+            err "Helm upgrade mcpcan failed"
+            exit 1
+          }
+          log "Helm upgrade mcpcan finished"
+        else
+          err "Release exists, skip upgrade. Fix or change values then run upgrade manually"
+          exit 0
+        fi
+      else
+        warn "Helm release 'mcpcan' status is abnormal: $status"
+        read -r -p "Force upgrade anyway? [y/N]: " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+          log "Running Helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --timeout 600s --wait"
+          helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --timeout 600s --wait || {
+            err "Helm upgrade mcpcan failed"
+            exit 1
+          }
+          log "Helm upgrade mcpcan finished"
+        else
+          err "Please repair the abnormal status first, then upgrade"
+          exit 1
+        fi
+      fi
+    else
+      warn "Unable to read Helm release status"
+      read -r -p "Proceed with upgrade? [y/N]: " ans
+      if [[ "$ans" =~ ^[Yy]$ ]]; then
+        log "Running Helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --timeout 600s --wait"
+        helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --timeout 600s --wait || {
+          err "Helm upgrade mcpcan failed"
+          exit 1
+        }
+        log "Helm upgrade mcpcan finished"
+      else
+        err "Cancel upgrade"
+        exit 1
+      fi
+    fi
+  else
+    log "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s (this step needs a few minutes)"
+    helm install mcpcan ./helm -f helm/values-custom.yaml --namespace "$ns" --create-namespace --timeout 600s --wait || {
+      err "Running Helm install mcpcan ./helm -f helm/values-custom.yaml --namespace \"$ns\" --create-namespace --timeout 600s --wait failed"
+      exit 1
+    }
+    log "Running Helm install mcpcan finished"
+  fi
 }
 
 verify_pods() {
