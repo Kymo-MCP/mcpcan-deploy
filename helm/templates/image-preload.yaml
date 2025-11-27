@@ -29,7 +29,7 @@ spec:
       restartPolicy: OnFailure
       initContainers:
       {{- range $name, $img := .Values.global.images }}
-      - name: preload-{{ $name }}
+      - name: preload-{{ lower $name }}
         image: {{ if $.Values.global.cn }}{{ $.Values.global.registryForMirrorCN }}{{ else }}{{ $.Values.global.registry }}{{ end }}/{{ $img }}
         imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
         command:
