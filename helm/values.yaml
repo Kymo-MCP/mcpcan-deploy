@@ -15,11 +15,6 @@ global:
   # Example: "mcpcan.example.com"
   domain: ""
   
-  # Public IP address for external access
-  # Used when domain is not configured
-  # Must be accessible from client networks
-  publicIP: "192.168.1.100"
-  
   # Application version tag
   # Used for image tags and deployment tracking
   version: v1.4.0-dev
@@ -28,16 +23,30 @@ global:
   # All service images will be pulled from this registry
   registry: 77kymo
 
+  # Container registry URL for mirror images in CN
+  # All service images will be pulled from this registry in CN
   registryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
   
   # Image pull policy for all containers
   # Options: Always, IfNotPresent, Never
   imagePullPolicy: Always
-  
+
+  # Image tags for all services
+  # Used to override default image tags
+  images:
+    busybox: "busybox:1.36"
+    mysql: "mysql:8.0.30"
+    redis: "redis:6-alpine"
+    mcpInit: "mcp-init:v1.3.1"
+    mcpMarket: "mcp-market:v1.3.1"
+    mcpAuthz: "mcp-authz:v1.3.1"
+    mcpGateway: "mcp-gateway:v1.3.1"
+    mcpWeb: "mcp-web:v1.3.1"
+
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
   # Change this in production environments
-  appSecret: dev-app-secret
+  appSecret: "MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE"
   
   # Run mode for the application
   # Options: "demo", "prod"
@@ -72,6 +81,11 @@ global:
     mysqlPath: /var/lib/mysql
     # Redis data mount point
     redisPath: /data/redis
+
+
+
+
+  
 
 # =============================================================================
 # Kubernetes Access Configuration

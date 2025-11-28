@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
-    mcpcan.io/hook: disabled
+    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
   ttlSecondsAfterFinished: 864000
   template:
@@ -26,10 +26,10 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/kube-access.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.kubeAccess.serviceAccountName | default "mcpcan-user" }}
-      restartPolicy: OnFailure
+      restartPolicy: Never
       initContainers:
       - name: wait-deps
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/busybox:1.36
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.busybox }}
         command:
         - sh
         - -c
@@ -38,15 +38,9 @@ spec:
           until nc -z {{ .Values.infrastructure.redis.service.name | default "redis" }} {{ .Values.infrastructure.redis.service.port | default 6379 }}; do echo "waiting for redis"; sleep 2; done
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.services.init.name | default "mcp-init" }}:{{ .Values.global.version }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpInit }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.init.resources }}
-        command:
-        - "/app/init"
-        - "&&"
-        - "tail"
-        - "-f"
-        - "/dev/null"
         resources:
           {{- toYaml .Values.services.init.resources | nindent 10 }}
         {{- end }}
