@@ -221,7 +221,8 @@ else
 fi
 
 info "k3s uninstall completed!"
-info "To reinstall, run: ./install-k3s.sh"
+info "To reinstall, run: ./install-fast.sh"
+
 
 # Suggest reboot (optional)
 if [ "$clean_all" = true ]; then

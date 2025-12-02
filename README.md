@@ -1,6 +1,6 @@
 # MCPCan Deployment Guide
 
-## [Environment Dependencies](#dependencies) 
+## [Environment Dependencies](#dependencies)
 
 Before starting deployment, please ensure your environment meets the following requirements:
 
@@ -12,380 +12,208 @@ Before starting deployment, please ensure your environment meets the following r
 
 ## Quick Start ([View Helm Chart Repository:https://kymo-mcp.github.io/mcpcan-deploy/](https://kymo-mcp.github.io/mcpcan-deploy/))
 
-### 1. Clone Repository
+This document provides two installation paths to help you deploy the MCPCAN management platform in different scenarios.
+
+- **Fast Install Script**: Suitable for clean Linux servers, automatically installs dependencies and the platform. Recommended for quick experience via IP access.
+- **Custom Install (Helm)**: Suitable for scenarios requiring custom domains, enabling HTTPS, modifying default accounts/passwords, or platform configurations.
+
+### 1. Get Deployment Repository
+
+Select the repository source based on your network environment:
 
 ```bash
-# Clone project repository
+# GitHub (International)
 git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
+cd mcpcan-deploy
+
+# Gitee (Recommended for China)
+git clone https://gitee.com/kymomcp/mcpcan-deploy.git
 cd mcpcan-deploy
 ```
 
-### 2. Basic Configuration Deployment
+### 2. Installation Paths
 
-Deploy using default configuration for quick setup:
+#### Path A: Fast Install (Recommended for IP Access)
+
+This path automatically installs k3s, ingress-nginx, Helm, and deploys the MCPCAN platform. Suitable for fresh environments without pre-installed Kubernetes components.
 
 ```bash
-# Basic deployment (using IP access, modify publicIP in ./helm/values.yaml)
-helm install mcpcan ./helm --namespace mcpcan --create-namespace --timeout 600s --wait
+# Standard Fast Install (International Mirrors)
+./scripts/install-fast.sh
 
-# Check deployment status
-kubectl get pods -n mcpcan
-kubectl get svc -n mcpcan
+# Fast Install (Accelerated with China Mirrors)
+./scripts/install-fast.sh --cn
 ```
 
-After deployment is complete, you can access through:
-- Web Service: `http://<node-ip>`
+Upon success, the script verifies the Helm release status and prints the access URL:
+- Public IP: `http://<public-ip>` (Automatically detected)
+- Local Fallback: `http://localhost`
 
-### 3. Custom Domain Deployment
+#### Path B: Custom Install (Domain/HTTPS/Configuration)
 
-If you have your own domain, you can configure it following these steps:
+Follow these steps when you need to use a custom domain, enable HTTPS, or adjust default configurations.
 
-#### Step 1: Copy and modify configuration file
+**Step 1: Install Dependencies (k3s, ingress-nginx, Helm)**
+
+Suitable for clean environments. If you already have k3s/ingress-nginx/Helm, skip this section.
 
 ```bash
-# Copy default configuration
+# Install k3s, ingress-nginx, and Helm
+./scripts/install-run-environment.sh
+
+# Install k3s, ingress-nginx, and Helm (China Mirrors)
+./scripts/install-run-environment.sh --cn
+```
+
+**Step 2: Configure and Install**
+
+```bash
+# 1. Copy default configuration file
 cp helm/values.yaml helm/values-custom.yaml
-```
 
-#### Step 2: Modify domain configuration
+# 2. Edit custom configuration file (Set domain, TLS, etc.)
+# vi helm/values-custom.yaml
 
-Edit `helm/values-custom.yaml`:
-
-```yaml
-# Global configuration
-global:
-  # Set your domain, e.g.: demo.mcpcan.com, publicIP configuration will be ignored when domain exists
-  domain: "demo.mcpcan.com"
-  
-# Ingress configuration
-ingress:
-  tls:
-    enabled: true
-    # If using self-signed certificate (e.g.: demo.mcpcan.com), please configure certificate content
-    # Note: Self-signed certificates will show security warnings in browsers
-    # Installing with self-signed certificates may cause MCP access configurations to fail, 
-    # in which case you can manually change the protocol to http in the configuration
-    # Production environments should use official certificates
-    crt: |
-      -----BEGIN CERTIFICATE-----
-      # Your certificate content
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN PRIVATE KEY-----
-      # Your private key content
-      -----END PRIVATE KEY-----
-```
-
-#### Step 3: Generate TLS Certificate (Optional)
-
-```bash
-# Generate self-signed certificate
-./scripts/generate-simple-cert.sh your-domain.com 365
-
-# Certificate files will be generated in certs/ directory
-ls certs/
-```
-
-#### Step 4: Deploy with custom configuration
-
-```bash
-# Deploy with custom configuration
+# 3. Install
 helm install mcpcan ./helm -f helm/values-custom.yaml \
   --namespace mcpcan --create-namespace --timeout 600s --wait
-
-# Or upgrade existing deployment
-helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
-  --namespace mcpcan --timeout 600s --wait
 ```
 
-## Deployment Management
+## Core Scripts Guide
 
-### Upgrade Deployment
+The project provides multiple utility scripts to simplify deployment and management. Here is a guide for the three core scripts:
+
+### 1. Fast Install Script (`install-fast.sh`)
+**Purpose**: One-click installation and deployment of all components in a clean Linux environment.
+**Features**:
+- Automatically detects and installs K3s, Helm, Ingress-Nginx.
+- Automatically deploys the MCPCAN platform.
+- Supports `--cn` parameter for accelerated installation using domestic mirrors.
+**Usage**:
+```bash
+./scripts/install-fast.sh [--cn]
+```
+
+### 2. Runtime Environment Install Script (`install-run-environment.sh`)
+**Purpose**: Installs only the Kubernetes base runtime environment without deploying MCPCAN business applications.
+**Features**:
+- Installs K3s cluster.
+- Installs Helm package manager.
+- Installs Ingress-Nginx controller.
+- Suitable for scenarios requiring custom configuration for MCPCAN installation.
+**Usage**:
+```bash
+./scripts/install-run-environment.sh [--cn]
+```
+
+### 3. Uninstall Script (`uninstall.sh`)
+**Purpose**: Completely uninstalls MCPCAN and its runtime environment.
+**Warning**: This operation will delete the K3s cluster and all data. Please use with caution.
+**Usage**:
+```bash
+./scripts/uninstall.sh
+```
+
+## Detailed Helm Usage Guide
+
+This section details common Helm commands for managing MCPCAN deployments.
+
+### 1. Install
+Deploy the Chart into the Kubernetes cluster.
 
 ```bash
-# Upgrade to new version
-helm upgrade mcpcan ./helm -f helm/values-custom.yaml \
-  --set global.version=v1.1.0 \
-  --namespace mcpcan --timeout 600s --wait
+# Basic installation
+helm install mcpcan ./helm --namespace mcpcan --create-namespace
 
-# View upgrade history
+# Install using custom configuration file
+helm install mcpcan ./helm -f helm/values-custom.yaml --namespace mcpcan --create-namespace
+
+# Common parameters:
+# --namespace: Specify namespace
+# --create-namespace: Create namespace if it doesn't exist
+# --wait: Wait for all Pods to be ready before returning
+# --timeout: Set timeout for waiting
+```
+
+### 2. Upgrade
+Update the existing Release after modifying configuration or upgrading versions.
+
+```bash
+# Update configuration
+helm upgrade mcpcan ./helm -f helm/values-custom.yaml --namespace mcpcan
+
+# Dynamically modify a single configuration item
+helm upgrade mcpcan ./helm --set global.domain=new.example.com --namespace mcpcan
+```
+
+### 3. View Status (Status & List)
+View deployment status and version history.
+
+```bash
+# View deployment status (including Pod, Service, etc.)
+helm status mcpcan --namespace mcpcan
+
+# List all Releases in a specific namespace
+helm list --namespace mcpcan
+
+# View release history
 helm history mcpcan --namespace mcpcan
 ```
 
-### Uninstall Deployment
+### 4. Uninstall
+Delete the deployed Release.
 
 ```bash
-# Uninstall Helm Release
+# Uninstall application
 helm uninstall mcpcan --namespace mcpcan
 
-# Clean up namespace
-kubectl delete namespace mcpcan
-
-# Clean up persistent data (use with caution)
-sudo rm -rf /data/mcpcan
+# Note: By default, PVCs (Persistent Volume Claims) might not be deleted to protect data.
+# To completely clean up data, manually delete the corresponding PVCs or data directories.
 ```
 
-### Common Management Commands
+## Deployment Management & Operations
 
-#### View Status
+### Common Kubectl Commands
 
 ```bash
-# View Helm Release status
-helm status mcpcan --namespace mcpcan
-
 # View Pod status
 kubectl get pods -n mcpcan
 
-# View service status
+# View Service
 kubectl get svc -n mcpcan
 
-# View Ingress status
+# View Ingress
 kubectl get ingress -n mcpcan
-```
 
-#### View Logs
-
-```bash
-# View specific service logs
-kubectl logs -n mcpcan -l app=mcp-gateway
-kubectl logs -n mcpcan -l app=mcp-authz
-kubectl logs -n mcpcan -l app=mcp-market
-kubectl logs -n mcpcan -l app=mcp-web
-
-# View logs in real-time
+# View Pod logs
 kubectl logs -n mcpcan -l app=mcp-gateway -f
-```
 
-#### Troubleshooting
-
-```bash
-# View Pod detailed information
+# View Pod details (for troubleshooting)
 kubectl describe pod <pod-name> -n mcpcan
-
-# View events
-kubectl get events -n mcpcan --sort-by='.lastTimestamp'
-
-# Enter Pod for debugging
-kubectl exec -it <pod-name> -n mcpcan -- /bin/sh
-
-# Port forwarding (local debugging)
-kubectl port-forward svc/mcp-gateway-svc 8080:8080 -n mcpcan
-kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan
 ```
 
-## Shell Script Usage Guide
+## More Utility Scripts
 
-The project provides multiple utility scripts to simplify deployment and management:
-
-### 1. One-Click Runtime Environment Installation Script
-
-```bash
-# Install complete runtime environment (K3s + Helm + Ingress-Nginx)
-./scripts/install-run-environment.sh
-
-# Use China mirror sources for faster installation
-./scripts/install-run-environment.sh --cn
-
-# View all available options
-./scripts/install-run-environment.sh --help
-```
-
-### 2. K3s Management Scripts
-
-```bash
-# Install K3s
-./scripts/install-k3s.sh
-
-# Uninstall K3s
-./scripts/uninstall-k3s.sh
-```
-
-### 3. Helm Installation Script
-
-```bash
-# Install Helm package manager
-./scripts/install-helm.sh
-```
-
-### 4. Ingress-Nginx Installation Script
-
-```bash
-# Install Ingress-Nginx controller
-./scripts/install-ingress-nginx.sh
-```
-
-### 5. Certificate Generation Script
-
-```bash
-# Generate self-signed certificate
-# Usage: ./scripts/generate-simple-cert.sh <domain> <validity-days>
-./scripts/generate-simple-cert.sh demo.mcpcan.com 365
-
-# Generated certificate files
-ls certs/
-# tls.crt - Certificate file
-# tls.key - Private key file
-```
-
-### 6. Image Management Scripts
-
-```bash
-# Load offline images
-./scripts/load-images.sh
-
-# Interactive Bash environment
-./scripts/bash.sh
-```
-
-### 7. Helm Package Management
-
-```bash
-# Push Helm package to GitHub Pages
-./scripts/push-helm-pkg-to-github-pages.sh
-```
+In addition to the core scripts, the `scripts/` directory provides auxiliary tools:
+- `install-k3s.sh`: Installs K3s separately.
+- `install-helm.sh`: Installs Helm separately.
+- `install-ingress-nginx.sh`: Installs Ingress-Nginx separately.
+- `generate-simple-cert.sh`: Generates self-signed SSL certificates.
+- `load-images.sh`: Loads offline images.
 
 ## Advanced Configuration
-
-### Custom Deployment Parameters
-
-You can override default configurations using `--set` parameters:
-
-```bash
-# Custom image version
-helm upgrade --install mcpcan ./helm \
-  --set global.version=v1.2.3 \
-  --namespace mcpcan
-
-# Custom domain
-helm upgrade --install mcpcan ./helm \
-  --set global.domain=my-custom-domain.com \
-  --namespace mcpcan
-
-# Custom resource limits
-helm upgrade --install mcpcan ./helm \
-  --set services.gateway.resources.limits.memory=512Mi \
-  --set services.gateway.resources.limits.cpu=500m \
-  --namespace mcpcan
-
-# Disable a service
-helm upgrade --install mcpcan ./helm \
-  --set services.market.enabled=false \
-  --namespace mcpcan
-```
 
 ### Multi-Environment Deployment
 
 ```bash
-# Development environment
+# Development Environment
 helm install mcpcan-dev ./helm -f helm/values-dev.yaml \
   --namespace mcpcan-dev --create-namespace
 
-# Staging environment
-helm install mcpcan-staging ./helm -f helm/values-staging.yaml \
-  --namespace mcpcan-staging --create-namespace
-
-# Production environment
+# Production Environment
 helm install mcpcan-prod ./helm -f helm/values-prod.yaml \
   --namespace mcpcan-prod --create-namespace
 ```
-
-## Environment Dependencies Installation Guide
-
-### One-Click Runtime Environment Installation (Recommended)
-
-For clean environments, we recommend using the provided one-click installation script:
-
-```bash
-# Install complete runtime environment (K3s + Helm + Ingress-Nginx)
-./scripts/install-run-environment.sh
-
-# Use China mirror sources for faster installation
-./scripts/install-run-environment.sh --cn
-
-# View all available options
-./scripts/install-run-environment.sh --help
-```
-
-**This script automatically installs the following components:**
-- **K3s**: Lightweight Kubernetes distribution
-- **Helm**: Kubernetes package manager
-- **Ingress-Nginx**: Ingress controller for handling external traffic routing
-
-### Manual Installation (Optional)
-
-If you need custom installation or already have some components, you can choose manual installation:
-
-#### 1. Kubernetes Cluster
-
-```bash
-# Install K3s using official installation script
-curl -sfL https://get.k3s.io | sh -
-
-# Or install specific version
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.5+k3s1 sh -
-
-# Verify installation
-sudo k3s kubectl get nodes
-```
-
-**Requirements:**
-- Kubernetes version >= 1.20
-- At least 2GB available memory and 2 CPU cores
-
-#### 2. Helm Package Manager
-```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-```
-
-#### 3. NGINX Ingress Controller
-```bash
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx --create-namespace \
-  --set controller.service.type=NodePort
-```
-
-## Software Architecture Design
-
-MCPCan is built on a modern Kubernetes microservice architecture, providing comprehensive MCP service lifecycle management capabilities. The platform consists of the following core components:
-
-### Core Services
-
-1. **MCPCan-Web** - Vue.js-based frontend service providing modern web interface for MCP service management
-2. **MCPCan-Gateway** - MCP gateway service responsible for request routing, protocol conversion, and authentication
-3. **MCPCan-Authz** - Authentication and authorization service handling user management and access control
-4. **MCPCan-Market** - MCP service marketplace for discovering, publishing, and managing MCP services
-5. **MCPCan-Init** - Initialization service for system setup and configuration
-
-### Data Storage
-
-6. **MySQL** - Primary database service for persistent data storage
-7. **Redis** - Cache service for session management and performance optimization
-
-### Technology Stack
-
-**Frontend:**
-- Framework: Vue.js 3.5+ (Composition API)
-- Language: TypeScript
-- Styling: UnoCSS, SCSS
-- UI Components: Element Plus
-- State Management: Pinia
-- Build Tool: Vite
-
-**Backend:**
-- Language: Go 1.24.2+
-- Framework: Gin, gRPC
-- Database: MySQL, Redis
-- Containerization: Docker, Kubernetes
-
-## Important Notes
-
-1. **Resource Requirements**: Ensure the cluster has sufficient resources
-2. **Security Configuration**: Change default passwords and keys in production environments
-3. **Network Configuration**: Ensure firewall allows access to corresponding ports
-4. **Backup Strategy**: Regularly backup databases and important configuration files
-5. **Monitoring and Alerting**: Recommend configuring monitoring and alerting systems
-6. **Version Management**: Recommend using specific version tags instead of `latest`
 
 ## Frequently Asked Questions
 
