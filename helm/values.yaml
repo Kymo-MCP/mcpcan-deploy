@@ -17,7 +17,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.3.2-dev
+  version: v1.3.2
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -37,11 +37,11 @@ global:
     busybox: "busybox:1.36"
     mysql: "mysql:8.0.30"
     redis: "redis:6-alpine"
-    mcpInit: "mcp-init:v1.3.2-dev"
-    mcpMarket: "mcp-market:v1.3.2-dev"
-    mcpAuthz: "mcp-authz:v1.3.2-dev"
-    mcpGateway: "mcp-gateway:v1.3.2-dev"
-    mcpWeb: "mcp-web:v1.3.2-dev"
+    mcpInit: "mcp-init:v1.3.2"
+    mcpMarket: "mcp-market:v1.3.2"
+    mcpAuthz: "mcp-authz:v1.3.2"
+    mcpGateway: "mcp-gateway:v1.3.2"
+    mcpWeb: "mcp-web:v1.3.2"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
