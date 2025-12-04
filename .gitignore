@@ -31,3 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 helm/values-*.yaml
+
+docker-compose
