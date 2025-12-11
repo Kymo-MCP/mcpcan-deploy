@@ -17,7 +17,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.3.3
+  version: v1.4.0
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -37,11 +37,11 @@ global:
     busybox: "busybox:1.36"
     mysql: "mysql:8.0.30"
     redis: "redis:6-alpine"
-    mcpInit: "mcp-init:v1.3.3"
-    mcpMarket: "mcp-market:v1.3.3"
-    mcpAuthz: "mcp-authz:v1.3.3"
-    mcpGateway: "mcp-gateway:v1.3.3"
-    mcpWeb: "mcp-web:v1.3.3"
+    mcpInit: "mcp-init:v1.4.0"
+    mcpMarket: "mcp-market:v1.4.0"
+    mcpAuthz: "mcp-authz:v1.4.0"
+    mcpGateway: "mcp-gateway:v1.4.0"
+    mcpWeb: "mcp-web:v1.4.0"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
@@ -158,10 +158,6 @@ infrastructure:
       requests:
         memory: "256Mi"
         cpu: "100m"
-      # Maximum allowed resources
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
 
   # Redis Cache Configuration
   redis:
@@ -213,11 +209,6 @@ infrastructure:
       # Minimum guaranteed resources
       requests:
         memory: "128Mi"
-        cpu: "50m"
-      # Maximum allowed resources
-      limits:
-        memory: "256Mi"
-        cpu: "200m"
 
 # =============================================================================
 # Services Configuration
@@ -259,10 +250,6 @@ services:
       requests:
         memory: "64Mi"
         cpu: "50m"
-      # Maximum allowed resources
-      limits:
-        memory: "128Mi"
-        cpu: "200m"
 
   # Market Service (Code Package Management)
   market:
@@ -312,10 +299,6 @@ services:
       requests:
         memory: "128Mi"
         cpu: "100m"
-      # Maximum allowed resources
-      limits:
-        memory: "256Mi"
-        cpu: "500m"
 
   # Authorization Service
   authz:
@@ -356,10 +339,6 @@ services:
       requests:
         memory: "128Mi"
         cpu: "100m"
-      # Maximum allowed resources
-      limits:
-        memory: "256Mi"
-        cpu: "500m"
 
   # Gateway Service (API Gateway)
   gateway:
@@ -396,10 +375,6 @@ services:
       requests:
         memory: "128Mi"
         cpu: "100m"
-      # Maximum allowed resources
-      limits:
-        memory: "256Mi"
-        cpu: "500m"
 
   # Initialization Service
   init:
@@ -434,10 +409,6 @@ services:
       requests:
         memory: "64Mi"
         cpu: "50m"
-      # Maximum allowed resources
-      limits:
-        memory: "128Mi"
-        cpu: "200m"
 
 # =============================================================================
 # Ingress Configuration
