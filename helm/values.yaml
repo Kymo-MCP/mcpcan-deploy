@@ -17,7 +17,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.4.0
+  version: v1.5.0
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -33,15 +33,19 @@ global:
 
   # Image tags for all services
   # Used to override default image tags
+  enabledPreLoadImages: true
   images:
     busybox: "busybox:1.36"
     mysql: "mysql:8.0.30"
     redis: "redis:6-alpine"
-    mcpInit: "mcp-init:v1.4.0"
-    mcpMarket: "mcp-market:v1.4.0"
-    mcpAuthz: "mcp-authz:v1.4.0"
-    mcpGateway: "mcp-gateway:v1.4.0"
-    mcpWeb: "mcp-web:v1.4.0"
+    openapiToMcp: "openapi-to-mcp:v0.2.7"
+    mcpEntry: "mcp-entry:v3.5"
+    mcpHosting: "mcp-hosting:v3"
+    mcpInit: "mcp-init:v1.5.0"
+    mcpMarket: "mcp-market:v1.5.0"
+    mcpAuthz: "mcp-authz:v1.5.0"
+    mcpGateway: "mcp-gateway:v1.5.0"
+    mcpWeb: "mcp-web:v1.5.0"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
@@ -49,7 +53,10 @@ global:
   appSecret: "MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE"
   
   # Run mode for the application
-  # Options: "demo", "prod"
+  # Options: Default: "prod"
+  # "demo": Enables demo features and lower resource requirements
+  # "prod": Production-ready configuration with full features
+  # "kymo": Kymo-specific configuration
   runMode: "prod"
 
   # Host storage configuration
@@ -82,9 +89,17 @@ global:
     # Redis data mount point
     redisPath: /data/redis
 
+  # The domain name path resolution rules can modify the apiPathRule and webPathRule path rules when there is no conflict. 
+  # However, the /mcp-gateway path resolution rule is fixed. 
+  # It is specially used for mcp traffic proxy forwarding, cannot be modified, and this path is occupied compulsorily.
+  # web path rule
+  webPathRule: /
+  # api path rule
+  apiPathRule: /api
+  # mcp-gateway path rule : /mcp-gateway (This rule is bound to the container name, must exist, and cannot be modified.)
 
-
-
+  # codeUploadMaxFileSize: 100MB (default)
+  codeUploadMaxFileSize: 100
   
 
 # =============================================================================
@@ -123,13 +138,6 @@ infrastructure:
     # MySQL service name (used for internal DNS resolution)
     name: mysql
     
-    # MySQL container image configuration
-    image:
-      # MySQL image repository
-      repository: mysql
-      # MySQL version tag
-      tag: "8.0.30"
-    
     # Kubernetes service configuration
     service:
       # Service name for MySQL
@@ -156,8 +164,8 @@ infrastructure:
     resources:
       # Minimum guaranteed resources
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: "64Mi"
+        cpu: "64m"
 
   # Redis Cache Configuration
   redis:
@@ -174,13 +182,7 @@ infrastructure:
     
     # Redis service name (used for internal DNS resolution)
     name: redis
-    
-    # Redis container image configuration
-    image:
-      # Redis image repository
-      repository: redis
-      # Redis version tag (Alpine variant for smaller size)
-      tag: "6-alpine"
+
     
     # Kubernetes service configuration
     service:
@@ -208,13 +210,40 @@ infrastructure:
     resources:
       # Minimum guaranteed resources
       requests:
-        memory: "128Mi"
+        memory: "64Mi"
+        cpu: "64m"
 
 # =============================================================================
 # Services Configuration
 # =============================================================================
 # Configuration for MCPCan application services
 services:
+  # entry service
+  entry:
+    # Enable/disable entry service deployment
+    enabled: true
+    # Service name for Kubernetes resources
+    name: mcp-entry
+    # Number of pod replicas
+    replicas: 1
+
+    # Kubernetes service configuration
+    service:
+      # Service name for internal DNS resolution
+      name: mcp-entry-svc
+      # Service port number
+      port: 80
+      # Service type (ClusterIP for internal access)
+      type: ClusterIP
+    
+    # Resource limits and requests
+    resources:
+      # Minimum guaranteed resources
+      requests:
+        memory: "64Mi"
+        cpu: "64m"
+
+
   # Web Frontend Service
   web:
     # Enable/disable web service deployment
@@ -233,23 +262,14 @@ services:
       # Service type (ClusterIP for internal access)
       type: ClusterIP
     
-    # Ingress configuration for external access
-    ingress:
-      # Enable/disable ingress for this service
-      enabled: true
-      # Host header for routing (empty uses default)
-      host: ""
-      # URL path for routing
-      path: /
-      # Path matching type
-      pathType: Prefix
+    # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
     
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
       requests:
         memory: "64Mi"
-        cpu: "50m"
+        cpu: "64m"
 
   # Market Service (Code Package Management)
   market:
@@ -269,21 +289,7 @@ services:
       # Service type (ClusterIP for internal access)
       type: ClusterIP
     
-    # Ingress configuration for external access
-    ingress:
-      # Enable/disable ingress for this service
-      enabled: true
-      # Host header for routing (empty uses default)
-      host: ""
-      # URL path pattern with regex capture group
-      path: /api/market/(.*)
-      # Path matching type (ImplementationSpecific required for regex paths)
-      pathType: ImplementationSpecific
-      # Ingress annotations for URL rewriting and regex support
-      annotations:
-        nginx.ingress.kubernetes.io/use-regex: "true"
-        nginx.ingress.kubernetes.io/rewrite-target: /market/$1
-        nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
     
     # ConfigMap configuration (currently disabled)
     config:
@@ -297,8 +303,8 @@ services:
     resources:
       # Minimum guaranteed resources
       requests:
-        memory: "128Mi"
-        cpu: "100m"
+        memory: "64Mi"
+        cpu: "64m"
 
   # Authorization Service
   authz:
@@ -318,27 +324,14 @@ services:
       # Service type (ClusterIP for internal access)
       type: ClusterIP
     
-    # Ingress configuration for external access
-    ingress:
-      # Enable/disable ingress for this service
-      enabled: true
-      # Host header for routing (empty uses default)
-      host: ""
-      # URL path pattern with regex capture group
-      path: /api/authz/(.*)
-      # Path matching type (ImplementationSpecific required for regex paths)
-      pathType: ImplementationSpecific
-      # Ingress annotations for URL rewriting and regex support
-      annotations:
-        nginx.ingress.kubernetes.io/use-regex: "true"
-        nginx.ingress.kubernetes.io/rewrite-target: /authz/$1
+    # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
     
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
       requests:
-        memory: "128Mi"
-        cpu: "100m"
+        memory: "64Mi"
+        cpu: "64m"
 
   # Gateway Service (API Gateway)
   gateway:
@@ -358,23 +351,14 @@ services:
       # Service type (ClusterIP for internal access)
       type: ClusterIP
     
-    # Ingress configuration for external access
-    ingress:
-      # Enable/disable ingress for this service
-      enabled: true
-      # Host header for routing (empty uses default)
-      host: ""
-      # URL path for routing
-      path: /mcp-gateway
-      # Path matching type
-      pathType: Prefix
+    # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
     
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
       requests:
-        memory: "128Mi"
-        cpu: "100m"
+        memory: "64Mi"
+        cpu: "64m"
 
   # Initialization Service
   init:
@@ -387,9 +371,6 @@ services:
     loginUser:
       username: admin
       password: admin123
-      
-    # Path to kubeconfig file
-    kubeconfigPath: "/etc/kube/kubeconfig.yaml"
 
     # Number of pod replicas
     replicas: 1
@@ -408,8 +389,7 @@ services:
       # Minimum guaranteed resources
       requests:
         memory: "64Mi"
-        cpu: "50m"
-
+        cpu: "64m"
 # =============================================================================
 # Ingress Configuration
 # =============================================================================
@@ -442,6 +422,8 @@ ingress:
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
   # TLS/SSL configuration
   tls:
+    # create a new secret for TLS certificate
+    createSecret: true
     # Enable/disable TLS encryption
     enabled: false
     # Kubernetes secret name containing TLS certificate
@@ -458,11 +440,6 @@ ingress:
       -----BEGIN PRIVATE KEY-----
       ...
       -----END PRIVATE KEY-----
-  
-# Node selector for scheduling image pull job
-# Empty means no specific node requirements
-nodeSelector: {}
 
-# Tolerations for scheduling image pull job
-# Empty means no specific tolerations
-tolerations: []
+#  kubernetes.io/hostname: "docker-desktop"\
+nodeSelector: {}

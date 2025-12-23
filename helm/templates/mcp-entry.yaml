@@ -1,0 +1,123 @@
+{{- if .Values.services.entry.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.services.entry.name | default "mcp-entry" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.entry.name | default "mcp-entry" }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.entry.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.services.entry.name | default "mcp-entry" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.services.entry.name | default "mcp-entry" }}
+        {{- include "mcpcan.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.services.entry.name | default "mcp-entry" }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpEntry }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: 80
+          name: web
+        - containerPort: 443
+          name: websecure
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/traefik/traefik.yaml
+          subPath: traefik.yaml
+        - name: config-volume
+          mountPath: /etc/traefik/dynamic.yaml
+          subPath: dynamic.yaml
+        resources:
+          {{- toYaml .Values.services.entry.resources | nindent 10 }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mcp-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.services.entry.service.name | default "mcp-entry-svc" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.entry.name | default "mcp-entry" }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.entry.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.services.entry.service.port }}
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.services.entry.name | default "mcp-entry" }}
+---
+{{- if and .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.services.entry.name | default "mcp-entry" }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.services.entry.name | default "mcp-entry" }}
+    {{- include "mcpcan.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    {{- if .Values.global.domain }}
+    - {{ .Values.global.domain }}
+    {{- end }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  {{- if .Values.global.domain }}
+  - host: {{ .Values.global.domain }}
+    http:
+  {{- else }}
+  - http:
+  {{- end }}
+      paths:
+      - path: {{ .Values.global.webPathRule }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.services.entry.service.name | default "mcp-entry-svc" }}
+            port:
+              number: {{ .Values.services.entry.service.port }}
+      - path: {{ .Values.global.apiPathRule }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.services.entry.service.name | default "mcp-entry-svc" }}
+            port:
+              number: {{ .Values.services.entry.service.port }}
+      - path: /mcp-gateway
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.services.entry.service.name | default "mcp-entry-svc" }}
+            port:
+              number: {{ .Values.services.entry.service.port }}
+{{- end }}
+{{- end }}

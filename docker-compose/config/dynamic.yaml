@@ -1,0 +1,158 @@
+# dynamic.yaml
+
+# TLS Configuration
+# Configure the certificates for HTTPS
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/mcpcan.example.com.crt
+      keyFile: /etc/traefik/certs/mcpcan.example.com.key
+
+http:
+  middlewares:
+    # Middleware to strip "/api" prefix from the path
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+    strip-web-prefix:
+      stripPrefix:
+        prefixes:
+          - "/"
+    # External Authentication Middleware (Forward Auth)
+    # Delegates authentication to an external service
+    external-auth:
+      forwardAuth:
+        address: "http://mcp-authz:8081/authz/validate"
+        trustForwardHeader: true
+        authResponseHeaders: ["X-Consum-User-Id"]
+
+  # Servers Transport for Web Service
+  # Allows HTTPS connections to the web service with self-signed certificates
+  serversTransports:
+    https-skip-verify-transport:
+      insecureSkipVerify: true
+
+  routers:
+    # =========================================================================
+    # HTTP Routers (Port 80)
+    # =========================================================================
+    
+    # Router for Public Authz endpoints (HTTP)
+    authz-public:
+      rule: "PathPrefix(`/api/authz/login`) || PathPrefix(`/api/authz/logout`) || PathPrefix(`/api/authz/register`) || PathPrefix(`/api/authz/refresh`) || PathPrefix(`/api/authz/validate`) || PathPrefix(`/api/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`/api/health`) || PathPrefix(`/api/market/code/download`) || PathPrefix(`/api/market/openapi/download`)"
+      service: "authz-service"
+      entryPoints: ["web"]
+      middlewares:
+        - "strip-api-prefix"
+
+    # Router for Protected Authz endpoints
+    # Requires authentication
+    authz-protected:
+      rule: "PathPrefix(`/api/authz`)"
+      service: "authz-service"
+      entryPoints: ["web"]
+      middlewares:
+        - "strip-api-prefix"
+      # Priority is automatically determined by rule length, but specific routes (longer) take precedence
+
+    # Router for Market endpoints
+    # Requires authentication
+    market-router:
+      rule: "PathPrefix(`/api/market`)"
+      service: "market-service"
+      entryPoints: ["web"]
+      middlewares:
+        - "strip-api-prefix"
+        - "external-auth"
+
+    # Router for MCP-Gateway endpoints
+    mcp-gateway-router:
+      rule: "PathPrefix(`/mcp-gateway`)"
+      service: "mcp-gateway-service"
+      entryPoints: ["web"]
+
+    # Router for the root web service
+    # Lower priority to avoid conflicts with /api routes
+    web-router:
+      rule: "PathPrefix(`/`)"
+      service: "web-service"
+      entryPoints: ["web"]
+      middlewares:
+        - "strip-web-prefix"
+      priority: 1 # Lower priority
+
+    # secure routers
+    # =========================================================================
+    # HTTPS Routers (Port 443)
+    # =========================================================================
+
+    # Router for Public Authz endpoints (HTTPS)
+    authz-public-secure:
+      rule: "PathPrefix(`/api/authz/login`) || PathPrefix(`/api/authz/logout`) || PathPrefix(`/api/authz/register`) || PathPrefix(`/api/authz/refresh`) || PathPrefix(`/api/authz/validate`) || PathPrefix(`/api/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`/api/health`) || PathPrefix(`/api/market/code/download`) || PathPrefix(`/api/market/openapi/download`)"
+      service: "authz-service"
+      entryPoints: ["websecure"]
+      middlewares:
+        - "strip-api-prefix"
+      tls: {}
+
+    # Router for Protected Authz endpoints (HTTPS)
+    authz-protected-secure:
+      rule: "PathPrefix(`/api/authz`)"
+      service: "authz-service"
+      entryPoints: ["websecure"]
+      middlewares:
+        - "strip-api-prefix"
+      tls: {}
+
+    # Router for Market endpoints (HTTPS)
+    market-router-secure:
+      rule: "PathPrefix(`/api/market`)"
+      service: "market-service"
+      entryPoints: ["websecure"]
+      middlewares:
+        - "strip-api-prefix"
+        - "external-auth"
+      tls: {}
+
+    # Router for MCP-Gateway endpoints (HTTPS)
+    mcp-gateway-router-secure:
+      rule: "PathPrefix(`/mcp-gateway`)"
+      service: "mcp-gateway-service"
+      entryPoints: ["websecure"]
+      tls: {}
+
+    # Router for the root web service (HTTPS)
+    web-router-secure:
+      rule: "PathPrefix(`/`)"
+      service: "web-service"
+      entryPoints: ["websecure"]
+      middlewares:
+        - "strip-web-prefix"
+      priority: 1 # Lower priority
+      tls: {}
+
+  services:
+    # Authz Service Definition
+    authz-service:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-authz:8081"
+
+    # Market Service Definition
+    market-service:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-market:8080"
+
+    # mcp-gateway-service
+    mcp-gateway-service:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-gateway:8082"
+
+    # Web Service Definition
+    web-service:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-web:3000"
+        # serversTransport: "https-skip-verify-transport"

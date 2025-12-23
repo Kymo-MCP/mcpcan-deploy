@@ -1,10 +1,12 @@
 {{- if .Values.infrastructure.redis.enabled }}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: redis-config
   namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-80"
   labels:
     app: redis
     {{- include "mcpcan.labels" . | nindent 4 }}
@@ -81,7 +83,6 @@ data:
     aof-rewrite-incremental-fsync yes
     rdb-save-incremental-fsync yes
 ---
-{{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -92,7 +93,7 @@ metadata:
     {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-65"
+    helm.sh/hook-weight: "-70"
 spec:
   serviceName: {{ .Values.infrastructure.redis.name | default "redis" }}
   replicas: 1
@@ -105,6 +106,10 @@ spec:
         app: redis
         {{- include "mcpcan.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: {{ .Values.infrastructure.redis.name | default "redis" }}
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.redis }}
@@ -161,7 +166,7 @@ metadata:
   annotations:
     "helm.sh/resource-policy": "keep"
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-65"
+    helm.sh/hook-weight: "-70"
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     {{- include "mcpcan.labels" . | nindent 4 }}
@@ -183,7 +188,7 @@ metadata:
   annotations:
     "helm.sh/resource-policy": "keep"
     helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-65"
+    helm.sh/hook-weight: "-70"
   labels:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
     service-type: nodeport
@@ -198,4 +203,5 @@ spec:
     protocol: TCP
   selector:
     app: {{ .Values.infrastructure.redis.name | default "redis" }}
+{{- end }}
 {{- end }}

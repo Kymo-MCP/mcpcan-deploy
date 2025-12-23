@@ -1,0 +1,38 @@
+runMode: prod
+server:
+  httpPort: 8080
+secret: MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE
+runEnvironment:
+  enabled: true
+  name: "Default-Run-Environment"
+  type: "docker"
+  docker:
+    host: "unix:///var/run/docker.sock"
+    network: "docker-compose_mcpcan-network"
+services:
+  mcpMarket:
+    host: mcp-market
+    port: 8080
+database:
+  mysql:
+    host: mysql
+    port: 3306
+    database: mcp_dev
+    username: mcp_user
+    password: dev-password
+  redis:
+    host: redis
+    port: 6379
+    password: dev-redis-password
+log:
+  level: debug
+  format: json
+code:
+  upload:
+    maxFileSize: 100
+    allowedExtensions: .zip,.tar.gz,.tar,.dxt,.mcpb
+storage:
+  rootPath: ./data/mcpcan
+  codePath: ./data/mcpcan/code-package
+  staticPath: ./data/mcpcan/static
+  openapiFilePath: ./data/mcpcan/openapi-file

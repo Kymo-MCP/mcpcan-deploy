@@ -10,7 +10,116 @@ metadata:
     helm.sh/hook-weight: "-80"
 data:
   env.js: |-
-    window.__APP_CONFIG__ = {{- $isDemo := eq $.Values.global.runMode "demo" -}}{{ toJson (dict "VITE_DEMO" (printf "%v" $isDemo)) }}
+    {{- $isDemo := eq $.Values.global.runMode "demo" }}
+    {{- $webPath := .Values.global.webPathRule }}
+    {{- if eq $webPath "/" }}
+      {{- $webPath = "" }}
+    {{- end }}
+    window.__APP_CONFIG__ = {{ dict
+      "VITE_DEMO" (printf "%v" $isDemo)
+      "API_BASE" .Values.global.apiPathRule
+      "PUBLIC_PATH" $webPath
+      | toJson }}
+{{- if .Values.services.entry.enabled }}
+  traefik.yaml: |-
+    global:
+      checkNewVersion: false
+      sendAnonymousUsage: false
+    entryPoints:
+      web:
+        address: ":80"
+    providers:
+      file:
+        filename: "/etc/traefik/dynamic.yaml"
+        watch: true
+    log:
+      level: "INFO"
+      format: "json"
+      filePath: "/dev/stdout"
+    accessLog:
+      format: "json"
+      fields:
+        headers:
+          defaultMode: keep
+          names:
+            X-Consum-User: keep
+
+  dynamic.yaml: |-
+    http:
+      middlewares:
+        strip-api-prefix:
+          stripPrefix:
+            prefixes:
+              - "{{ .Values.global.apiPathRule }}"
+        strip-web-prefix:
+          stripPrefix:
+            prefixes:
+              - "{{ .Values.global.webPathRule }}"
+        external-auth:
+          forwardAuth:
+            address: "http://{{ .Values.services.authz.service.name }}:{{ .Values.services.authz.service.port }}/authz/validate"
+            trustForwardHeader: true
+            authResponseHeaders: ["X-Consum-User-Id"]
+      serversTransports:
+        https-skip-verify-transport:
+          insecureSkipVerify: true
+      routers:
+        authz-public:
+          rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/authz/login`) || PathPrefix(`{{ .Values.global.apiPathRule }}/authz/logout`) || PathPrefix(`{{ .Values.global.apiPathRule }}/authz/register`) || PathPrefix(`{{ .Values.global.apiPathRule }}/authz/refresh`) || PathPrefix(`{{ .Values.global.apiPathRule }}/authz/validate`) || PathPrefix(`{{ .Values.global.apiPathRule }}/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`{{ .Values.global.apiPathRule }}/health`)"
+          service: "authz-service"
+          entryPoints: ["web"]
+          middlewares:
+            - "strip-api-prefix"
+          priority: 100
+        market-pulic:
+          rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/market/code/download`) || PathPrefix(`{{ .Values.global.apiPathRule }}/market/openapi/download`)"
+          service: "market-service"
+          entryPoints: ["web"]
+          middlewares:
+            - "strip-api-prefix"
+          priority: 100
+        authz-protected:
+          rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/authz`)"
+          service: "authz-service"
+          entryPoints: ["web"]
+          middlewares:
+            - "strip-api-prefix"
+        market-router:
+          rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/market`)"
+          service: "market-service"
+          entryPoints: ["web"]
+          middlewares:
+            - "strip-api-prefix"
+            - "external-auth"
+        mcp-gateway-router:
+          rule: "PathPrefix(`/mcp-gateway`)"
+          service: "mcp-gateway-service"
+          entryPoints: ["web"]
+        web-router:
+          rule: "PathPrefix(`{{ .Values.global.webPathRule }}`)"
+          service: "web-service"
+          entryPoints: ["web"]
+          middlewares:
+            - "strip-web-prefix"
+          priority: 1
+      services:
+        authz-service:
+          loadBalancer:
+            servers:
+              - url: "http://{{ .Values.services.authz.service.name }}:{{ .Values.services.authz.service.port }}"
+        market-service:
+          loadBalancer:
+            servers:
+              - url: "http://{{ .Values.services.market.service.name }}:{{ .Values.services.market.service.port }}"
+        mcp-gateway-service:
+          loadBalancer:
+            servers:
+              - url: "http://{{ .Values.services.gateway.service.name }}:{{ .Values.services.gateway.service.port }}"
+        web-service:
+          loadBalancer:
+            servers:
+              - url: "http://{{ .Values.services.web.service.name }}:{{ .Values.services.web.service.port }}"
+{{- end }}
 {{- if .Values.services.gateway.enabled }}
   gateway.yaml: |-
     server:
@@ -33,6 +142,7 @@ data:
 {{- end }}
 {{- if .Values.services.authz.enabled }}
   authz.yaml: |-
+    runMode: {{ .Values.global.runMode }}
     server:
       httpPort: {{ .Values.services.authz.service.port }}
     secret: {{ .Values.global.appSecret }}
@@ -62,6 +172,13 @@ data:
     server:
       httpPort: {{ .Values.services.market.service.port }}
     secret: {{ .Values.global.appSecret }}
+    runEnvironment:
+      enabled: true
+      name: "Default-Run-Environment"
+      type: "kubernetes"
+      kubernetes:
+        namespace: {{ .Release.Namespace }}
+        configPath: "/etc/kube/kubeconfig.yaml"
     services:
       mcpMarket:
         host: {{ .Values.services.market.name | default "mcp-market" }}-svc
@@ -85,7 +202,7 @@ data:
       format: json
     code:
       upload:
-        maxFileSize: 100
+        maxFileSize: {{ .Values.global.codeUploadMaxFileSize }}
         allowedExtensions: [".zip", ".tar.gz", ".tar", ".dxt", ".mcpb"]
     storage:
       rootPath: {{ .Values.global.mountStorage.rootPath }}
@@ -95,6 +212,7 @@ data:
 {{- end }}
 {{- if .Values.services.init.enabled }}
   init.yaml: |-
+    runMode: {{ .Values.global.runMode }}
     init:
       admin_username: {{ .Values.services.init.loginUser.username }}
       admin_password: {{ .Values.services.init.loginUser.password }}
@@ -103,9 +221,6 @@ data:
       admin_role_description: admin role
       admin_role_level: 1
       admin_data_scope: all
-    kubernetes:
-      namespace: {{ .Release.Namespace }}
-      defaultConfigFilePath: {{ .Values.services.init.kubeconfigPath | default "/etc/kube/kubeconfig.yaml" }}
     database:
       mysql:
         host: {{ .Values.infrastructure.mysql.service.name }}

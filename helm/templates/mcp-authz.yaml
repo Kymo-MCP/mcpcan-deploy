@@ -12,8 +12,6 @@ metadata:
     app.kubernetes.io/component: authz
     app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
-  annotations:
-    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
   replicas: {{ .Values.services.authz.replicas | default 1 }}
   selector:
@@ -33,6 +31,10 @@ spec:
         mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       initContainers:
       - name: wait-deps
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.busybox }}
@@ -92,47 +94,5 @@ spec:
   selector:
     app: {{ .Values.services.authz.name | default "mcp-authz" }}
 {{- end }}
----
-{{- if and .Values.ingress.enabled .Values.services.authz.ingress.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Values.services.authz.name | default "mcp-authz" }}-ingress
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Values.services.authz.name | default "mcp-authz" }}
-    {{- include "mcpcan.labels" . | nindent 4 }}
-  {{- $ann := (merge (.Values.services.authz.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
-  {{- if gt (len $ann) 0 }}
-  annotations:
-    {{- toYaml $ann | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
-  {{- if .Values.ingress.tls.enabled }}
-  tls:
-  - hosts:
-    {{- if .Values.global.domain }}
-    - {{ .Values.global.domain }}
-    {{- end }}
-    secretName: {{ .Values.ingress.tls.secretName }}
-  {{- end }}
-  rules:
-  {{- if .Values.global.domain }}
-  - host: {{ .Values.global.domain }}
-  {{- else }}
-  - 
-  {{- end }}
-    http:
-      paths:
-      - path: {{ .Values.services.authz.ingress.path | default "/" }}
-        pathType: {{ .Values.services.authz.ingress.pathType | default "Prefix" }}
-        backend:
-          service:
-            name: {{ .Values.services.authz.service.name | default "mcp-authz-svc" }}
-            port:
-              number: {{ .Values.services.authz.service.port }}
-{{- end }}
+
 {{- end }}

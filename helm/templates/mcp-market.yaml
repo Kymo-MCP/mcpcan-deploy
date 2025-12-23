@@ -12,8 +12,6 @@ metadata:
     app.kubernetes.io/component: market
     app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
-  annotations:
-    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
 spec:
   replicas: {{ .Values.services.market.replicas | default 1 }}
   selector:
@@ -33,6 +31,10 @@ spec:
         mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ .Values.kubeAccess.serviceAccountName | default "mcpcan-user" }}
       initContainers:
       - name: wait-deps
@@ -52,6 +54,9 @@ spec:
         - containerPort: {{ .Values.services.market.service.port }}
           protocol: TCP
         {{- end }}
+        env:
+        - name: REGISTORY_IMAGE_MIRROR
+          value: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}
         {{- if .Values.services.market.resources }}
         resources:
           {{- toYaml .Values.services.market.resources | nindent 10 }}
@@ -62,6 +67,10 @@ spec:
           readOnly: true
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
+        - name: kubeconfig
+          mountPath: "/etc/kube/kubeconfig.yaml"
+          subPath: "kubeconfig.yaml"
+          readOnly: true
       volumes:
       - name: config-volume
         configMap:
@@ -73,6 +82,12 @@ spec:
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}
           type: DirectoryOrCreate
+      - name: kubeconfig
+        configMap:
+          name: mcp-kubeconfig
+          items:
+          - key: "kubeconfig.yaml"
+            path: "kubeconfig.yaml"
 ---
 {{- if .Values.services.market.service.port }}
 apiVersion: v1
@@ -93,48 +108,5 @@ spec:
   selector:
     app: {{ .Values.services.market.name | default "mcp-market" }}
 {{- end }}
----
-{{- if and .Values.ingress.enabled .Values.services.market.ingress.enabled }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Values.services.market.name | default "mcp-market" }}-ingress
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Values.services.market.name | default "mcp-market" }}
-    {{- include "mcpcan.labels" . | nindent 4 }}
-  {{- $ann := (merge (.Values.services.market.ingress.annotations | default dict) (.Values.ingress.annotations | default dict)) }}
-  {{- if gt (len $ann) 0 }}
-  annotations:
-    {{- toYaml $ann | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
-  {{- if .Values.ingress.tls.enabled }}
-  tls:
-  - hosts:
-    {{- if .Values.global.domain }}
-    - {{ .Values.global.domain }}
-    {{- end }}
-    secretName: {{ .Values.ingress.tls.secretName }}
-  {{- end }}
-  rules:
-  {{- if .Values.global.domain }}
-  - host: {{ .Values.global.domain }}
-  {{- else }}
-  - 
-  {{- end }}
-    http:
-      paths:
-      - path: {{ .Values.services.market.ingress.path | default "/" }}
-        pathType: {{ .Values.services.market.ingress.pathType | default "Prefix" }}
-        backend:
-          service:
-            name: {{ .Values.services.market.service.name | default "mcp-market-svc" }}
-            port:
-              number: {{ .Values.services.market.service.port }}
-{{- end }}
+
 {{- end }}

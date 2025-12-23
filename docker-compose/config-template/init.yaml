@@ -1,0 +1,28 @@
+runMode: ${RUN_MODE}
+init:
+  admin_username: ${ADMIN_USERNAME}
+  admin_password: ${ADMIN_PASSWORD}
+  admin_nickname: admin
+  admin_role_name: admin
+  admin_role_description: admin role
+  admin_role_level: 1
+  admin_data_scope: all
+database:
+  mysql:
+    host: ${MYSQL_HOST}
+    port: ${MYSQL_PORT}
+    database: ${MYSQL_DATABASE}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+    db: 0
+storage:
+  rootPath: /data/mcpcan
+  codePath: /data/mcpcan/code-package
+  staticPath: /data/mcpcan/static
+log:
+  level: debug
+  format: json

@@ -1,4 +1,4 @@
-{{- if .Values.global.images }}
+{{- if and .Values.global.enabledPreLoadImages .Values.global.images }}
 apiVersion: batch/v1
 kind: Job
 metadata:

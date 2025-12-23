@@ -1,0 +1,23 @@
+runMode: ${RUN_MODE}
+server:
+  httpPort: ${MCP_AUTHZ_SERVICE_PORT}
+secret: ${APP_SECRET}
+database:
+  mysql:
+    host: ${MYSQL_HOST}
+    port: ${MYSQL_PORT}
+    database: ${MYSQL_DATABASE}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+    db: 0
+log:
+  level: debug
+  format: json
+storage:
+  rootPath: ${HOST_DATA_PATH}
+  codePath: ${HOST_DATA_PATH}/code-package
+  staticPath: ${HOST_DATA_PATH}/static
