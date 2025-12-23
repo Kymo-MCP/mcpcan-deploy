@@ -1,0 +1,38 @@
+runMode: ${RUN_MODE}
+server:
+  httpPort: ${MCP_MARKET_SERVICE_PORT}
+secret: ${APP_SECRET}
+runEnvironment:
+  enabled: true
+  name: "Default-Run-Environment"
+  type: "docker"
+  docker:
+    host: "unix:///var/run/docker.sock"
+    network: "docker-compose_mcpcan-network"
+services:
+  mcpMarket:
+    host: ${MCP_MARKET_SERVICE_NAME}
+    port: ${MCP_MARKET_SERVICE_PORT}
+database:
+  mysql:
+    host: ${MYSQL_HOST}
+    port: ${MYSQL_PORT}
+    database: ${MYSQL_DATABASE}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+log:
+  level: debug
+  format: json
+code:
+  upload:
+    maxFileSize: ${MAX_FILE_SIZE}
+    allowedExtensions: ${ALLOWED_EXTENSIONS}
+storage:
+  rootPath: ${HOST_DATA_PATH}
+  codePath: ${HOST_DATA_PATH}/code-package
+  staticPath: ${HOST_DATA_PATH}/static
+  openapiFilePath: ${HOST_DATA_PATH}/openapi-file

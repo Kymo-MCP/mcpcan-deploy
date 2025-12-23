@@ -12,7 +12,8 @@ metadata:
     app.kubernetes.io/version: {{ .Values.global.version }}
     {{- include "mcpcan.labels" . | nindent 4 }}
   annotations:
-    deployment.kubernetes.io/revision: "{{ .Release.Revision }}"
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-50"
 spec:
   ttlSecondsAfterFinished: 864000
   template:
@@ -25,6 +26,10 @@ spec:
         mcpcan.io/revision: "{{ .Release.Revision }}"
         checksum/config: {{ include (print $.Template.BasePath "/kube-access.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ .Values.kubeAccess.serviceAccountName | default "mcpcan-user" }}
       restartPolicy: Never
       initContainers:
@@ -48,10 +53,6 @@ spec:
         - name: config-volume
           mountPath: "/app/config"
           readOnly: true
-        - name: kubeconfig-volume
-          mountPath: "/etc/kube/kubeconfig.yaml"
-          subPath: "kubeconfig.yaml"
-          readOnly: true
         - name: data-volume
           mountPath: {{ .Values.global.mountStorage.rootPath | default "/data/mcpcan" }}
       volumes:
@@ -61,12 +62,6 @@ spec:
           items:
           - key: "init.yaml"
             path: "init.yaml"
-      - name: kubeconfig-volume
-        configMap:
-          name: mcp-kubeconfig
-          items:
-          - key: "kubeconfig.yaml"
-            path: "kubeconfig.yaml"
       - name: data-volume
         hostPath:
           path: {{ .Values.global.hostStorage.rootPath | default "/data/mcpcan" }}

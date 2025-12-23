@@ -1,0 +1,37 @@
+# Global settings
+global:
+  checkNewVersion: false  # Disable version check to avoid network requests at startup
+  sendAnonymousUsage: false  # Disable anonymous statistics, do not send usage data to official
+
+# Traefik API and Dashboard Configuration, default 
+# api:
+#   dashboard: false
+
+# Entry points
+entryPoints:
+  web:
+    address: ":80" # HTTP Port 80
+  websecure:
+    address: ":443" # HTTPS Port 443
+
+# Dynamic configuration source
+providers:
+  file:
+    filename: "/etc/traefik/dynamic.yaml"
+    watch: true
+
+# Log configuration, output to standard output (Docker logs)
+log:
+  level: "INFO"
+  format: "json"
+  filePath: "/dev/stdout"  # Output to standard output (Docker logs)
+
+# Access log
+accessLog:
+  format: "json"
+  fields:
+    headers:
+      # Core fix: Use defaultMode: keep to retain all Headers
+      defaultMode: keep
+      names:
+        X-Consum-User: keep # Explicitly retain (although redundant in keep mode, it is for easier understanding)

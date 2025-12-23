@@ -1,10 +1,12 @@
 {{- if .Values.infrastructure.mysql.enabled }}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-config
   namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-80"
   labels:
     app: mysql
     {{- include "mcpcan.labels" . | nindent 4 }}
@@ -28,6 +30,9 @@ kind: ConfigMap
 metadata:
   name: mysql-init-scripts
   namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-80"
   labels:
     app: mysql
     {{- include "mcpcan.labels" . | nindent 4 }}
@@ -38,7 +43,6 @@ data:
     GRANT ALL PRIVILEGES ON {{ .Values.infrastructure.mysql.auth.database | default "mcp_market" }}.* TO '{{ .Values.infrastructure.mysql.auth.username | default "mcp_user" }}'@'%';
     FLUSH PRIVILEGES;
 ---
-{{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -62,6 +66,10 @@ spec:
         app: mysql
         {{- include "mcpcan.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: {{ .Values.infrastructure.mysql.name | default "mysql" }}
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mysql }}
@@ -176,4 +184,5 @@ spec:
     protocol: TCP
   selector:
     app: {{ .Values.infrastructure.mysql.name | default "mysql" }}
+{{- end }}
 {{- end }}
