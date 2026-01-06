@@ -17,7 +17,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.6.0-dev
+  version: v1.6.0
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -41,11 +41,11 @@ global:
     openapiToMcp: "openapi-to-mcp:v0.2.7"
     mcpEntry: "mcp-entry:v3.5"
     mcpHosting: "mcp-hosting:v3"
-    mcpInit: "mcp-init:v1.6.0-dev"
-    mcpMarket: "mcp-market:v1.6.0-dev"
-    mcpAuthz: "mcp-authz:v1.6.0-dev"
-    mcpGateway: "mcp-gateway:v1.6.0-dev"
-    mcpWeb: "mcp-web:v1.6.0-dev"
+    mcpInit: "mcp-init:v1.6.0"
+    mcpMarket: "mcp-market:v1.6.0"
+    mcpAuthz: "mcp-authz:v1.6.0"
+    mcpGateway: "mcp-gateway:v1.6.0"
+    mcpWeb: "mcp-web:v1.6.0"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
