@@ -13,6 +13,9 @@ services:
   mcpMarket:
     host: ${MCP_MARKET_SERVICE_NAME}
     port: ${MCP_MARKET_SERVICE_PORT}
+  mcpAuthz:
+    host: ${MCP_AUTHZ_SERVICE_NAME}
+    port: ${MCP_AUTHZ_SERVICE_PORT}
 database:
   mysql:
     host: ${MYSQL_HOST}

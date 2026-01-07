@@ -70,6 +70,7 @@ services:
     container_name: ${MCP_INIT_SERVICE_NAME}
     volumes:
       - ./config/init.yaml:/app/config/init.yaml
+      - ${HOST_DATA_PATH}:/data/mcpcan
     networks:
       - mcpcan-network
     depends_on:

@@ -8,6 +8,21 @@ set -e
 # 1. Load Environment Variables
 if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
+
+    # Pre-calculate derived variables for env.js
+    # Logic for VITE_DEMO
+    if [ "$RUN_MODE" = "demo" ]; then
+        export ENV_VITE_DEMO="true"
+    else
+        export ENV_VITE_DEMO="false"
+    fi
+
+    # Logic for PUBLIC_PATH
+    if [ "$WEB_PATH_RULE" = "/" ]; then
+        export ENV_PUBLIC_PATH=""
+    else
+        export ENV_PUBLIC_PATH="$WEB_PATH_RULE"
+    fi
 else
     echo "Error: .env file not found."
     exit 1

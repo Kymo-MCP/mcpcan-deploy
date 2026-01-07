@@ -13,6 +13,9 @@ services:
   mcpMarket:
     host: mcp-market
     port: 8080
+  mcpAuthz:
+    host: mcp-authz
+    port: 8081
 database:
   mysql:
     host: mysql
