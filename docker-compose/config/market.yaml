@@ -17,13 +17,13 @@ database:
   mysql:
     host: mysql
     port: 3306
-    database: mcp_dev
-    username: mcp_user
-    password: dev-password
+    database: mcpcan
+    username: mcpcan-user
+    password: a6ApqYJIycJJjl
   redis:
     host: redis
     port: 6379
-    password: dev-redis-password
+    password: dHaARm88OXXN6e
 log:
   level: debug
   format: json
