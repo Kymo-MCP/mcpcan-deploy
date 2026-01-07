@@ -11,6 +11,8 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ${HOST_MYSQL_PATH}:/var/lib/mysql
+      - ./config/mysql.conf:/etc/mysql/conf.d/mysql.conf:ro
+      - ./config/mysql.init.sql:/docker-entrypoint-initdb.d/mysql.init.sql:ro
     ports:
       - "${MYSQL_PUBLIC_PORT}:${MYSQL_PORT}"
     networks:
