@@ -113,6 +113,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mcp-init:
+        condition: service_completed_successfully
 
   mcp-gateway:
     image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
