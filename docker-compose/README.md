@@ -6,147 +6,190 @@ This document provides detailed instructions for deploying the MCPCan system usi
 
 1. [Prerequisites](#prerequisites)
 2. [Quick Start](#quick-start)
-   - [Default Quick Start](#21-default-quick-start)
-   - [Custom Configuration Start](#22-custom-configuration-start)
-3. [Accessing Services](#accessing-services)
-4. [Advanced Configuration](#advanced-configuration)
-   - [Certificate Replacement & Hot Reloading](#41-certificate-replacement--hot-reloading)
-   - [Custom Configuration](#42-custom-configuration)
+   - [Preparation](#21-preparation)
+   - [Start Services](#22-start-services)
+   - [Verify Installation](#23-verify-installation)
+3. [Custom Configuration](#custom-configuration)
+   - [Environment Variables](#31-environment-variables)
+   - [Configuration Hot Reload](#32-configuration-hot-reload)
+4. [Common Maintenance Commands](#common-maintenance-commands)
 5. [Service Architecture](#service-architecture)
-6. [Data Persistence](#data-persistence)
+6. [Advanced Configuration](#advanced-configuration)
+   - [Certificate Replacement & Hot Reloading](#61-certificate-replacement--hot-reloading)
 7. [FAQ](#faq)
 
 ## Prerequisites
 
+Before starting, please ensure your environment meets the following requirements:
+
+- **OS**: Linux (Ubuntu/CentOS recommended) or macOS
 - **Docker Engine**: 20.10.0+
-- **Docker Compose**: v2.0.0+ (Docker Compose V2 recommended)
+- **Docker Compose**: v2.0.0+ (Docker Compose V2 plugin command `docker compose` is recommended)
+- **Hardware Resources**:
+  - CPU: 2 Core+
+  - Memory: 4GB+
+  - Disk: 10GB+
 
 ## Quick Start
 
-Enter the deployment directory:
-```bash
-cd docker-compose/
-```
+### 2.1 Preparation
 
-### 2.1 Default Quick Start
+1. **Enter the deployment directory**:
+   ```bash
+   cd mcpcan-deploy/docker-compose/
+   ```
 
-If you do not need to modify any ports or configurations, simply run the following command to start (default ports 80 and 443):
+2. **Initialize Environment Configuration**:
+   Copy the example environment file `example.env` to `.env`. This file contains all core configurations (such as ports, database passwords, version numbers, etc.).
+   ```bash
+   cp example.env .env
+   ```
+   *(Optional) Use a text editor (such as `vim` or `nano`) to modify configurations in the `.env` file, for example, modifying the default port `MCP_ENTRY_SERVICE_PORT`.*
+
+3. **Generate Service Configuration**:
+   Run the configuration generation script. This script reads variables from `.env` and generates the final configuration files into the `config/` directory based on templates in `config-template/`.
+   ```bash
+   chmod +x replace.sh
+   ./replace.sh
+   ```
+   *Note: If you modify `.env` later, you must re-run this script to apply the changes.*
+
+### 2.2 Start Services
+
+Use Docker Compose to start all services. The first startup will automatically pull images and perform database initialization.
 
 ```bash
 docker compose up -d
 ```
 
-- **HTTP Access**: [http://localhost](http://localhost) (Default port 80)
-- **HTTPS Access**: [https://localhost](https://localhost) (Default port 443)
-This command will start all services using the default configuration preset in the repository.
+**Startup Process Explanation**:
+1. **Basic Services Start**: MySQL and Redis start first.
+2. **Health Check**: Wait for MySQL and Redis status to become `healthy`.
+3. **Initialization**: The `mcp-init` container starts, executing database migrations and seed data writing.
+4. **Core Services Start**: After `mcp-init` **successfully exits**, core services like `mcp-authz`, `mcp-market`, and `mcp-gateway` start.
+5. **Access Layer Start**: Finally, `mcp-web` and the `traefik` gateway start to provide external services.
 
-### 2.2 Custom Configuration Start
+### 2.3 Verify Installation
 
-If you need to modify database passwords, ports, domain names, or image versions, please follow these steps:
+After the service startup is complete (usually wait 1-2 minutes), you can access via browser:
 
-1. **Create Configuration File**:
-   Copy the example environment file:
-   ```bash
-   cp example.env .env
-   ```
-   Use an editor to modify variables in `.env` (e.g., `MYSQL_PASSWORD`, `HOST_HTTP_PORT`, etc.).
+- **Web Frontend**: [http://localhost](http://localhost) (or your configured HTTP port)
+- **HTTPS Access**: [https://localhost](https://localhost) (or your configured HTTPS port)
+  - *Note: A self-signed certificate is used by default. The browser will prompt that it is insecure; please click "Proceed" to continue.*
 
-2. **Generate Configuration and Start**:
-   Run the replacement script. This script generates new service configuration files based on `.env` (old configurations will be automatically backed up) and then forces container recreation:
-   ```bash
-   ./replace.sh && docker compose up -d --force-recreate
-   ```
+Check running status:
+```bash
+docker compose ps
+```
+Ensure all service statuses are `Up` (or `Up (healthy)`), and the `mcp-init` status is `Exited (0)`.
 
-   **Startup Process**:
-   1. The script generates new yaml configuration files into the `config/` directory based on templates and `.env`.
-   2. Starts MySQL and Redis, waiting for health checks to pass.
-   3. Runs `mcp-init` for initialization (database migration/seed data).
-   4. Starts backend services (`mcp-authz`, `mcp-market`, `mcp-gateway`).
-   5. Starts the gateway proxy (`traefik`) and frontend service (`mcp-web`).
+## Custom Configuration
 
-## Accessing Services
+### 3.1 Environment Variables
 
-The system enables both HTTP and HTTPS access by default, without interference (no forced redirection).
+Main configurations are managed in the `.env` file. After modification, run `./replace.sh` to take effect.
 
-- **HTTP Access**: [http://localhost](http://localhost) (Default port 80)
-- **HTTPS Access**: [https://localhost](https://localhost) (Default port 443)
-  - *Note: By default, a self-signed certificate is used. Browsers may warn about insecurity; please click "Proceed" or "Advanced -> Proceed".*
+| Variable Name | Default Value | Description |
+|--------|--------|------|
+| `VERSION` | latest | Image version tag |
+| `MCP_ENTRY_SERVICE_PORT` | 80 | HTTP access port |
+| `MCP_ENTRY_SERVICE_HTTPS_PORT` | 443 | HTTPS access port |
+| `MYSQL_PASSWORD` | (see file) | Database password |
+| `RUN_MODE` | prod | Run mode (demo/prod) |
 
-| Service | URL (HTTP) | URL (HTTPS) |
-|---------|------------|-------------|
-| **Web Frontend** | http://localhost | https://localhost |
-| **API Gateway** | http://localhost/mcp-gateway | https://localhost/mcp-gateway |
+### 3.2 Configuration Hot Reload
 
-*(Ports depend on `MCP_ENTRY_SERVICE_PORT` and `MCP_ENTRY_SERVICE_HTTPS_PORT` in `.env`)*
+Generated configuration files are located in the `config/` directory.
+- **Temporary Modification**: Directly modify files under `config/`, restart related containers to take effect (running `./replace.sh` will overwrite this modification).
+- **Permanent Modification**: Modify template files under `config-template/`, then run `./replace.sh`.
 
-## Advanced Configuration
+## Common Maintenance Commands
 
-### 4.1 Certificate Replacement & Hot Reloading
+The following commands need to be executed in the `docker-compose/` directory.
 
-MCPCan uses Traefik as the ingress gateway, supporting dynamic hot reloading of TLS certificates without restarting services.
+### Update Image and Restart
+Use when a new version of the image is released (modified `VERSION` in `.env`):
+```bash
+# 1. Pull the latest image
+docker compose pull
 
-1. **Prepare Certificates**:
-   Prepare your domain certificate files (e.g., `my-domain.crt` and `my-domain.key`).
+# 2. Recreate and start containers (only recreate changed containers)
+docker compose up -d
+```
 
-2. **Replace Files**:
-   Place the certificate files into the `certs/` directory (or your mounted directory).
+### Force Recreate Containers
+If you modified configuration files or want to completely reset container running status:
+```bash
+# --force-recreate forces destruction of old containers and creation of new ones
+docker compose up -d --force-recreate
+```
 
-3. **Modify Configuration**:
-   Edit the `config/dynamic.yaml` file and update the paths in the `tls` section:
-   ```yaml
-   tls:
-     certificates:
-       - certFile: /etc/traefik/certs/my-domain.crt
-         keyFile: /etc/traefik/certs/my-domain.key
-   ```
-   *Note: The paths here are container paths. By default, the host's `./certs` maps to `/etc/traefik/certs` in the container.*
+### Restart All Services
+Only restart containers, do not delete containers, do not update images:
+```bash
+docker compose restart
+```
 
-4. **Automatic Effect**:
-   After saving `dynamic.yaml`, Traefik will automatically detect the file change and load the new certificates without any restart operation.
+### Stop Services
+```bash
+# Stop and remove containers, networks (preserve data volumes)
+docker compose down
+```
 
-### 4.2 Custom Configuration
+### View Service Logs
+```bash
+# View all logs (Ctrl+C to exit)
+docker compose logs -f
 
-To simulate Kubernetes ConfigMaps, we generated configuration files for each service in the `config/` directory.
+# View specific service logs (e.g., mcp-gateway)
+docker compose logs -f mcp-gateway
 
-- **Template Files**: Located in `config-template/`, containing variable placeholders.
-- **Generated Files**: Located in `config/`, generated by `./replace.sh`.
-- **Note**: If you modify `.env`, you **MUST** re-run `./replace.sh` to apply changes to the actual configuration files in `config/`.
+# View initialization task logs (troubleshoot startup failures)
+docker compose logs mcp-init
+```
 
-## Service Architecture
+### Clean Unused Images
+Clean up old images no longer in use to free up disk space:
+```bash
+docker image prune -f
+```
 
-| Service Name | Description | Dependencies | Default Port |
-|---------|------|------|---------|
-| **traefik** | Ingress Gateway | - | 80, 443, 8080 |
-| **mysql** | Data Storage | - | 31306 -> 3306 |
-| **redis** | Cache & Message Queue | - | 31379 -> 6379 |
-| **mcp-init** | Initialization Task (Runs once) | mysql, redis | - |
-| **mcp-authz** | Auth & Authorization Service | mysql, redis, mcp-init | 8081 |
-| **mcp-market** | Plugin/Code Market Service | mysql, redis, mcp-init, mcp-authz | 8080 |
-| **mcp-gateway** | API Gateway | mysql, redis, mcp-market, mcp-authz | 8082 |
-| **mcp-web** | Frontend UI | mcp-gateway | 3000 |
-
-## Data Persistence
-
-Data is stored by default in the `data/` directory under the current directory (controlled by `HOST_DATA_PATH` in `.env`):
-
-- `data/mysql`: MySQL database files
-- `data/redis`: Redis data files
-- `data/mcpcan`: Application uploaded files, code packages, etc.
-
-**Clean Data** (Use with Caution):
-To completely reset the environment, stop containers and delete the data directory:
+### Completely Clean Environment (Use with Caution)
+**Warning**: This operation will delete all containers, networks, and **persistent data** (database, uploaded files, etc.).
 ```bash
 docker compose down
 rm -rf ./data
 ```
 
+## Service Architecture
+
+| Service Name | Description | Dependencies |
+|---------|------|----------|
+| **traefik** | Unified Ingress Gateway, handles HTTP/HTTPS routing | - |
+| **mcp-init** | Initialization Task (DB Migration/Seed), exits after completion | Depends on MySQL/Redis health |
+| **mcp-authz** | Authentication & Authorization Service | Waits for mcp-init to complete |
+| **mcp-market** | Plugin Market Core Service | Waits for mcp-init to complete |
+| **mcp-gateway** | API Gateway Service | Waits for mcp-init to complete |
+| **mcp-web** | Frontend Static Resource Service | Depends on backend services start |
+
+## Advanced Configuration
+
+### 6.1 Certificate Replacement & Hot Reloading
+
+MCPCan supports dynamic hot reloading of TLS certificates without restarting services.
+
+1. Prepare certificate files (`.crt`, `.key`).
+2. Place certificates into the `certs/` directory.
+3. Modify the certificate path configuration in `config/dynamic.yaml`.
+4. Traefik will automatically detect and apply the new certificate.
+
 ## FAQ
 
-**Q: Browser reports invalid certificate when accessing HTTPS?**
-A: This is normal because a self-signed certificate is used by default. You can replace it with your own valid certificate following section [4.1 Certificate Replacement & Hot Reloading](#41-certificate-replacement--hot-reloading).
+**Q: `mcp-market` and other services stay in `Created` status and don't start?**
+A: This is a normal dependency waiting mechanism. They are configured with `condition: service_completed_successfully` and must wait for the `mcp-init` container to successfully finish running (Exit 0) before starting. Please check the `mcp-init` logs to confirm if initialization was successful:
+```bash
+docker compose logs mcp-init
+```
 
-**Q: Changes to files in config/ are overwritten after restart?**
-A: If you ran `./replace.sh`, it regenerates configuration files based on templates. To permanently modify configuration, please modify the template files in `config-template/`, or modify files in `config/` directly without running `replace.sh` again.
-
-**Q: Container startup fails with "Connection refused"?**
-A: Check `docker compose logs mcp-init` or other service logs. Usually, it's because the database is not yet ready. Docker Compose has `healthcheck` configured, but if the machine performance is slow, you may need to increase the timeout.
+**Q: How to modify the database password?**
+A: Modify `MYSQL_PASSWORD` in `.env`, then you **MUST** delete the old database data (`rm -rf data/mysql`), and re-run `./replace.sh && docker compose up -d`. Because MySQL only sets the password when initializing the data directory for the first time.
