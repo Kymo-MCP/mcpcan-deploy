@@ -35,7 +35,7 @@ code:
     maxFileSize: 100
     allowedExtensions: .zip,.tar.gz,.tar,.dxt,.mcpb
 storage:
-  rootPath: ./data/mcpcan
-  codePath: ./data/mcpcan/code-package
-  staticPath: ./data/mcpcan/static
-  openapiFilePath: ./data/mcpcan/openapi-file
+  rootPath: /data/mcpcan
+  codePath: /data/mcpcan/code-package
+  staticPath: /data/mcpcan/static
+  openapiFilePath: /data/mcpcan/openapi-file

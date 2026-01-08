@@ -18,6 +18,6 @@ log:
   level: debug
   format: json
 storage:
-  rootPath: ./data/mcpcan
-  codePath: ./data/mcpcan/code-package
-  staticPath: ./data/mcpcan/static
+  rootPath: /data/mcpcan
+  codePath: /data/mcpcan/code-package
+  staticPath: /data/mcpcan/static
