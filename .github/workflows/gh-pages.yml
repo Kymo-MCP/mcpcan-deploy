@@ -5,10 +5,10 @@ on:
     branches: 
       - main
       - feature/v1.7.0-dev  # Added for testing
-    paths:
-      - 'helm/**'
-      - 'index.html'
-      - '.github/workflows/gh-pages.yml'
+    # paths:
+    #   - 'helm/**'
+    #   - 'index.html'
+    #   - '.github/workflows/gh-pages.yml'
   workflow_dispatch:
 
 permissions:
