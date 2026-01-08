@@ -35,7 +35,7 @@ code:
     maxFileSize: ${MAX_FILE_SIZE}
     allowedExtensions: ${ALLOWED_EXTENSIONS}
 storage:
-  rootPath: ${HOST_DATA_PATH}
-  codePath: ${HOST_DATA_PATH}/code-package
-  staticPath: ${HOST_DATA_PATH}/static
-  openapiFilePath: ${HOST_DATA_PATH}/openapi-file
+  rootPath: /data/mcpcan
+  codePath: /data/mcpcan/code-package
+  staticPath: /data/mcpcan/static
+  openapiFilePath: /data/mcpcan/openapi-file
