@@ -3,7 +3,9 @@ name: Auto Release
 # 触发条件：推送到主分支，且包含符合约定的提交
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+      - feature/v1.7.0-dev  # Added for testing
 
 jobs:
   release:
