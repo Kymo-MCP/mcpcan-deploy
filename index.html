@@ -323,8 +323,8 @@
         <nav class="nav container">
             <a href="#" class="logo">⚙️ MCPCan</a>
             <ul class="nav-links">
-                <li><a href="#">Dependencies</a></li>
-                <li><a href="#quick-start">Quick Start</a></li>
+                <li><a href="#dependencies">Dependencies</a></li>
+                <li><a href="#deployment">Deployment Guide</a></li>
                 <li><a href="#deployment-management">Deployment Management</a></li>
                 <li><a href="#architecture">Architecture Design</a></li>
                 <li><a href="#support">Support</a></li>
@@ -339,6 +339,15 @@
             <h1>MCPCan Deployment Guide</h1>
             <p>A comprehensive microservices platform providing MCP service lifecycle management capabilities with modern Kubernetes architecture</p>
             <div class="hero-links">
+                <a href="https://www.mcpcan.com" target="_blank" class="hero-link">
+                    🌐 Official Site
+                </a>
+                <a href="https://www.mcpcan.com/docs/en/guide/welcome" target="_blank" class="hero-link">
+                    📚 Documentation
+                </a>
+                <a href="http://demo.mcpcan.com" target="_blank" class="hero-link">
+                    🎮 Live Demo
+                </a>
                 <a href="https://github.com/Kymo-MCP/mcpcan" target="_blank" class="hero-link">
                     📦 Main Repository
                 </a>
@@ -356,117 +365,80 @@
                 <p>Before starting deployment, please ensure your environment meets the following requirements:</p>
                 
                 <div class="grid">
-                    <div class="card">
+                    <div class="card" style="width: 100%; margin: 0 auto;">
                         <h3>🔧 System Requirements</h3>
                         <ul>
-                            <li><strong>Kubernetes:</strong> 1.20 or higher</li>
+                            <li><strong>Kubernetes:</strong> 1.20 or higher (K3s recommended)</li>
                             <li><strong>Helm:</strong> 3.0 or higher</li>
-                            <li><strong>NGINX Ingress Controller:</strong> Required if ingress is enabled</li>
-                            <li><strong>Persistent Storage:</strong> For data persistence</li>
-                            <li><strong>Resources:</strong> At least 4GB RAM and 2 CPU cores</li>
+                            <li><strong>NGINX Ingress Controller:</strong> Required for external access</li>
+                            <li><strong>Persistent Storage:</strong> Default storage class required</li>
+                            <li><strong>Resources:</strong> Minimum 2 CPU Cores / 4GB RAM</li>
                         </ul>
-                    </div>
-                    
-                    <div class="card">
-                        <h3>🚀 One-Click Installation</h3>
-                        <p>For clean environments, we recommend using the provided one-click installation script:</p>
-                        <div class="code-block">
-                            <pre># Clone the MCPCan deployment repository
-git clone https://github.com/kymo-mcp/mcpcan-deploy.git
-cd mcpcan-deploy
-
-# Install complete runtime environment
-./scripts/install-run-environment.sh
-
-# Use China mirror sources
-./scripts/install-run-environment.sh --cn</pre>
-                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Quick Start -->
-            <section id="quick-start" class="section">
-                <h2>Quick Start</h2>
-                <p style="text-align: center; margin-bottom: 2rem;">
-                    <strong>📋 Prerequisites:</strong> 
-                    <a href="#dependencies" style="color: #667eea; text-decoration: none;">Environment Dependencies Installation Guide</a>
-                </p>
+            <!-- Deployment Guide -->
+            <section id="deployment" class="section">
+                <h2>Deployment Guide</h2>
+                
+                <!-- Option 1: Automated Script -->
+                <div class="highlight">
+                    <h3 style="color: white; margin-top: 0;">🚀 Option 1: Automated Installation (Recommended)</h3>
+                    <p>Use the <code>install-fast.sh</code> script to automatically handle environment setup, configuration, and deployment. This is the recommended method for most users.</p>
+                    
+                    <div class="code-block" style="background: rgba(0,0,0,0.3);">
+                        <pre># 1. Clone the repository
+git clone https://github.com/Kymo-MCP/mcpcan-deploy.git
+cd mcpcan-deploy
 
-                <h3>🚀 Helm Repository Installation (Recommended)</h3>
+# 2. Run the fast installation script
+# Standard Installation (International Network)
+./scripts/install-fast.sh
+
+# Accelerated Installation (China Mirrors)
+./scripts/install-fast.sh --cn</pre>
+                    </div>
+
+                    <div class="card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.95); border-left: 4px solid #48bb78;">
+                        <h3 style="color: #2d3748;">🛠️ Automated Script Workflow</h3>
+                        <ul>
+                            <li><strong>1. Environment Check:</strong> Automatically checks and installs K3s, Helm, and Ingress Controller if they are missing.</li>
+                            <li><strong>2. Configuration Generation:</strong> Creates <code>values-custom.yaml</code> from the template and applies mirror settings if <code>--cn</code> is used.</li>
+                            <li><strong>3. Smart Deployment:</strong> Detects existing installations and performs a safe upgrade or a fresh install.</li>
+                            <li><strong>4. Health Verification:</strong> Monitors pod status in real-time and waits for all services to be healthy.</li>
+                            <li><strong>5. Access Info:</strong> Automatically detects and outputs the service access URL.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Option 2: Manual Helm -->
+                <h3>Option 2: Manual Helm Installation</h3>
+                <p>For advanced users who need to customize the deployment process or integrate with existing pipelines.</p>
+
+                <h4>Method A: Local Chart Deployment (Customizable)</h4>
+                <p>Best for developers who want to modify the chart or values extensively.</p>
                 <div class="code-block">
-                    <pre># Step 1: Add MCPCan Helm repository
-helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
+                    <pre># 1. Prepare Configuration
+cp helm/values.yaml helm/values-custom.yaml
 
-# Step 2: Update Helm repository
-helm repo update mcpcan
+# 2. Customize Configuration (Optional)
+# vim helm/values-custom.yaml
 
-# Step 3: Install latest version
-helm install mcpcan mcpcan/mcpcan-deploy --namespace mcpcan --create-namespace --timeout 600s --wait
-
-# Deploy with public IP
-helm install mcpcan mcpcan/mcpcan-deploy \
-  --set global.publicIP=192.168.1.100 \
-  --set infrastructure.mysql.auth.rootPassword=secure-password \
-  --set infrastructure.redis.auth.password=secure-password \
-  --namespace mcpcan --create-namespace --timeout 600s --wait
-
-# Deploy with domain name
-helm install mcpcan mcpcan/mcpcan-deploy \
-  --set global.domain=mcp.example.com \
-  --set infrastructure.mysql.auth.rootPassword=secure-password \
-  --set infrastructure.redis.auth.password=secure-password \
+# 3. Install or Upgrade
+helm upgrade --install mcpcan ./helm -f helm/values-custom.yaml \
   --namespace mcpcan --create-namespace --timeout 600s --wait</pre>
                 </div>
 
-                <div class="success">
-                    <strong>✅ After deployment is complete, you can access through:</strong><br>
-                    Web Service: <code>http://&lt;node-ip&gt;</code>
-                </div>
+                <h4>Method B: Helm Repository Deployment (Standard)</h4>
+                <p>Best for standard production deployments using versioned charts.</p>
+                <div class="code-block">
+                    <pre># 1. Add Repository
+helm repo add mcpcan https://kymo-mcp.github.io/mcpcan-deploy/
+helm repo update
 
-                <h3>🔧 Custom Domain Deployment</h3>
-                <p>If you have your own domain, you can configure it following these steps:</p>
-                
-                <h4>Step 1: Clone the repository (if not using Helm repository)</h4>
-                <div class="code-block">
-                    <pre># Clone the MCPCan deployment repository
-git clone https://github.com/kymo-mcp/mcpcan-deploy.git
-cd mcpcan-deploy</pre>
-                </div>
-                
-                <h4>Step 2: Copy and modify configuration file</h4>
-                <div class="code-block">
-                    <pre># Copy default configuration
-cp helm/values.yaml helm/values-custom.yaml</pre>
-                </div>
-
-                <h4>Step 3: Modify domain configuration</h4>
-                <p>Edit <code>helm/values-custom.yaml</code>:</p>
-                <div class="code-block">
-                    <pre># Global configuration
-global:
-  # Set your domain, e.g.: demo.mcpcan.com
-  domain: "demo.mcpcan.com"
-  
-# Ingress configuration
-ingress:
-  tls:
-    enabled: true
-    # Configure certificate content for self-signed certificates
-    crt: |
-      -----BEGIN CERTIFICATE-----
-      # Your certificate content
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN PRIVATE KEY-----
-      # Your private key content
-      -----END PRIVATE KEY-----</pre>
-                </div>
-
-                <h4>Step 4: Deploy with custom configuration</h4>
-                <div class="code-block">
-                    <pre># Deploy with custom configuration
-helm install mcpcan ./helm -f helm/values-custom.yaml \
+# 2. Install Chart
+helm install mcpcan mcpcan/mcpcan-deploy \
   --namespace mcpcan --create-namespace --timeout 600s --wait</pre>
                 </div>
             </section>
@@ -617,7 +589,7 @@ kubectl port-forward svc/mcp-web-svc 3000:3000 -n mcpcan</pre>
                         <ul>
                             <li><a href="https://github.com/Kymo-MCP/mcpcan-deploy" target="_blank">GitHub Repository</a></li>
                             <li><a href="https://kymo-mcp.github.io/mcpcan-deploy/" target="_blank">Helm Chart Repository</a></li>
-                            <li><a href="#" target="_blank">Documentation</a></li>
+                            <li><a href="https://www.mcpcan.com/docs/en/guide/welcome" target="_blank">Documentation</a></li>
                         </ul>
                     </div>
                     <div class="card">

@@ -2,6 +2,14 @@
 
 本文档提供了使用 Docker Compose 部署 MCPCan 系统的详细说明，这是目前推荐的部署方式。如果需要 Kubernetes 部署，请参考 [Helm 快速开始](#helm-快速开始)。
 
+## 项目链接
+
+- 🌐 [官网 (Official Site)](https://www.mcpcan.com)
+- 📚 [文档 (Documentation)](https://www.mcpcan.com/docs/en/guide/welcome)
+- 🎮 [在线演示 (Live Demo)](http://demo.mcpcan.com)
+- 📦 [主仓库 (Main Repository)](https://github.com/Kymo-MCP/mcpcan)
+- 🚀 [部署仓库 (Deployment Repository)](https://github.com/Kymo-MCP/mcpcan-deploy)
+
 ## 目录
 
 1. [Docker Compose 部署](#docker-compose-部署)

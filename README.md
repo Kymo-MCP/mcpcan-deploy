@@ -2,6 +2,14 @@
 
 This document provides detailed instructions for deploying the MCPCan system using Docker Compose, which is the currently recommended deployment method. If you need Kubernetes deployment, please refer to [Helm Quick Start](#helm-quick-start).
 
+## Project Links
+
+- 🌐 [Official Site](https://www.mcpcan.com)
+- 📚 [Documentation](https://www.mcpcan.com/docs/en/guide/welcome)
+- 🎮 [Live Demo](http://demo.mcpcan.com)
+- 📦 [Main Repository](https://github.com/Kymo-MCP/mcpcan)
+- 🚀 [Deployment Repository](https://github.com/Kymo-MCP/mcpcan-deploy)
+
 ## Table of Contents
 
 1. [Docker Compose Deployment](#docker-compose-deployment)
