@@ -2,7 +2,9 @@ name: Deploy Helm Chart to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+      - feature/v1.7.0-dev  # Added for testing
     paths:
       - 'helm/**'
       - 'index.html'
@@ -26,8 +28,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
+        with:
+          path: 'src'
+
+      - name: Checkout Pages Branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: 'pages'
+          fetch-depth: 0
+        continue-on-error: true # It's okay if the branch doesn't exist yet
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
@@ -37,91 +49,62 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Generate Documentation
+      - name: Package and Index Helm Chart
         run: |
-          # Extract version from Chart.yaml
-          CHART_VERSION=$(grep '^version:' helm/Chart.yaml | awk '{print $2}')
-          CHART_NAME=$(grep '^name:' helm/Chart.yaml | awk '{print $2}')
-          CHART_DESCRIPTION=$(grep '^description:' helm/Chart.yaml | sed 's/^description: //')
+          # Define variables
+          CHART_PATH="src/helm"
+          OUTPUT_DIR="_site"
+          REPO_URL="https://kymo-mcp.github.io/mcpcan-deploy/"
           
-          echo "📋 Generating index.yaml documentation..."
-          echo "Chart Name: $CHART_NAME"
-          echo "Chart Version: $CHART_VERSION"
-          echo "Chart Description: $CHART_DESCRIPTION"
-          
-          # Create index.yaml with chart information
-          cat > index.yaml << EOF
-          apiVersion: v1
-          entries:
-            $CHART_NAME:
-            - apiVersion: v2
-              appVersion: $CHART_VERSION
-              created: "$(date -u +%Y-%m-%dT%H:%M:%S.%fZ)"
-              description: $CHART_DESCRIPTION
-              digest: $(helm package helm/ --destination /tmp/ > /dev/null 2>&1 && sha256sum /tmp/$CHART_NAME-$CHART_VERSION.tgz | awk '{print $1}')
-              name: $CHART_NAME
-              type: application
-              urls:
-              - https://kymo-mcp.github.io/mcpcan-deploy/$CHART_NAME-$CHART_VERSION.tgz
-              version: $CHART_VERSION
-          generated: "$(date -u +%Y-%m-%dT%H:%M:%S.%fZ)"
-          EOF
-          
-          echo "✅ index.yaml documentation generated successfully"
-          echo "📄 Generated index.yaml content:"
-          cat index.yaml
-          
-          # Clean up temporary files
-          rm -f /tmp/$CHART_NAME-$CHART_VERSION.tgz
-
-      - name: Build Helm Repository
-        run: |
           # Create output directory
-          mkdir -p _site
+          mkdir -p $OUTPUT_DIR
+          
+          # Copy existing packages and index from pages branch if available
+          if [ -d "pages" ] && [ -f "pages/index.yaml" ]; then
+            echo "📋 Found existing pages branch, copying existing artifacts..."
+            # Copy all .tgz files
+            cp pages/*.tgz $OUTPUT_DIR/ 2>/dev/null || true
+            # Copy index.yaml for merging
+            cp pages/index.yaml $OUTPUT_DIR/index.yaml.old
+            echo "✅ Existing artifacts copied."
+          else
+            echo "⚠️ No existing pages branch or index.yaml found. Starting fresh."
+          fi
           
           # Verify Helm chart structure
           echo "🔍 Verifying Helm chart structure..."
-          helm lint helm/
+          helm lint $CHART_PATH
           
           # Package Helm chart
           echo "📦 Packaging Helm chart..."
-          helm package helm/ --destination _site/
+          helm package $CHART_PATH --destination $OUTPUT_DIR/
           
           # Generate repository index
           echo "📋 Generating repository index..."
-          helm repo index _site/ --url https://kymo-mcp.github.io/mcpcan-deploy/
-          
-          # Verify index.yaml was created
-          if [ -f "_site/index.yaml" ]; then
-            echo "✅ index.yaml created successfully"
-            echo "📄 Index file content:"
-            cat _site/index.yaml
+          if [ -f "$OUTPUT_DIR/index.yaml.old" ]; then
+            echo "🔄 Merging with existing index..."
+            helm repo index $OUTPUT_DIR/ --url $REPO_URL --merge $OUTPUT_DIR/index.yaml.old
           else
-            echo "❌ index.yaml not found!"
-            exit 1
+            echo "🆕 Creating new index..."
+            helm repo index $OUTPUT_DIR/ --url $REPO_URL
           fi
           
-          # Copy homepage and index.yaml
-          echo "🏠 Copying homepage and index files..."
-          cp index.html _site/
+          # Remove backup index
+          rm -f $OUTPUT_DIR/index.yaml.old
           
-          # Ensure index.yaml exists in root for fallback
-          if [ -f "index.yaml" ]; then
-            echo "📋 Using existing index.yaml as fallback"
-            cp index.yaml _site/index.yaml.backup
-          fi
+          # Copy homepage
+          echo "🏠 Copying homepage..."
+          cp src/index.html $OUTPUT_DIR/
           
           # Disable Jekyll
-          touch _site/.nojekyll
+          touch $OUTPUT_DIR/.nojekyll
           
           # Set proper permissions
-          chmod -R 755 _site/
+          chmod -R 755 $OUTPUT_DIR/
           
           echo "📦 Build completed successfully!"
           echo "📁 Final directory structure:"
-          ls -la _site/
-          echo "📊 File sizes:"
-          du -h _site/*
+          ls -la $OUTPUT_DIR/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
@@ -136,4 +119,4 @@ jobs:
         run: |
           echo "✅ Deployment completed successfully!"
           echo "🌐 Helm Repository: ${{ steps.deployment.outputs.page_url }}"
-          echo "📋 Add repository: helm repo add mcpcan-deploy ${{ steps.deployment.outputs.page_url }}"
+          echo "📋 Add repository: helm repo add mcpcan ${{ steps.deployment.outputs.page_url }}"
