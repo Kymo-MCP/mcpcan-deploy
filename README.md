@@ -75,6 +75,10 @@ Use Docker Compose to start all services. The first startup will automatically p
 
 ```bash
 docker compose up -d
+
+
+# Default Login Credentials
+Login: admin/admin123
 ```
 
 **Startup Process Description**:

@@ -75,6 +75,9 @@ cd mcpcan-deploy/docker-compose
 
 ```bash
 docker compose up -d
+
+# 默认登录凭证
+登录: admin/admin123
 ```
 
 **启动流程说明**：
