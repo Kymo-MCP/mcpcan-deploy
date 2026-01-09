@@ -1,4 +1,4 @@
-name: Auto Release
+name: Release
 
 # 触发条件：推送到主分支，且包含符合约定的提交
 on:

@@ -1,4 +1,4 @@
-name: Deploy Helm Chart to GitHub Pages
+name: GitHub-Pages
 
 on:
   workflow_dispatch:
@@ -17,9 +17,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # environment:
-    #   name: github-pages
-    #   url: ${{ steps.deployment.outputs.page_url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
