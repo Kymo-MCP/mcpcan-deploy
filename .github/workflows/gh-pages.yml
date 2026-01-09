@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: 'src'
-          ref: "${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' ? 'main' : '' }}"
+          ref: ${{ github.ref_name }}
 
       - name: Checkout Pages Branch
         uses: actions/checkout@v4
