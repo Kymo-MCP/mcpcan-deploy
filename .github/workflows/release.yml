@@ -1,9 +1,11 @@
 name: Release
 
-# 触发条件：推送到主分支，且包含符合约定的提交
+# 触发条件：推送到主分支
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+      - feature/v1.7.0-dev
 
 jobs:
   release:
@@ -14,8 +16,7 @@ jobs:
     
     # 定义输出，供后续任务使用
     outputs:
-      skipped: ${{ steps.release.outputs.skipped }}
-      tag: ${{ steps.release.outputs.tag }}
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
       # 步骤1：检出代码
@@ -24,45 +25,26 @@ jobs:
         with:
           fetch-depth: 0  # 拉取完整提交历史，用于生成Release Notes
 
-      # 步骤2：安装Node.js（依赖工具需要）
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # 步骤3：生成版本信息和Release Notes
-      - name: Generate release info
-        id: release
-        uses: TriPSs/conventional-changelog-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          git-user-name: "github-actions[bot]"
-          git-user-email: "github-actions[bot]@users.noreply.github.com"
-          version-file: "./VERSION" # 指定版本文件
-          tag-prefix: "v"           # Tag前缀，如 v1.0.0
-          output-file: "false"      # 不生成CHANGELOG.md文件，直接使用Release Body
-          skip-commit: "true"       # 跳过Action内置的提交，我们手动处理VERSION文件
-          skip-tag: "true"          # 跳过Action内置的Tag，由softprops/action-gh-release处理
-
-      # 步骤4：更新VERSION文件并提交
-      - name: Update VERSION file
-        if: steps.release.outputs.skipped == 'false'
+      # 步骤2：读取VERSION文件
+      - name: Read VERSION file
+        id: version
         run: |
-          echo "${{ steps.release.outputs.tag }}" > VERSION
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION
-          git commit -m "chore(release): ${{ steps.release.outputs.tag }}"
-          git push
+          if [ -f "VERSION" ]; then
+            VERSION=$(cat VERSION | tr -d '\n\r' | xargs)
+            echo "Read version from file: $VERSION"
+            echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "❌ VERSION file not found"
+            exit 1
+          fi
 
-      # 步骤5：创建GitHub Release并推送Tag
+      # 步骤3：创建GitHub Release并推送Tag
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: steps.release.outputs.skipped == 'false'
         with:
-          tag_name: ${{ steps.release.outputs.tag }}  # 自动生成的Tag（如v1.2.0）
-          name: Release ${{ steps.release.outputs.tag }}  # Release标题
-          body: ${{ steps.release.outputs.clean_changelog }}  # 自动生成的Release Notes
+          tag_name: ${{ steps.version.outputs.tag }}  # 使用VERSION文件中的版本
+          name: Release ${{ steps.version.outputs.tag }}  # Release标题
+          generate_release_notes: true  # 让GitHub自动生成Release Notes
           draft: false  # 不创建草稿，直接发布
           prerelease: false  # 非预发布版本
         env:
