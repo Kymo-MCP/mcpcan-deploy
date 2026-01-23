@@ -62,7 +62,7 @@ jobs:
         with:
           tag_name: ${{ steps.release.outputs.tag }}  # 自动生成的Tag（如v1.2.0）
           name: Release ${{ steps.release.outputs.tag }}  # Release标题
-          body: ${{ steps.release.outputs.clean_changelog }}  # 自动生成的Release Notes
+          body_path: .github/workflows/release.md # 使用指定文件作为 Release Note
           draft: false  # 不创建草稿，直接发布
           prerelease: false  # 非预发布版本
         env:
