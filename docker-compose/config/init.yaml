@@ -22,6 +22,7 @@ database:
 storage:
   rootPath: /data/mcpcan
   codePath: /data/mcpcan/code-package
+  openapiFilePath: /data/mcpcan/openapi-file
   staticPath: /data/mcpcan/static
 log:
   level: debug

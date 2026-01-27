@@ -236,6 +236,7 @@ data:
     storage:
       rootPath: {{ .Values.global.mountStorage.rootPath }}
       codePath: {{ .Values.global.mountStorage.codePackagePath }}
+      openapiFilePath: {{ .Values.global.mountStorage.openapiFilePath }}
       staticPath: {{ .Values.global.mountStorage.staticPath }}
     log:
       level: debug
