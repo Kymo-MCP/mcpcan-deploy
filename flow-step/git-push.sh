@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# chmod +x ./scripts/git-push.sh
-# ./scripts/git-push.sh -r "remote-http-url"
+# chmod +x ./flow-step/git-push.sh
+# ./flow-step/git-push.sh -r "remote-http-url"
 
 # 任一命令返回非 0 时立即退出
 set -euo pipefail
@@ -15,7 +15,7 @@ show_help() {
     echo ""
     echo "By default it will:"
     echo "1) Force push"
-    echo "2) Always filter out 'scripts/git-push.sh' from the pushed content"
+    echo "2) Always filter out the 'flow-step' directory from the pushed content"
     echo ""
     echo "Options:"
     echo "  -r, --remote <url>     Target remote repository URL (required)"
@@ -92,7 +92,7 @@ echo "Configuration:"
 echo "  Remote: (Hidden for security)"
 echo "  Branch: $CURRENT_BRANCH (Auto-detected)"
 echo "  Force:  true"
-echo "  Filter: scripts/git-push.sh excluded = true"
+echo "  Filter: flow-step/ excluded = true"
 echo "----------------------------------------"
 
 # 生成临时 remote 名称（避免与现有 remote 冲突）
@@ -113,19 +113,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 构造一个过滤后的提交（排除 scripts/git-push.sh），不改动工作区
-echo "Preparing filtered commit (excluding scripts/git-push.sh)..."
-if ! git cat-file -e "HEAD:scripts/git-push.sh" 2>/dev/null; then
-    echo "No scripts/git-push.sh found in HEAD. Skipping filtering."
+# 构造一个过滤后的提交（排除 flow-step/），不改动工作区
+echo "Preparing filtered commit (excluding flow-step/)..."
+if ! git cat-file -e "HEAD:flow-step" 2>/dev/null; then
+    echo "No flow-step/ directory found in HEAD. Skipping filtering."
 else
     TMP_INDEX="$(mktemp -t gitpushnew_index.XXXXXX)"
     ORIGINAL_GIT_INDEX_FILE="${GIT_INDEX_FILE-}"
     export GIT_INDEX_FILE="$TMP_INDEX"
 
     git read-tree HEAD
-    git rm --cached --ignore-unmatch scripts/git-push.sh >/dev/null 2>&1 || true
+    git rm -r --cached --ignore-unmatch flow-step >/dev/null 2>&1 || true
     FILTERED_TREE="$(git write-tree)"
-    COMMIT_MSG="chore: filtered push (exclude scripts/git-push.sh)"
+    COMMIT_MSG="chore: filtered push (exclude flow-step/)"
     if ensure_git_identity; then
         PUSH_REF="$(printf "%s\n" "$COMMIT_MSG" | git commit-tree "$FILTERED_TREE" -p HEAD)"
     else
