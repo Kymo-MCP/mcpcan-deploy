@@ -17,7 +17,7 @@ global:
   
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.10.1-dev
+  version: v1.10.1
   
   # Container registry URL
   # All service images will be pulled from this registry
@@ -39,13 +39,13 @@ global:
     mysql: "mysql:8.0.30"
     redis: "redis:6-alpine"
     openapiToMcp: "openapi-to-mcp:v0.2.7"
-    mcpEntry: "mcp-entry:v3.5"
-    mcpHosting: "mcp-hosting:v4"
-    mcpInit: "mcp-init:v1.10.1-dev"
-    mcpMarket: "mcp-market:v1.10.1-dev"
-    mcpAuthz: "mcp-authz:v1.10.1-dev"
-    mcpGateway: "mcp-gateway:v1.10.1-dev"
-    mcpWeb: "mcp-web:v1.10.1-dev"
+    mcpEntry: "mcp-entry:v1.10.1"
+    mcpHosting: "mcp-hosting:v1.10.1"
+    mcpInit: "mcp-init:v1.10.1"
+    mcpMarket: "mcp-market:v1.10.1"
+    mcpAuthz: "mcp-authz:v1.10.1"
+    mcpGateway: "mcp-gateway:v1.10.1"
+    mcpWeb: "mcp-web:v1.10.1"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
