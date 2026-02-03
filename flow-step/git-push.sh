@@ -19,11 +19,13 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  -r, --remote <url>     Target remote repository URL (required)"
+    echo "  -b, --branch <branch>  Target remote branch (optional, overrides detection)"
     echo "  -h, --help             Show this help"
     exit 0
 }
 
 REMOTE_URL=""
+TARGET_BRANCH=""
 BOT_NAME="KEYMO-BOT"
 BOT_EMAIL="opensource@kymo.cn"
 
@@ -49,6 +51,10 @@ while [[ $# -gt 0 ]]; do
             REMOTE_URL="$2"
             shift 2
             ;;
+        -b|--branch)
+            TARGET_BRANCH="$2"
+            shift 2
+            ;;
         -h|--help)
             show_help
             ;;
@@ -72,13 +78,20 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 # 自动识别当前分支
-# 1) 优先使用 symbolic-ref（常规分支场景）
-# 2) 兜底使用 branch --show-current（git >= 2.22）
-# 3) 再兜底使用 rev-parse（git < 2.22）
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)
+# 1) 如果指定了 -b 参数，直接使用
+# 2) 优先使用 symbolic-ref（常规分支场景）
+# 3) 兜底使用 branch --show-current（git >= 2.22）
+# 4) 再兜底使用 rev-parse（git < 2.22）
+DETECTED_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-    echo "Error: Could not determine current branch. You might be in a detached HEAD state."
+if [ -n "$TARGET_BRANCH" ]; then
+    CURRENT_BRANCH="$TARGET_BRANCH"
+elif [ -n "$DETECTED_BRANCH" ] && [ "$DETECTED_BRANCH" != "HEAD" ]; then
+    CURRENT_BRANCH="$DETECTED_BRANCH"
+else
+    echo "Error: Could not determine current branch (Detached HEAD state detected)."
+    echo "In detached HEAD state, you MUST specify the target branch name using -b/--branch."
+    echo "Example: $0 -r <remote_url> -b <target_branch>"
     exit 1
 fi
 
