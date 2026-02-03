@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Resolve Project Root Directory
+# Ensure we are in the mcpcan-deploy root directory regardless of where the script is called from
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Navigate 3 levels up: dev -> env -> flow-step -> mcpcan-deploy
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+if [ ! -d "$PROJECT_ROOT/helm" ]; then
+    echo "Error: Could not find project root (helm directory not found in $PROJECT_ROOT)"
+    exit 1
+fi
+
+cd "$PROJECT_ROOT" || exit 1
+echo "Working directory: $(pwd)"
+HELM_CHART="$PROJECT_ROOT/helm"
+
 export NAMESPACE=bots-test
 export GlobalCN=true
 export GlobalDomain=ai-test.itqm.cn
@@ -72,19 +87,19 @@ log "=================================================="
 log "Starting Helm Deployment"
 log "Action: $ACTION"
 log "Namespace: $NAMESPACE"
-log "Chart Path: ./helm"
+log "Chart Path: $HELM_CHART"
 log "=================================================="
 
 # 3. Check if Chart Path exists
 log "Step 3: Checking Chart Path..."
-if [ ! -d "./helm" ]; then
-    log "Error: Helm chart directory not found at ./helm"
+if [ ! -d "$HELM_CHART" ]; then
+    log "Error: Helm chart directory not found at $HELM_CHART"
     exit 1
 fi
 
 # Special Logic for bots-test environment
 export KYMO_API_SVC="intelligent-api-svc-v2:8000"
-AuthzYaml="./helm/templates/mcp-authz.yaml"
+AuthzYaml="$HELM_CHART/templates/mcp-authz.yaml"
 log "Special Logic: Injected KYMO_API_SVC into $AuthzYaml"
 sed -i '/^        volumeMounts:$/i\
         env:\
@@ -94,7 +109,7 @@ sed -i '/^        volumeMounts:$/i\
 
 # 4. Helm Template Check
 log "Step 4: Verifying Helm Template..."
-if helm template "$NAMESPACE" ./helm \
+if helm template "$NAMESPACE" "$HELM_CHART" \
     --set global.cn=$GlobalCN \
     --set global.domain=$GlobalDomain \
     --set global.runMode=$GlobalRunMode \
@@ -132,7 +147,7 @@ fi
 # 5. Execute Helm Command
 log "Step 5: Executing Helm $ACTION..."
 # shellcheck disable=SC2086
-helm $ACTION "$NAMESPACE" ./helm \
+helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set global.cn=$GlobalCN \
     --set global.domain=$GlobalDomain \
     --set global.runMode=$GlobalRunMode \
