@@ -71,3 +71,38 @@ Get full image name
 {{- printf "%s:%s" .repository (include "mcpcan.imageTag" .) }}
 {{- end }}
 {{- end }}
+
+{{- define "mcpcan.registryServer" -}}
+{{- $server := "" -}}
+{{- if and .Values.global.registryAuth (ne (.Values.global.registryAuth.server | default "") "") -}}
+{{- $server = .Values.global.registryAuth.server -}}
+{{- else -}}
+{{- if .Values.global.cn -}}
+{{- $server = .Values.global.registryForMirrorCN -}}
+{{- else -}}
+{{- $server = .Values.global.registry -}}
+{{- end -}}
+{{- end -}}
+{{- $server -}}
+{{- end }}
+
+{{- define "mcpcan.imagePullSecrets" -}}
+{{- $registryAuth := .Values.global.registryAuth -}}
+{{- $registrySecretName := "" -}}
+{{- $useRegistryAuthSecret := false -}}
+{{- if $registryAuth -}}
+{{- $registrySecretName = ($registryAuth.secretName | default "") -}}
+{{- $useRegistryAuthSecret = or ($registryAuth.enabled | default false) ($registryAuth.createSecret | default false) -}}
+{{- end -}}
+{{- if or (and $useRegistryAuthSecret (ne $registrySecretName "")) .Values.global.imagePullSecrets -}}
+imagePullSecrets:
+{{- if and $useRegistryAuthSecret (ne $registrySecretName "") }}
+  - name: {{ $registrySecretName }}
+{{- end }}
+{{- range $s := (.Values.global.imagePullSecrets | default (list)) }}
+{{- if ne $s $registrySecretName }}
+  - name: {{ $s }}
+{{- end }}
+{{- end }}
+{{- end -}}
+{{- end }}

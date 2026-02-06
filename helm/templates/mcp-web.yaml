@@ -35,6 +35,7 @@ spec:
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- include "mcpcan.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: {{ .Values.services.web.name | default "mcp-web" }}
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpWeb }}

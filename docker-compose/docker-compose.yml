@@ -103,6 +103,7 @@ services:
     volumes:
       - ./config/market.yaml:/app/config/market.yaml
       - ${HOST_DATA_PATH}:/data/mcpcan
+      - ${HOME}/.docker/config.json:/root/.docker/config.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - mcpcan-network
