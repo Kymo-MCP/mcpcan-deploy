@@ -38,7 +38,7 @@ spec:
       {{- include "mcpcan.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: {{ .Values.services.web.name | default "mcp-web" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpWeb }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}/{{ .Values.global.images.mcpWeb }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.web.service.port }}
         ports:

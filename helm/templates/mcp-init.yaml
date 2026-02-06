@@ -44,7 +44,7 @@ spec:
           until nc -z {{ .Values.infrastructure.redis.service.name | default "redis" }} {{ .Values.infrastructure.redis.service.port | default 6379 }}; do echo "waiting for redis"; sleep 2; done
       containers:
       - name: {{ .Values.services.init.name | default "mcp-init" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpInit }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}/{{ .Values.global.images.mcpInit }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.init.resources }}
         resources:

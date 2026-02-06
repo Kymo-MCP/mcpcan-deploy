@@ -22,10 +22,15 @@ global:
   # Container registry URL
   # All service images will be pulled from this registry
   registry: 77kymo
+  # Container registry URL for enterprise images
+  enterpriseRegistry: 77kymo
 
   # Container registry URL for mirror images in CN
   # All service images will be pulled from this registry in CN
   registryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
+  # Container registry URL for enterprise images
+  enterpriseRegistryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
+
 
   # Image pull policy for all containers
   # Options: Always, IfNotPresent, Never

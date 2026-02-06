@@ -48,7 +48,7 @@ spec:
           until nc -z {{ .Values.infrastructure.redis.service.name | default "redis" }} {{ .Values.infrastructure.redis.service.port | default 6379 }}; do echo "waiting for redis"; sleep 2; done
       containers:
       - name: {{ .Values.services.market.name | default "mcp-market" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpMarket }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}/{{ .Values.global.images.mcpMarket }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.market.service.port }}
         ports:
@@ -57,7 +57,7 @@ spec:
         {{- end }}
         env:
         - name: REGISTORY_IMAGE_MIRROR
-          value: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}
+          value: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}
         {{- if .Values.services.market.resources }}
         resources:
           {{- toYaml .Values.services.market.resources | nindent 10 }}
