@@ -58,7 +58,6 @@ global:
   # "prod": Production-ready configuration with full features
   # "kymo": Kymo-specific configuration
   runMode: "prod"
-  codeMode: "OpenCode"
 
   # Host storage configuration
   # Defines where data is stored on the host system

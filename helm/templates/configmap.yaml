@@ -143,7 +143,6 @@ data:
 {{- if .Values.services.authz.enabled }}
   authz.yaml: |-
     runMode: {{ .Values.global.runMode }}
-    codeMode: {{ .Values.global.codeMode }}
     server:
       httpPort: {{ .Values.services.authz.service.port }}
     secret: {{ .Values.global.appSecret }}
@@ -170,7 +169,6 @@ data:
 {{- if .Values.services.market.enabled }}
   market.yaml: |-
     runMode: {{ .Values.global.runMode }}
-    codeMode: {{ .Values.global.codeMode }}
     server:
       httpPort: {{ .Values.services.market.service.port }}
     secret: {{ .Values.global.appSecret }}
@@ -215,7 +213,6 @@ data:
 {{- if .Values.services.init.enabled }}
   init.yaml: |-
     runMode: {{ .Values.global.runMode }}
-    codeMode: {{ .Values.global.codeMode }}
     init:
       admin_username: {{ .Values.services.init.loginUser.username }}
       admin_password: {{ .Values.services.init.loginUser.password }}
