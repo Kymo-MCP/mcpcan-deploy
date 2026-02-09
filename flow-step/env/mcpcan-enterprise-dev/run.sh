@@ -86,8 +86,8 @@ if helm template "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.codePackagePath=$GlobalHostStorageCodePackagePath \
     --set global.hostStorage.mysqlPath=$GlobalHostStorageMysqlPath \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
-    --set infrastructure.mysqlService.nodePort=$InfrastruscureMysqlServiceNodePort \
-    --set infrastructure.redisService.nodePort=$InfrastruscureRedisServiceNodePort \
+    --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
+    --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
@@ -111,8 +111,8 @@ helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.codePackagePath=$GlobalHostStorageCodePackagePath \
     --set global.hostStorage.mysqlPath=$GlobalHostStorageMysqlPath \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
-    --set infrastructure.mysqlService.nodePort=$InfrastruscureMysqlServiceNodePort \
-    --set infrastructure.redisService.nodePort=$InfrastruscureRedisServiceNodePort \
+    --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
+    --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
