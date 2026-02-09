@@ -14,8 +14,8 @@ fi
 cd "$PROJECT_ROOT" || exit 1
 echo "Working directory: $(pwd)"
 HELM_CHART="$PROJECT_ROOT/helm"
-TLS_CERT_PATH="$PROJECT_ROOT/flow-step/env/dev/tls.cert"
-TLS_KEY_PATH="$PROJECT_ROOT/flow-step/env/dev/tls.key"
+TLS_CERT_PATH="$SCRIPT_DIR/tls.cert"
+TLS_KEY_PATH="$SCRIPT_DIR/tls.key"
 
 
 export NAMESPACE=mcp-enterprise
@@ -30,6 +30,13 @@ export GlobalHostStorageRedisPath=/data/mcp-enterprise/redis
 export InfrastruscureMysqlServiceNodePort=32386
 export InfrastruscureRedisServiceNodePort=32389
 export IngressTlsEnabled=true
+
+# Registry Authentication
+export RegistryAuthEnabled=true
+export RegistryAuthCreateSecret=true
+export RegistryAuthServer=ccr.ccs.tencentyun.com
+export RegistryAuthUsername=100034771716
+export RegistryAuthPassword='itqm123!@#'
 
 
 # Logging function
@@ -88,6 +95,11 @@ if helm template "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
     --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
+    --set registryAuth.enabled=$RegistryAuthEnabled \
+    --set registryAuth.createSecret=$RegistryAuthCreateSecret \
+    --set registryAuth.server=$RegistryAuthServer \
+    --set registryAuth.username=$RegistryAuthUsername \
+    --set registryAuth.password=$RegistryAuthPassword \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
@@ -113,6 +125,11 @@ helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
     --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
+    --set registryAuth.enabled=$RegistryAuthEnabled \
+    --set registryAuth.createSecret=$RegistryAuthCreateSecret \
+    --set registryAuth.server=$RegistryAuthServer \
+    --set registryAuth.username=$RegistryAuthUsername \
+    --set registryAuth.password=$RegistryAuthPassword \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
