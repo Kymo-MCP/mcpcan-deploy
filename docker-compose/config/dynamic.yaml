@@ -24,7 +24,7 @@ http:
       forwardAuth:
         address: "http://mcp-authz:8081/authz/validate"
         trustForwardHeader: true
-        authResponseHeaders: ["X-Consum-User-Id"]
+        authResponseHeaders: ["X-Consum-User-Id", "X-Custom-User-Info"]
 
   # Servers Transport for Web Service
   # Allows HTTPS connections to the web service with self-signed certificates
