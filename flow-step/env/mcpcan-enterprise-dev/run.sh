@@ -7,11 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 if [ ! -d "$PROJECT_ROOT/helm" ]; then
-    echo "Error: Could not find project root (helm directory not found in $PROJECT_ROOT)"
+    echo "Error: Could not find project root (helm directory not found in $PROJECT_ROOT/helm)"
     exit 1
 fi
 
-cd "$PROJECT_ROOT" || exit 1
 echo "Working directory: $(pwd)"
 HELM_CHART="$PROJECT_ROOT/helm"
 TLS_CERT_PATH="$SCRIPT_DIR/tls.cert"
@@ -72,13 +71,13 @@ log "=================================================="
 log "Starting Helm Deployment"
 log "Action: $ACTION"
 log "Namespace: $NAMESPACE"
-log "Chart Path: ./helm"
+log "Chart Path: $HELM_CHART"
 log "=================================================="
 
 # 3. Check if Chart Path exists
 log "Step 3: Checking Chart Path..."
-if [ ! -d "./helm" ]; then
-    log "Error: Helm chart directory not found at ./helm"
+if [ ! -d "$HELM_CHART" ]; then
+    log "Error: Helm chart directory not found at $HELM_CHART"
     exit 1
 fi
 
@@ -95,11 +94,11 @@ if helm template "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
     --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
-    --set registryAuth.enabled=$RegistryAuthEnabled \
-    --set registryAuth.createSecret=$RegistryAuthCreateSecret \
-    --set registryAuth.server=$RegistryAuthServer \
-    --set registryAuth.username=$RegistryAuthUsername \
-    --set registryAuth.password=$RegistryAuthPassword \
+    --set global.registryAuth.enabled=$RegistryAuthEnabled \
+    --set global.registryAuth.createSecret=$RegistryAuthCreateSecret \
+    --set global.registryAuth.server=$RegistryAuthServer \
+    --set global.registryAuth.username=$RegistryAuthUsername \
+    --set global.registryAuth.password=$RegistryAuthPassword \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
@@ -125,11 +124,11 @@ helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set global.hostStorage.redisPath=$GlobalHostStorageRedisPath \
     --set infrastructure.mysql.service.nodePort=$InfrastruscureMysqlServiceNodePort \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
-    --set registryAuth.enabled=$RegistryAuthEnabled \
-    --set registryAuth.createSecret=$RegistryAuthCreateSecret \
-    --set registryAuth.server=$RegistryAuthServer \
-    --set registryAuth.username=$RegistryAuthUsername \
-    --set registryAuth.password=$RegistryAuthPassword \
+    --set global.registryAuth.enabled=$RegistryAuthEnabled \
+    --set global.registryAuth.createSecret=$RegistryAuthCreateSecret \
+    --set global.registryAuth.server=$RegistryAuthServer \
+    --set global.registryAuth.username=$RegistryAuthUsername \
+    --set global.registryAuth.password=$RegistryAuthPassword \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
