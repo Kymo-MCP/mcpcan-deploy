@@ -56,7 +56,7 @@ global:
     mcpEntry: "mcp-entry:v3.5"
     mcpHosting: "mcp-hosting:v4"
     mcpInit: "mcp-init:v1.11-dev"
-    mcpMarket: "mcp-market-:v1.11-dev"
+    mcpMarket: "mcp-market:v1.11-dev"
     mcpAuthz: "mcp-authz:v1.11-dev"
     mcpGateway: "mcp-gateway:v1.11-dev"
     mcpWeb: "mcp-web:v1.11-dev"
