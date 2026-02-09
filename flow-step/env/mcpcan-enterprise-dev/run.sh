@@ -96,9 +96,9 @@ if helm template "$NAMESPACE" "$HELM_CHART" \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
     --set global.registryAuth.enabled=$RegistryAuthEnabled \
     --set global.registryAuth.createSecret=$RegistryAuthCreateSecret \
-    --set global.registryAuth.server=$RegistryAuthServer \
-    --set global.registryAuth.username=$RegistryAuthUsername \
-    --set global.registryAuth.password=$RegistryAuthPassword \
+    --set-string global.registryAuth.server="$RegistryAuthServer" \
+    --set-string global.registryAuth.username="$RegistryAuthUsername" \
+    --set-string global.registryAuth.password="$RegistryAuthPassword" \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
@@ -126,9 +126,9 @@ helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set infrastructure.redis.service.nodePort=$InfrastruscureRedisServiceNodePort \
     --set global.registryAuth.enabled=$RegistryAuthEnabled \
     --set global.registryAuth.createSecret=$RegistryAuthCreateSecret \
-    --set global.registryAuth.server=$RegistryAuthServer \
-    --set global.registryAuth.username=$RegistryAuthUsername \
-    --set global.registryAuth.password=$RegistryAuthPassword \
+    --set-string global.registryAuth.server="$RegistryAuthServer" \
+    --set-string global.registryAuth.username="$RegistryAuthUsername" \
+    --set-string global.registryAuth.password="$RegistryAuthPassword" \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
