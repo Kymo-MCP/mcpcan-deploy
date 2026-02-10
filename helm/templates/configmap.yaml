@@ -84,6 +84,7 @@ data:
           entryPoints: ["web"]
           middlewares:
             - "strip-api-prefix"
+            - "external-auth"
         market-router:
           rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/market`)"
           service: "market-service"
