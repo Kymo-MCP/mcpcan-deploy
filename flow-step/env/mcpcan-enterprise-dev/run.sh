@@ -28,6 +28,7 @@ export GlobalHostStorageMysqlPath=/data/mcp-enterprise/mysql
 export GlobalHostStorageRedisPath=/data/mcp-enterprise/redis
 export InfrastruscureMysqlServiceNodePort=32386
 export InfrastruscureRedisServiceNodePort=32389
+export IngressTlsCreateSecret=true
 export IngressTlsEnabled=true
 
 # Registry Authentication
@@ -99,6 +100,7 @@ if helm template "$NAMESPACE" "$HELM_CHART" \
     --set-string global.registryAuth.server="$RegistryAuthServer" \
     --set-string global.registryAuth.username="$RegistryAuthUsername" \
     --set-string global.registryAuth.password="$RegistryAuthPassword" \
+    --set ingress.tls.createSecret=$IngressTlsCreateSecret \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
@@ -129,6 +131,7 @@ helm $ACTION "$NAMESPACE" "$HELM_CHART" \
     --set-string global.registryAuth.server="$RegistryAuthServer" \
     --set-string global.registryAuth.username="$RegistryAuthUsername" \
     --set-string global.registryAuth.password="$RegistryAuthPassword" \
+    --set ingress.tls.createSecret=$IngressTlsCreateSecret \
     --set ingress.tls.enabled=$IngressTlsEnabled \
     --set-file ingress.tls.crt="$TLS_CERT_PATH" \
     --set-file ingress.tls.key="$TLS_KEY_PATH" \
