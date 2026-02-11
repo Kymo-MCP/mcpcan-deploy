@@ -13,8 +13,8 @@ fi
 
 echo "Working directory: $(pwd)"
 HELM_CHART="$PROJECT_ROOT/helm"
-TLS_CERT_PATH="$SCRIPT_DIR/tls.cert"
-TLS_KEY_PATH="$SCRIPT_DIR/tls.key"
+TLS_CERT_PATH="$PROJECT_ROOT/flow-step/env/mcpcan-enterprise-dev/tls.cert"
+TLS_KEY_PATH="$PROJECT_ROOT/flow-step/env/mcpcan-enterprise-dev/tls.key"
 
 
 export NAMESPACE=mcp-enterprise
