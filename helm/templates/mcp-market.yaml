@@ -57,7 +57,7 @@ spec:
         {{- end }}
         env:
         - name: REGISTORY_IMAGE_MIRROR
-          value: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}
+          value: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}
         {{- if .Values.services.market.resources }}
         resources:
           {{- toYaml .Values.services.market.resources | nindent 10 }}
