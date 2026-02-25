@@ -59,7 +59,7 @@ data:
           forwardAuth:
             address: "http://{{ .Values.services.authz.service.name }}:{{ .Values.services.authz.service.port }}/authz/validate"
             trustForwardHeader: true
-            authResponseHeaders: ["X-Consum-User-Id"]
+            authResponseHeaders: ["X-Consum-User-Id", "X-Custom-User-Info"]
       serversTransports:
         https-skip-verify-transport:
           insecureSkipVerify: true
@@ -84,6 +84,7 @@ data:
           entryPoints: ["web"]
           middlewares:
             - "strip-api-prefix"
+            - "external-auth"
         market-router:
           rule: "PathPrefix(`{{ .Values.global.apiPathRule }}/market`)"
           service: "market-service"
