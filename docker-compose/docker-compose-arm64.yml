@@ -52,7 +52,7 @@ services:
       retries: 5
 
   mcp-entry:
-    platform: linux/arm64
+    platform: linux/amd64
     image: ${REGISTRY_PREFIX}/mcp-entry:v3.5
     container_name: ${MCP_ENTRY_SERVICE_NAME}
     environment:
@@ -78,7 +78,7 @@ services:
         condition: service_started
 
   mcp-init:
-    platform: linux/arm64
+    platform: linux/amd64
     image: ${REGISTRY_PREFIX}/mcp-init:${VERSION}
     container_name: ${MCP_INIT_SERVICE_NAME}
     volumes:
@@ -93,7 +93,7 @@ services:
         condition: service_healthy
 
   mcp-authz:
-    platform: linux/arm64
+    platform: linux/amd64
     image: ${REGISTRY_PREFIX}/mcp-authz:${VERSION}
     container_name: ${MCP_AUTHZ_SERVICE_NAME}
     restart: always
@@ -111,7 +111,7 @@ services:
         condition: service_healthy
 
   mcp-market:
-    platform: linux/arm64
+    platform: linux/amd64
     image: ${REGISTRY_PREFIX}/mcp-market:${VERSION}
     container_name: ${MCP_MARKET_SERVICE_NAME}
     restart: always
@@ -131,25 +131,8 @@ services:
       mcp-init:
         condition: service_completed_successfully
 
-  mcp-gateway:
-    platform: linux/arm64
-    image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
-    container_name: ${MCP_GATEWAY_SERVICE_NAME}
-    restart: always
-    volumes:
-      - ./config/gateway.yaml:/app/config/gateway.yaml
-    networks:
-      - mcpcan-network
-    expose:
-      - "${MCP_GATEWAY_SERVICE_PORT}"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   mcp-web:
-    platform: linux/arm64
+    platform: linux/amd64
     image: ${REGISTRY_PREFIX}/mcp-web:${VERSION}
     container_name: ${MCP_WEB_SERVICE_NAME}
     restart: always
