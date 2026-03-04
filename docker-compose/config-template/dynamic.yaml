@@ -26,6 +26,21 @@ http:
         trustForwardHeader: true
         authResponseHeaders: ["X-Consum-User-Id", "X-Custom-User-Info"]
 
+    # MCP Authentication Middleware
+    mcp-auth:
+      forwardAuth:
+        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/internal/gateway/auth"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-Mcp-Instance-Id"
+          - "X-Mcp-User-Id"
+
+    # Manual test StripPrefix
+    mcp-strip-manual-test:
+      stripPrefix:
+        prefixes:
+          - "${MCP_GATEWAY_PATH_RULE}/manual-test/"
+
   # Servers Transport for Web Service
   # Allows HTTPS connections to the web service with self-signed certificates
   serversTransports:
@@ -36,7 +51,7 @@ http:
     # =========================================================================
     # HTTP Routers (Port 80)
     # =========================================================================
-    
+
     # Router for Public Authz endpoints (HTTP)
     authz-public:
       rule: "PathPrefix(`${API_PATH_RULE}/authz/login`) || PathPrefix(`${API_PATH_RULE}/authz/logout`) || PathPrefix(`${API_PATH_RULE}/authz/register`) || PathPrefix(`${API_PATH_RULE}/authz/refresh`) || PathPrefix(`${API_PATH_RULE}/authz/validate`) || PathPrefix(`${API_PATH_RULE}/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`${API_PATH_RULE}/health`)"
@@ -80,6 +95,14 @@ http:
       rule: "PathPrefix(`${MCP_GATEWAY_PATH_RULE}`)"
       service: "mcp-gateway-service"
       entryPoints: ["web"]
+
+    # Manual test router (temporary)
+    mcp-manual-test:
+      rule: "PathPrefix(`${MCP_GATEWAY_PATH_RULE}/manual-test/`)"
+      service: "mcp-manual-test-svc"
+      entryPoints: ["web"]
+      middlewares:
+        - "mcp-strip-manual-test"
 
     # Router for the root web service
     # Lower priority to avoid conflicts with ${API_PATH_RULE} routes
@@ -159,6 +182,12 @@ http:
       loadBalancer:
         servers:
           - url: "http://${MCP_GATEWAY_SERVICE_NAME}:${MCP_GATEWAY_SERVICE_PORT}"
+
+    # MCP Manual Test Service
+    mcp-manual-test-svc:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-ext-manual-test:80"
 
     # Web Service Definition
     web-service:

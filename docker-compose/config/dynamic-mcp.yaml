@@ -1,0 +1,30 @@
+http:
+  middlewares:
+    mcp-auth:
+      forwardAuth:
+        address: "http://mcp-market:8080/internal/gateway/auth"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-Mcp-Instance-Id"
+          - "X-Mcp-User-Id"
+
+    # 手动测试用 StripPrefix（临时）
+    mcp-strip-manual-test:
+      stripPrefix:
+        prefixes:
+          - "/mcp-gateway/manual-test/"
+
+  routers:
+    # 手动测试路由（临时，验证 SSE 链路后删除）
+    mcp-manual-test:
+      rule: "PathPrefix(`/mcp-gateway/manual-test/`)"
+      service: "mcp-manual-test-svc"
+      entryPoints: ["web"]
+      middlewares:
+        - "mcp-strip-manual-test"
+
+  services:
+    mcp-manual-test-svc:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-ext-manual-test:80"

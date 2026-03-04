@@ -1,0 +1,25 @@
+global:
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":${MCP_ENTRY_SERVICE_PORT}"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: ${MCP_NETWORK}
+  http:
+    endpoint: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/internal/gateway/routes"
+    pollInterval: "10s"
+  file:
+    filename: /etc/traefik/dynamic-mcp.yaml
+    watch: true

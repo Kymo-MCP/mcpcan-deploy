@@ -36,7 +36,7 @@ http:
     # =========================================================================
     # HTTP Routers (Port 80)
     # =========================================================================
-    
+
     # Router for Public Authz endpoints (HTTP)
     authz-public:
       rule: "PathPrefix(`/api/authz/login`) || PathPrefix(`/api/authz/logout`) || PathPrefix(`/api/authz/register`) || PathPrefix(`/api/authz/refresh`) || PathPrefix(`/api/authz/validate`) || PathPrefix(`/api/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`/api/health`)"
@@ -75,11 +75,8 @@ http:
         - "strip-api-prefix"
         - "external-auth"
 
-    # Router for MCP-Gateway endpoints
-    mcp-gateway-router:
-      rule: "PathPrefix(`/mcp-gateway`)"
-      service: "mcp-gateway-service"
-      entryPoints: ["web"]
+    # [DEPRECATED] mcp-gateway 已迁移到独立的 mcp-traefik 服务
+    # MCP 实例流量不再经过 mcp-entry
 
     # Router for the root web service
     # Lower priority to avoid conflicts with /api routes
@@ -124,12 +121,7 @@ http:
         - "external-auth"
       tls: {}
 
-    # Router for MCP-Gateway endpoints (HTTPS)
-    mcp-gateway-router-secure:
-      rule: "PathPrefix(`/mcp-gateway`)"
-      service: "mcp-gateway-service"
-      entryPoints: ["websecure"]
-      tls: {}
+    # [DEPRECATED] mcp-gateway HTTPS 路由已迁移到 mcp-traefik
 
     # Router for the root web service (HTTPS)
     web-router-secure:
@@ -152,13 +144,10 @@ http:
     market-service:
       loadBalancer:
         servers:
-          - url: "http://mcp-market:8080"
+          # - url: "http://mcp-market:8080"
+          - url: "http://host.docker.internal:8080"
 
-    # mcp-gateway-service
-    mcp-gateway-service:
-      loadBalancer:
-        servers:
-          - url: "http://mcp-gateway:8082"
+    # [DEPRECATED] mcp-gateway-service 已迁移到 mcp-traefik
 
     # Web Service Definition
     web-service:

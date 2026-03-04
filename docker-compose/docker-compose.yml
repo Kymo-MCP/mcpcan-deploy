@@ -125,21 +125,27 @@ services:
       mcp-init:
         condition: service_completed_successfully
 
-  mcp-gateway:
-    image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
-    container_name: ${MCP_GATEWAY_SERVICE_NAME}
+  # [DEPRECATED] mcp-gateway 已由 mcp-traefik + agentgateway 替代
+  # mcp-gateway:
+  #   image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
+  #   container_name: ${MCP_GATEWAY_SERVICE_NAME}
+
+  mcp-traefik:
+    image: traefik:v3.5
+    container_name: mcp-traefik
     restart: always
+    ports:
+      - "${MCP_TRAEFIK_PORT:-8082}:80"
     volumes:
-      - ./config/gateway.yaml:/app/config/gateway.yaml
+      - ./config/traefik-mcp.yaml:/etc/traefik/traefik.yaml
+      - ./config/dynamic-mcp.yaml:/etc/traefik/dynamic-mcp.yaml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - mcpcan-network
-    expose:
-      - "${MCP_GATEWAY_SERVICE_PORT}"
+    command: traefik
     depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      mcp-market:
+        condition: service_started
 
   mcp-web:
     image: ${REGISTRY_PREFIX}/mcp-web:${VERSION}

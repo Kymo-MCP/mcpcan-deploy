@@ -1,9 +1,9 @@
 # Global settings
 global:
-  checkNewVersion: false  # Disable version check to avoid network requests at startup
-  sendAnonymousUsage: false  # Disable anonymous statistics, do not send usage data to official
+  checkNewVersion: false # Disable version check to avoid network requests at startup
+  sendAnonymousUsage: false # Disable anonymous statistics, do not send usage data to official
 
-# Traefik API and Dashboard Configuration, default 
+# Traefik API and Dashboard Configuration, default
 # api:
 #   dashboard: false
 
@@ -16,6 +16,13 @@ entryPoints:
 
 # Dynamic configuration source
 providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: ${MCP_NETWORK}
+  http:
+    endpoint: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/internal/gateway/routes"
+    pollInterval: "10s"
   file:
     filename: "/etc/traefik/dynamic.yaml"
     watch: true
@@ -24,7 +31,7 @@ providers:
 log:
   level: "INFO"
   format: "json"
-  filePath: "/dev/stdout"  # Output to standard output (Docker logs)
+  filePath: "/dev/stdout" # Output to standard output (Docker logs)
 
 # Access log
 accessLog:
