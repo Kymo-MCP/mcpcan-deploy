@@ -26,6 +26,18 @@ http:
         trustForwardHeader: true
         authResponseHeaders: ["X-Consum-User-Id", "X-Custom-User-Info"]
 
+    # MCP Container Auth Middleware
+    mcp-auth:
+      forwardAuth:
+        address: "http://host.docker.internal:8080/market/gateway/auth"
+        trustForwardHeader: true
+        authRequestHeaders:
+          - "Authorization"
+          - "API-Key"
+          - "X-API-Key"
+        authResponseHeaders:
+          - "X-Mcp-Instance-Id"
+
   # Servers Transport for Web Service
   # Allows HTTPS connections to the web service with self-signed certificates
   serversTransports:
@@ -121,8 +133,6 @@ http:
         - "external-auth"
       tls: {}
 
-    # [DEPRECATED] mcp-gateway HTTPS 路由已迁移到 mcp-traefik
-
     # Router for the root web service (HTTPS)
     web-router-secure:
       rule: "PathPrefix(`/`)"
@@ -146,8 +156,6 @@ http:
         servers:
           # - url: "http://mcp-market:8080"
           - url: "http://host.docker.internal:8080"
-
-    # [DEPRECATED] mcp-gateway-service 已迁移到 mcp-traefik
 
     # Web Service Definition
     web-service:

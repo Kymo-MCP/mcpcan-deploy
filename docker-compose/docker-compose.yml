@@ -50,17 +50,23 @@ services:
       retries: 5
 
   mcp-entry:
-    image: ${REGISTRY_PREFIX}/mcp-entry:v3.5
+    image: traefik:v3.6.9
     container_name: ${MCP_ENTRY_SERVICE_NAME}
     environment:
       - REGISTORY_IMAGE_MIRROR=${REGISTRY_PREFIX}
+      - DOCKER_API_VERSION=1.44
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${MCP_ENTRY_SERVICE_PORT}:${MCP_ENTRY_SERVICE_PORT}"
       - "${MCP_ENTRY_SERVICE_HTTPS_PORT}:${MCP_ENTRY_SERVICE_HTTPS_PORT}"
+      - "8090:8080"
     volumes:
       - ./config/traefik.yaml:/etc/traefik/traefik.yaml
       - ./config/dynamic.yaml:/etc/traefik/dynamic.yaml
       - ./config/certs:/etc/traefik/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: always
     networks:
       - mcpcan-network
@@ -115,6 +121,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - mcpcan-network
+    extra_hosts:
+      - "localhost:host-gateway"
     expose:
       - "${MCP_MARKET_SERVICE_PORT}"
     depends_on:
@@ -124,28 +132,6 @@ services:
         condition: service_healthy
       mcp-init:
         condition: service_completed_successfully
-
-  # [DEPRECATED] mcp-gateway 已由 mcp-traefik + agentgateway 替代
-  # mcp-gateway:
-  #   image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
-  #   container_name: ${MCP_GATEWAY_SERVICE_NAME}
-
-  mcp-traefik:
-    image: traefik:v3.5
-    container_name: mcp-traefik
-    restart: always
-    ports:
-      - "${MCP_TRAEFIK_PORT:-8082}:80"
-    volumes:
-      - ./config/traefik-mcp.yaml:/etc/traefik/traefik.yaml
-      - ./config/dynamic-mcp.yaml:/etc/traefik/dynamic-mcp.yaml
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - mcpcan-network
-    command: traefik
-    depends_on:
-      mcp-market:
-        condition: service_started
 
   mcp-web:
     image: ${REGISTRY_PREFIX}/mcp-web:${VERSION}

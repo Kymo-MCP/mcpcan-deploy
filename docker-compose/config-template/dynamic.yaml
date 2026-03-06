@@ -29,7 +29,7 @@ http:
     # MCP Authentication Middleware
     mcp-auth:
       forwardAuth:
-        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/internal/gateway/auth"
+        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/gateway/auth"
         trustForwardHeader: true
         authResponseHeaders:
           - "X-Mcp-Instance-Id"
@@ -90,12 +90,6 @@ http:
         - "strip-api-prefix"
         - "external-auth"
 
-    # Router for MCP-Gateway endpoints
-    mcp-gateway-router:
-      rule: "PathPrefix(`${MCP_GATEWAY_PATH_RULE}`)"
-      service: "mcp-gateway-service"
-      entryPoints: ["web"]
-
     # Manual test router (temporary)
     mcp-manual-test:
       rule: "PathPrefix(`${MCP_GATEWAY_PATH_RULE}/manual-test/`)"
@@ -147,13 +141,6 @@ http:
         - "external-auth"
       tls: {}
 
-    # Router for MCP-Gateway endpoints (HTTPS)
-    mcp-gateway-router-secure:
-      rule: "PathPrefix(`${MCP_GATEWAY_PATH_RULE}`)"
-      service: "mcp-gateway-service"
-      entryPoints: ["websecure"]
-      tls: {}
-
     # Router for the root web service (HTTPS)
     web-router-secure:
       rule: "PathPrefix(`${WEB_PATH_RULE}`)"
@@ -176,12 +163,6 @@ http:
       loadBalancer:
         servers:
           - url: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}"
-
-    # mcp-gateway-service
-    mcp-gateway-service:
-      loadBalancer:
-        servers:
-          - url: "http://${MCP_GATEWAY_SERVICE_NAME}:${MCP_GATEWAY_SERVICE_PORT}"
 
     # MCP Manual Test Service
     mcp-manual-test-svc:

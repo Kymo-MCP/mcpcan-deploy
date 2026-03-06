@@ -9,13 +9,6 @@ runEnvironment:
   docker:
     host: "unix:///var/run/docker.sock"
     network: "docker-compose_mcpcan-network"
-services:
-  mcpMarket:
-    host: mcp-market
-    port: 8080
-  mcpAuthz:
-    host: mcp-authz
-    port: 8081
 database:
   mysql:
     host: mysql
