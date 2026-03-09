@@ -1,0 +1,7 @@
+# tls-config.yaml
+# Traefik Dynamic Configuration for Custom Certificates
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/server.crt
+      keyFile: /etc/traefik/certs/server.key

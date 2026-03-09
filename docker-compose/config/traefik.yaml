@@ -12,13 +12,11 @@ api:
 entryPoints:
   web:
     address: ":80" # HTTP Port 80
-  websecure:
-    address: ":443" # HTTPS Port 443
 
 # Dynamic configuration source
 providers:
   file:
-    filename: "/etc/traefik/dynamic.yaml"
+    directory: "/etc/traefik/dynamic"
     watch: true
   docker:
     endpoint: "unix:///var/run/docker.sock"

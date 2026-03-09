@@ -1,0 +1,14 @@
+# docker-compose.tls.yml
+# This is an override file for enabling HTTPS/TLS in Traefik.
+# Use it with: docker-compose -f docker-compose.yml -f docker-compose.tls.yml up -d
+
+services:
+  mcp-entry:
+    ports:
+      - "${MCP_ENTRY_SERVICE_HTTPS_PORT:-443}:443"
+    volumes:
+      # Mount your certificate files here.
+      # Place your server.crt and server.key inside the ./certs directory.
+      - ./certs:/etc/traefik/certs:ro
+      # Mount the dynamic TLS configuration.
+      - ./https-setup/tls-config.yaml:/etc/traefik/dynamic/tls-config.yaml:ro

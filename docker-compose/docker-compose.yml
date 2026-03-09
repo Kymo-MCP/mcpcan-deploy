@@ -60,12 +60,10 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "${MCP_ENTRY_SERVICE_PORT}:${MCP_ENTRY_SERVICE_PORT}"
-      - "${MCP_ENTRY_SERVICE_HTTPS_PORT}:${MCP_ENTRY_SERVICE_HTTPS_PORT}"
       - "8090:8080"
     volumes:
-      - ./config/traefik.yaml:/etc/traefik/traefik.yaml
-      - ./config/dynamic.yaml:/etc/traefik/dynamic.yaml
-      - ./config/certs:/etc/traefik/certs
+      - ./config/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./config/dynamic.yaml:/etc/traefik/dynamic/dynamic.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: always
     networks:

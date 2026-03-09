@@ -1,202 +1,84 @@
 # MCPCan Docker Compose 部署指南
 
-本文档提供了使用 Docker Compose 部署 MCPCan 系统的详细说明。该部署方案支持 HTTP/HTTPS 双协议访问，适合本地开发、测试或轻量级生产环境部署。
+基于 Docker Compose 的一键式私有化部署方案。默认开启 HTTP 访问，支持通过扩展包启用 HTTPS。
 
-## 目录
+## 1. 快速开始
 
-1. [前置要求](#前置要求)
-2. [快速开始](#快速开始)
-   - [准备工作](#21-准备工作)
-   - [启动服务](#22-启动服务)
-   - [验证安装](#23-验证安装)
-3. [自定义配置](#自定义配置)
-   - [环境变量配置](#31-环境变量配置)
-   - [配置热更新](#32-配置热更新)
-4. [常用维护命令](#常用维护命令)
-5. [服务架构](#服务架构)
-6. [高级配置](#高级配置)
-   - [证书替换与热加载](#61-证书替换与热加载)
-7. [常见问题](#常见问题)
+只需三步即可完成基础部署：
 
-## 前置要求
+### 第一步：初始化环境
 
-在开始之前，请确保您的环境满足以下要求：
+```bash
+cp .example.env .env
+```
 
-- **操作系统**: Linux (推荐 Ubuntu/CentOS) 或 macOS
-- **Docker Engine**: 20.10.0+
-- **Docker Compose**: v2.0.0+ (推荐使用 Docker Compose V2 插件命令 `docker compose`)
-- **硬件资源**:
-  - CPU: 2 Core+
-  - Memory: 4GB+
-  - Disk: 10GB+
+_(可选)_ 编辑 `.env` 修改 `VERSION` 或端口。
 
-## 快速开始
+### 第二步：生成配置
 
-### 2.1 准备工作
+```bash
+# 赋予执行权限并运行
+chmod +x replace.sh
+./replace.sh
+```
 
-1. **进入部署目录**：
-
-   ```bash
-   cd mcpcan-deploy/docker-compose/
-   ```
-
-2. **初始化环境配置**：
-   复制示例环境文件 `example.env` 为 `.env`。该文件包含了所有核心配置（如端口、数据库密码、版本号等）。
-
-   ```bash
-   cp example.env .env
-   ```
-
-   _(可选) 使用文本编辑器（如 `vim` 或 `nano`）修改 `.env` 文件中的配置，例如修改默认端口 `MCP_ENTRY_SERVICE_PORT`。_
-
-3. **生成服务配置**：
-   运行配置生成脚本。该脚本会读取 `.env` 中的变量，并根据 `config-template/` 中的模板生成最终的配置文件到 `config/` 目录。
-   ```bash
-   chmod +x replace.sh
-   ./replace.sh
-   ```
-   _注意：如果后续修改了 `.env`，必须重新运行此脚本以应用变更。_
-
-### 2.2 启动服务
-
-使用 Docker Compose 启动所有服务。首次启动会自动拉取镜像并进行数据库初始化。
+### 第三步：起动服务
 
 ```bash
 docker compose up -d
 ```
 
-**启动流程说明**：
+---
 
-1. **基础服务启动**: MySQL 和 Redis 率先启动。
-2. **健康检查**: 等待 MySQL 和 Redis 状态变为 `healthy`。
-3. **核心服务启动**: MySQL 和 Redis 启动成功后，`mcp-authz`, `mcp-market` 等核心服务启动。
-4. **接入层启动**: 最后启动 `mcp-web` 和 `traefik` 网关，对外提供服务。
+## 2. 访问与验证
 
-### 2.3 验证安装
+服务启动后（约 1 分钟后），可通过以下方式访问：
 
-服务启动完成后（通常需等待 1-2 分钟），可以通过浏览器访问：
+- **Web 控制台**: `http://localhost` (默认 80 端口)
+- **Traefik 仪表盘**: `http://localhost:8090` (用于查看路由状态)
+- **状态检查**: 执行 `docker compose ps` 确保所有容器显示为 `Up (healthy)`。
 
-- **Web 前端**: [http://localhost](http://localhost) (或您配置的 HTTP 端口)
-- **HTTPS 访问**: [https://localhost](https://localhost) (或您配置的 HTTPS 端口)
-  - _注意：默认使用自签名证书，浏览器会提示不安全，请点击“继续前往”即可。_
+---
 
-查看运行状态：
+## 3. 进阶配置
 
-```bash
-docker compose ps
-```
+### 启用 HTTPS (TLS)
 
-确保所有服务状态为 `Up` (或 `Up (healthy)`)。
+系统支持“自带证书 (BYOC)”模式。如需开启 443 端口及加密访问，请参考专用指南：
+👉 **[HTTPS 部署扩展方案](./HTTPS_SETUP.md)**
 
-## 自定义配置
+### 自定义环境变量
 
-### 3.1 环境变量配置
+所有核心参数均在 `.env` 中定义，修改后请重新运行 `./replace.sh` 并执行 `docker compose up -d`。
 
-主要配置均在 `.env` 文件中管理。修改后需运行 `./replace.sh` 生效。
+| 变量              | 说明                         |
+| :---------------- | :--------------------------- |
+| `REGISTRY_PREFIX` | 镜像仓库前缀 (默认为 77kymo) |
+| `VERSION`         | 系统版本标签                 |
+| `ADMIN_USERNAME`  | 初始管理员账号               |
+| `ADMIN_PASSWORD`  | 初始管理员密码               |
 
-| 变量名                         | 默认值   | 说明                 |
-| ------------------------------ | -------- | -------------------- |
-| `VERSION`                      | latest   | 镜像版本标签         |
-| `MCP_ENTRY_SERVICE_PORT`       | 80       | HTTP 访问端口        |
-| `MCP_ENTRY_SERVICE_HTTPS_PORT` | 443      | HTTPS 访问端口       |
-| `MYSQL_PASSWORD`               | (见文件) | 数据库密码           |
-| `RUN_MODE`                     | prod     | 运行模式 (demo/prod) |
+---
 
-### 3.2 配置热更新
+## 4. 常用维护命令
 
-生成的配置文件位于 `config/` 目录。
+| 任务             | 命令                                          |
+| :--------------- | :-------------------------------------------- |
+| **查看日志**     | `docker compose logs -f [服务名]`             |
+| **重启服务**     | `docker compose restart`                      |
+| **停止并清理**   | `docker compose down`                         |
+| **更新镜像**     | `docker compose pull && docker compose up -d` |
+| **查看资源占用** | `docker stats`                                |
 
-- **临时修改**: 直接修改 `config/` 下的文件，重启相关容器生效（运行 `./replace.sh` 会覆盖此修改）。
-- **永久修改**: 修改 `config-template/` 下的模板文件，然后运行 `./replace.sh`。
+---
 
-## 常用维护命令
+## 5. 常见问题 (FAQ)
 
-以下命令均需在 `docker-compose/` 目录下执行。
+**Q: 修改了 .env 没生效？**
+A: 请确保运行了 `./replace.sh` 来重新生成 `config/` 目录下的真实配置文件。
 
-### 更新镜像并重启
+**Q: 数据库连接失败？**
+A: 首次启动 MySQL 初始化较慢。请通过 `docker compose logs -f mysql` 查看是否已就绪。
 
-当发布了新版本镜像（修改了 `.env` 中的 `VERSION`）时使用：
-
-```bash
-# 1. 拉取最新镜像
-docker compose pull
-
-# 2. 重新创建并启动容器（仅重建有变更的容器）
-docker compose up -d
-```
-
-### 强制重建容器
-
-如果修改了配置文件或想彻底重置容器运行状态：
-
-```bash
-# --force-recreate 强制销毁旧容器并创建新容器
-docker compose up -d --force-recreate
-```
-
-### 重启所有服务
-
-仅重启容器，不删除容器，不更新镜像：
-
-```bash
-docker compose restart
-```
-
-### 停止服务
-
-```bash
-# 停止并移除容器、网络（保留数据卷）
-docker compose down
-```
-
-### 查看服务日志
-
-```bash
-# 查看所有日志 (Ctrl+C 退出)
-docker compose logs -f
-
-# 查看特定服务日志 (如 mcp-market)
-docker compose logs -f mcp-market
-```
-
-### 清理未使用的镜像
-
-清理不再使用的旧镜像以释放磁盘空间：
-
-```bash
-docker image prune -f
-```
-
-### 彻底清理环境 (慎用)
-
-**警告**: 此操作将删除所有容器、网络以及**持久化的数据**（数据库、上传文件等）。
-
-```bash
-docker compose down
-rm -rf ./data
-```
-
-## 服务架构
-
-| 服务名称       | 描述                               | 依赖关系         |
-| -------------- | ---------------------------------- | ---------------- |
-| **traefik**    | 统一入口网关，处理 HTTP/HTTPS 路由 | -                |
-| **mcp-authz**  | 认证与授权服务                     | 依赖数据库启动   |
-| **mcp-market** | 插件市场核心服务                   | 依赖数据库启动   |
-| **mcp-web**    | 前端静态资源服务                   | 依赖后端服务启动 |
-
-## 高级配置
-
-### 6.1 证书替换与热加载
-
-MCPCan 支持 TLS 证书动态热加载，无需重启服务。
-
-1. 准备证书文件（`.crt`, `.key`）。
-2. 将证书放入 `certs/` 目录。
-3. 修改 `config/dynamic.yaml` 中的证书路径配置。
-4. Traefik 会自动检测并应用新证书。
-
-## 常见问题
-
-**Q: 如何修改数据库密码？**
-A: 修改 `.env` 中的 `MYSQL_PASSWORD`，然后**必须**删除旧的数据库数据（`rm -rf data/mysql`），再重新运行 `./replace.sh && docker compose up -d`。因为 MySQL 仅在首次初始化数据目录时设置密码。
+**Q: 80 端口被占用？**
+A: 修改 `.env` 中的 `MCP_ENTRY_SERVICE_PORT`，重新生成配置并重启服务。

@@ -1,12 +1,5 @@
 # dynamic.yaml
 
-# TLS Configuration
-# Configure the certificates for HTTPS
-tls:
-  certificates:
-    - certFile: /etc/traefik/certs/mcpcan.example.com.crt
-      keyFile: /etc/traefik/certs/mcpcan.example.com.key
-
 http:
   middlewares:
     # Middleware to strip "${API_PATH_RULE}" prefix from the path
@@ -58,12 +51,6 @@ http:
           - "Content-Type"
           - "X-Custom-Metadata"
           - "X-Trace-Id"
-
-  # Servers Transport for Web Service
-  # Allows HTTPS connections to the web service with self-signed certificates
-  serversTransports:
-    https-skip-verify-transport:
-      insecureSkipVerify: true
 
   routers:
     # =========================================================================
@@ -117,49 +104,6 @@ http:
       middlewares:
         - "strip-web-prefix"
       priority: 1 # Lower priority
-
-    # secure routers
-    # =========================================================================
-    # HTTPS Routers (Port 443)
-    # =========================================================================
-
-    # Router for Public Authz endpoints (HTTPS)
-    authz-public-secure:
-      rule: "PathPrefix(`${API_PATH_RULE}/authz/login`) || PathPrefix(`${API_PATH_RULE}/authz/logout`) || PathPrefix(`${API_PATH_RULE}/authz/register`) || PathPrefix(`${API_PATH_RULE}/authz/refresh`) || PathPrefix(`${API_PATH_RULE}/authz/validate`) || PathPrefix(`${API_PATH_RULE}/authz/encryption-key`) || PathPrefix(`/health`) || PathPrefix(`${API_PATH_RULE}/health`) || PathPrefix(`${API_PATH_RULE}/market/code/download`) || PathPrefix(`${API_PATH_RULE}/market/openapi/download`)"
-      service: "authz-service"
-      entryPoints: ["websecure"]
-      middlewares:
-        - "strip-api-prefix"
-      tls: {}
-
-    # Router for Protected Authz endpoints (HTTPS)
-    authz-protected-secure:
-      rule: "PathPrefix(`${API_PATH_RULE}/authz`)"
-      service: "authz-service"
-      entryPoints: ["websecure"]
-      middlewares:
-        - "strip-api-prefix"
-      tls: {}
-
-    # Router for Market endpoints (HTTPS)
-    market-router-secure:
-      rule: "PathPrefix(`${API_PATH_RULE}/market`)"
-      service: "market-service"
-      entryPoints: ["websecure"]
-      middlewares:
-        - "strip-api-prefix"
-        - "external-auth"
-      tls: {}
-
-    # Router for the root web service (HTTPS)
-    web-router-secure:
-      rule: "PathPrefix(`${WEB_PATH_RULE}`)"
-      service: "web-service"
-      entryPoints: ["websecure"]
-      middlewares:
-        - "strip-web-prefix"
-      priority: 1 # Lower priority
-      tls: {}
 
   services:
     # Authz Service Definition
