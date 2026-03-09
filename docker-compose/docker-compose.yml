@@ -91,6 +91,19 @@ services:
       - mcpcan-network
     expose:
       - "${MCP_AUTHZ_SERVICE_PORT}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:${MCP_AUTHZ_SERVICE_PORT}/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       mysql:
         condition: service_healthy
@@ -147,7 +160,7 @@ services:
       - "${MCP_WEB_SERVICE_PORT}"
     depends_on:
       mcp-authz:
-        condition: service_started
+        condition: service_healthy
       mcp-market:
         condition: service_healthy
 
