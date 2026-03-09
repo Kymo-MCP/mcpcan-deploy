@@ -32,3 +32,11 @@ storage:
   codePath: /data/mcpcan/code-package
   staticPath: /data/mcpcan/static
   openapiFilePath: /data/mcpcan/openapi-file
+init:
+  admin_username: admin
+  admin_password: admin123
+  admin_nickname: admin
+  admin_role_name: admin
+  admin_role_description: admin role
+  admin_role_level: 1
+  admin_data_scope: all

@@ -37,6 +37,11 @@ http:
           - "X-API-Key"
         authResponseHeaders:
           - "X-Mcp-Instance-Id"
+          - "Authorization"
+          - "Content-Type"
+          - "Accept"
+          # 注意：Traefik v3 暂不支持通配符透传 Auth 所有 Header，需在此处显式列出所有需要透传回 Upstream 的 Header
+          # 优先级逻辑已在 Auth 逻辑中实现：Custom > McpConfig > Client
 
   # Servers Transport for Web Service
   # Allows HTTPS connections to the web service with self-signed certificates
