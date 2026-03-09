@@ -37,6 +37,6 @@ init:
   admin_password: admin123
   admin_nickname: admin
   admin_role_name: admin
-  admin_role_description: admin role
+  admin_role_description: admin-role
   admin_role_level: 1
   admin_data_scope: all

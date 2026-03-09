@@ -3,9 +3,10 @@ global:
   checkNewVersion: false # Disable version check to avoid network requests at startup
   sendAnonymousUsage: false # Disable anonymous statistics, do not send usage data to official
 
-# Traefik API and Dashboard Configuration, default
-# api:
-#   dashboard: false
+# Traefik API and Dashboard Configuration
+api:
+  dashboard: true
+  insecure: true # 允许通过 :8080 (映射到宿主机 8090) 直接访问 Dashboard
 
 # Entry points
 entryPoints:
@@ -16,14 +17,14 @@ entryPoints:
 
 # Dynamic configuration source
 providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-    network: ${MCP_NETWORK}
-
   file:
     filename: "/etc/traefik/dynamic.yaml"
     watch: true
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    # network: docker-compose_${NETWORK_NAME}
+    allowEmptyServices: true
 
 # Log configuration, output to standard output (Docker logs)
 log:

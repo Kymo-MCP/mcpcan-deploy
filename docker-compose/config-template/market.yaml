@@ -9,13 +9,6 @@ runEnvironment:
   docker:
     host: "unix:///var/run/docker.sock"
     network: "docker-compose_mcpcan-network"
-services:
-  mcpMarket:
-    host: ${MCP_MARKET_SERVICE_NAME}
-    port: ${MCP_MARKET_SERVICE_PORT}
-  mcpAuthz:
-    host: ${MCP_AUTHZ_SERVICE_NAME}
-    port: ${MCP_AUTHZ_SERVICE_PORT}
 database:
   mysql:
     host: ${MYSQL_HOST}
@@ -39,3 +32,11 @@ storage:
   codePath: /data/mcpcan/code-package
   staticPath: /data/mcpcan/static
   openapiFilePath: /data/mcpcan/openapi-file
+init:
+  admin_username: ${ADMIN_USERNAME}
+  admin_password: ${ADMIN_PASSWORD}
+  admin_nickname: ${ADMIN_NICKNAME}
+  admin_role_name: ${ADMIN_ROLE_NAME}
+  admin_role_description: ${ADMIN_ROLE_DESCRIPTION}
+  admin_role_level: ${ADMIN_ROLE_LEVEL}
+  admin_data_scope: ${ADMIN_DATA_SCOPE}
