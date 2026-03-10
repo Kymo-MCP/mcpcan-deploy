@@ -26,30 +26,30 @@ http:
           - "X-Custom-User-Info"
           - "X-Trace-Id"
 
-    # MCP Authentication Middleware (Market/Gateway)
-    mcp-gateway-forward-auth:
-      forwardAuth:
-        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/market/gateway/auth"
-        trustForwardHeader: true
-        # 允许 Market 服务读取客户端的各类 Header
-        authRequestHeaders:
-          - "Authorization"
-          - "API-Key"
-          - "X-API-Key"
-          - "Content-Type"
-          - "Accept"
-          - "User-Agent"
-          - "X-Request-Id"
-          - "X-Session-Id"
-        # 允许 Market 服务将转换后的 Header 注入/覆盖到上游请求
-        authResponseHeaders:
-          - "X-Mcp-Instance-Id"
-          - "X-Mcp-User-Id"
-          - "Authorization" # 关键：允许 Token 转换
-          - "API-Key" # 关键：允许 Token 转换
-          - "X-API-Key" # 关键 : 允许 Token 转换
-          - "X-Custom-Metadata"
-          - "X-Trace-Id"
+    # MCP Authentication Middleware (Market/Gateway) - DEPRECATED: Moving auth to sidecar
+    # mcp-gateway-forward-auth:
+    #   forwardAuth:
+    #     address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/market/gateway/auth"
+    #     trustForwardHeader: true
+    #     # 允许 Market 服务读取客户端的各类 Header
+    #     authRequestHeaders:
+    #       - "Authorization"
+    #       - "API-Key"
+    #       - "X-API-Key"
+    #       - "Content-Type"
+    #       - "Accept"
+    #       - "User-Agent"
+    #       - "X-Request-Id"
+    #       - "X-Session-Id"
+    #     # 允许 Market 服务将转换后的 Header 注入/覆盖到上游请求
+    #     authResponseHeaders:
+    #       - "X-Mcp-Instance-Id"
+    #       - "X-Mcp-User-Id"
+    #       - "Authorization" # 关键：允许 Token 转换
+    #       - "API-Key" # 关键：允许 Token 转换
+    #       - "X-API-Key" # 关键 : 允许 Token 转换
+    #       - "X-Custom-Metadata"
+    #       - "X-Trace-Id"
 
   routers:
     # =========================================================================
@@ -98,8 +98,7 @@ http:
       rule: "PathPrefix(`/mcp-gateway`)"
       service: "market-service"
       entryPoints: ["web"]
-      middlewares:
-        - "mcp-gateway-forward-auth"
+      middlewares: []
       priority: 1000
 
     # Router for the root web service
