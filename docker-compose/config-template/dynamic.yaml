@@ -29,7 +29,7 @@ http:
     # MCP Authentication Middleware (Market/Gateway)
     mcp-auth:
       forwardAuth:
-        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/gateway/auth"
+        address: "http://${MCP_MARKET_SERVICE_NAME}:${MCP_MARKET_SERVICE_PORT}/market/gateway/auth"
         trustForwardHeader: true
         # 允许 Market 服务读取客户端的各类 Header
         authRequestHeaders:
