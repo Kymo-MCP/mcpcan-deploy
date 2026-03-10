@@ -1,0 +1,29 @@
+services:
+  # 临时调试：直接暴露实例端口
+  mcp-debug-instance:
+    image: 77kymo/mcp-hosting:latest
+    container_name: mcp-debug-instance
+    ports:
+      - "31280:8080"
+    volumes:
+      - ../config/mcp-servers.json:/app/mcp-servers.json:ro
+    networks:
+      - mcpcan-network
+    command: --port=8080 --mcp-servers-config=/app/mcp-servers.json
+
+  # 临时调试：直接暴露 Sidecar 端口
+  mcp-debug-sidecar:
+    image: 77kymo/mcp-sidecar:latest
+    container_name: mcp-debug-sidecar
+    ports:
+      - "31281:80"
+    environment:
+      - MCP_TARGET_URL=http://mcp-debug-instance:8080
+      - MCP_ROUTE_PREFIX=/mcp-gateway/debug-inst
+    networks:
+      - mcpcan-network
+    depends_on:
+      - mcp-debug-instance
+
+networks:
+  mcpcan-network: {}
