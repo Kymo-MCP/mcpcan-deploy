@@ -18,7 +18,7 @@ services:
     ports:
       - "31281:80"
     environment:
-      - MCP_TARGET_URL=http://mcp-debug-instance:8080
+      - MCP_TARGET_URL=http://mcp-debug-instance:8080/sse
       - MCP_ROUTE_PREFIX=/mcp-gateway/debug-inst
     networks:
       - mcpcan-network
