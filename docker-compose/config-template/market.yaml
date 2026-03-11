@@ -1,5 +1,6 @@
 runMode: ${RUN_MODE}
 server:
+  serviceName: ${MCP_MARKET_SERVICE_NAME}
   httpPort: ${MCP_MARKET_SERVICE_PORT}
 secret: ${APP_SECRET}
 runEnvironment:

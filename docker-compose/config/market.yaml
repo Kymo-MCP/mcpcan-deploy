@@ -1,5 +1,6 @@
 runMode: prod
 server:
+  serviceName: mcp-market
   httpPort: 8080
 secret: MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE
 runEnvironment:

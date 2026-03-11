@@ -1,5 +1,6 @@
 runMode: prod
 server:
+  serviceName: mcp-authz
   httpPort: 8081
 secret: MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE
 database:

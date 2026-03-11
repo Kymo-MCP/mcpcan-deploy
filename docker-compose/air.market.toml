@@ -9,7 +9,7 @@ tmp_dir = "tmp"
   # 编译后的二进制文件
   bin = "./tmp/market"
   # 使用 dlv 启动调试服务
-  full_bin = "dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient --continue exec ./tmp/market"
+  full_bin = "dlv --headless --listen=:2345 --api-version=2 --accept-multiclient exec ./tmp/market --continue"
   # 监听的文件后缀
   include_ext = ["go", "tpl", "tmpl", "html", "yaml", "yml", "toml"]
   # 排除的目录

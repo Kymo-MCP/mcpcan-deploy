@@ -1,5 +1,6 @@
 runMode: ${RUN_MODE}
 server:
+  serviceName: ${MCP_AUTHZ_SERVICE_NAME}
   httpPort: ${MCP_AUTHZ_SERVICE_PORT}
 secret: ${APP_SECRET}
 database:

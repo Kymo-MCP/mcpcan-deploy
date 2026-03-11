@@ -5,18 +5,20 @@ services:
     container_name: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-mcpcan}
-      MYSQL_USER: ${MYSQL_USER:-mcpcan}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mcpcan}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ${HOST_MYSQL_PATH:-./data/mysql}:/var/lib/mysql
       - ./config/mysql.conf:/etc/mysql/conf.d/mysql.conf:ro
       - ./config/mysql.init.sql:/docker-entrypoint-initdb.d/mysql.init.sql:ro
     ports:
-      - "3306:3306"
+      - "${MYSQL_PUBLIC_PORT:-31306}:${MYSQL_PORT:-3306}"
     networks:
-      - mcpcan-network
+      mcpcan-network:
+        aliases:
+          - mysql
     healthcheck:
       test:
         [
@@ -37,13 +39,15 @@ services:
     image: redis:6-alpine
     container_name: redis
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD:-123456}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - ${HOST_REDIS_PATH:-./data/redis}:/data
     ports:
-      - "6379:6379"
+      - "${REDIS_PUBLIC_PORT:-31379}:${REDIS_PORT:-6379}"
     networks:
-      - mcpcan-network
+      mcpcan-network:
+        aliases:
+          - redis
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-123456}", "ping"]
       interval: 10s
@@ -60,6 +64,12 @@ services:
       - ../../mcpcan/backend:/app:cached
       - ./air.market.toml:/app/.air.toml:ro
       - ./config/market.yaml:/app/config/market.yaml:ro
+      - go-pkg-cache:/go/pkg/mod # 持久化 Go 模块
+      - go-build-cache:/root/.cache/go-build # 持久化编译缓存
+    environment:
+      - GOPROXY=https://goproxy.cn,direct
+      - GO111MODULE=on
+      - MCP_INTERNAL_BASE_URL=http://mcp-entry
     ports:
       - "8080:8080"
       - "2345:2345"
@@ -68,7 +78,10 @@ services:
     security_opt:
       - apparmor=unconfined
     networks:
-      - mcpcan-network
+      mcpcan-network:
+        aliases:
+          - mcp-market
+          - market-service
     depends_on:
       mysql:
         condition: service_healthy
@@ -85,6 +98,11 @@ services:
       - ../../mcpcan/backend:/app:cached
       - ./air.authz.toml:/app/.air.toml:ro
       - ./config/authz.yaml:/app/config/authz.yaml:ro
+      - go-pkg-cache:/go/pkg/mod # 共享 Go 模块缓存
+      - go-build-cache:/root/.cache/go-build # 共享编译缓存
+    environment:
+      - GOPROXY=https://goproxy.cn,direct
+      - GO111MODULE=on
     ports:
       - "8081:8081"
       - "2346:2346"
@@ -93,7 +111,10 @@ services:
     security_opt:
       - apparmor=unconfined
     networks:
-      - mcpcan-network
+      mcpcan-network:
+        aliases:
+          - mcp-authz
+          - authz-service
     depends_on:
       mysql:
         condition: service_healthy
@@ -111,13 +132,46 @@ services:
       - /app/node_modules # 关键：使用匿名卷隔离 node_modules
       - ./config/env.js:/app/public/env.js:ro
     ports:
-      - "5173:5173"
+      - "3000:3000"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8080
-    command: sh -c "pnpm install && pnpm dev --host 0.0.0.0"
+      - VITE_API_BASE_URL=/api
+      - NODE_ENV=development
+    command: sh -c "pnpm install && pnpm dev --host 0.0.0.0 --port 3000 --strictPort --no-open"
+    networks:
+      mcpcan-network:
+        aliases:
+          - mcp-web
+          - web-service
+
+  # Gateway / Entry (Traefik) - 重要：从这里访问 http://localhost
+  mcp-entry:
+    image: traefik:v3.6.9
+    container_name: mcp-entry-dev
+    environment:
+      - REGISTORY_IMAGE_MIRROR=${REGISTRY_PREFIX}
+      - DOCKER_API_VERSION=1.44
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "80:80"
+      - "8090:8080" # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./config/dynamic.yaml:/etc/traefik/dynamic/dynamic.yaml:ro
     networks:
       - mcpcan-network
+    command: traefik
+    depends_on:
+      - mcp-web
+      - mcp-market
+      - mcp-authz
 
 networks:
   mcpcan-network:
     driver: bridge
+
+volumes:
+  go-pkg-cache:
+  go-build-cache:
