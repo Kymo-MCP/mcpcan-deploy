@@ -24,7 +24,7 @@ http:
       forwardAuth:
         address: "http://mcp-authz:8081/authz/validate"
         trustForwardHeader: true
-        authResponseHeaders: ["X-Consum-User-Id"]
+        authResponseHeaders: ["X-Consum-User-Id", "X-Custom-User-Info"]
 
   # Servers Transport for Web Service
   # Allows HTTPS connections to the web service with self-signed certificates
@@ -62,6 +62,7 @@ http:
       entryPoints: ["web"]
       middlewares:
         - "strip-api-prefix"
+        - "external-auth"
       # Priority is automatically determined by rule length, but specific routes (longer) take precedence
 
     # Router for Market endpoints

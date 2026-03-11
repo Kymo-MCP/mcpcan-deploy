@@ -1,5 +1,6 @@
 services:
   mysql:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mysql:8.0.30
     container_name: mysql
     restart: always
@@ -33,6 +34,7 @@ services:
       retries: 5
 
   redis:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/redis:6-alpine
     container_name: redis
     restart: always
@@ -50,6 +52,7 @@ services:
       retries: 5
 
   mcp-entry:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-entry:v3.5
     container_name: ${MCP_ENTRY_SERVICE_NAME}
     environment:
@@ -75,6 +78,7 @@ services:
         condition: service_started
 
   mcp-init:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-init:${VERSION}
     container_name: ${MCP_INIT_SERVICE_NAME}
     volumes:
@@ -89,6 +93,7 @@ services:
         condition: service_healthy
 
   mcp-authz:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-authz:${VERSION}
     container_name: ${MCP_AUTHZ_SERVICE_NAME}
     restart: always
@@ -106,6 +111,7 @@ services:
         condition: service_healthy
 
   mcp-market:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-market:${VERSION}
     container_name: ${MCP_MARKET_SERVICE_NAME}
     restart: always
@@ -126,6 +132,7 @@ services:
         condition: service_completed_successfully
 
   mcp-gateway:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-gateway:${VERSION}
     container_name: ${MCP_GATEWAY_SERVICE_NAME}
     restart: always
@@ -142,6 +149,7 @@ services:
         condition: service_healthy
 
   mcp-web:
+    platform: linux/arm64
     image: ${REGISTRY_PREFIX}/mcp-web:${VERSION}
     container_name: ${MCP_WEB_SERVICE_NAME}
     restart: always

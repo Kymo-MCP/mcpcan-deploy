@@ -27,6 +27,7 @@ spec:
         mcpcan.io/revision: "{{ .Release.Revision }}"
     spec:
       restartPolicy: OnFailure
+      {{- include "mcpcan.imagePullSecrets" . | nindent 6 }}
       initContainers:
       {{- range $name, $img := .Values.global.images }}
       - name: preload-{{ lower $name }}

@@ -35,6 +35,7 @@ spec:
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- include "mcpcan.imagePullSecrets" . | nindent 6 }}
       initContainers:
       - name: wait-deps
         image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.busybox }}
@@ -46,7 +47,7 @@ spec:
           until nc -z {{ .Values.infrastructure.redis.service.name | default "redis" }} {{ .Values.infrastructure.redis.service.port | default 6379 }}; do echo "waiting for redis"; sleep 2; done
       containers:
       - name: {{ .Values.services.authz.name | default "mcp-authz" }}
-        image: {{ if .Values.global.cn }}{{ .Values.global.registryForMirrorCN }}{{ else }}{{ .Values.global.registry }}{{ end }}/{{ .Values.global.images.mcpAuthz }}
+        image: {{ if .Values.global.cn }}{{ .Values.global.enterpriseRegistryForMirrorCN }}{{ else }}{{ .Values.global.enterpriseRegistry }}{{ end }}/{{ .Values.global.images.mcpAuthz }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         {{- if .Values.services.authz.service.port }}
         ports:

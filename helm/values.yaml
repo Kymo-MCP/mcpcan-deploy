@@ -14,26 +14,40 @@ global:
   # If not set, publicIP will be used for access
   # Example: "mcpcan.example.com"
   domain: ""
-  
+
   # Application version tag
   # Used for image tags and deployment tracking
-  version: v1.10.2
-  
+  version: v1.12
+
   # Container registry URL
   # All service images will be pulled from this registry
   registry: 77kymo
+  # Container registry URL for enterprise images
+  enterpriseRegistry: 77kymo
 
   # Container registry URL for mirror images in CN
   # All service images will be pulled from this registry in CN
   registryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
-  
+  # Container registry URL for enterprise images
+  enterpriseRegistryForMirrorCN: ccr.ccs.tencentyun.com/itqm-private
+
   # Image pull policy for all containers
   # Options: Always, IfNotPresent, Never
   imagePullPolicy: Always
 
-  # Image tags for all services
+  imagePullSecrets: []
+  registryAuth:
+    enabled: false
+    createSecret: false
+    secretName: "mcpcan-registry-auth"
+    server: ""
+    username: ""
+    password: ""
+
   # Used to override default image tags
-  enabledPreLoadImages: true
+  enabledPreLoadImages: false
+
+  # Image tags for all services
   images:
     busybox: "busybox:1.36"
     mysql: "mysql:8.0.30"
@@ -41,17 +55,17 @@ global:
     openapiToMcp: "openapi-to-mcp:v0.2.7"
     mcpEntry: "mcp-entry:v3.5"
     mcpHosting: "mcp-hosting:v4"
-    mcpInit: "mcp-init:v1.10.2"
-    mcpMarket: "mcp-market:v1.10.2"
-    mcpAuthz: "mcp-authz:v1.10.2"
-    mcpGateway: "mcp-gateway:v1.10.2"
-    mcpWeb: "mcp-web:v1.10.2"
+    mcpInit: "mcp-init:v1.12"
+    mcpMarket: "mcp-market:v1.12"
+    mcpAuthz: "mcp-authz:v1.12"
+    mcpGateway: "mcp-gateway:v1.12"
+    mcpWeb: "mcp-web:v1.12"
 
   # Application secret key
   # Used for JWT token signing and other cryptographic operations
   # Change this in production environments
   appSecret: "MrKuvLNn0hc1kHRbA6EqjSPj1ecrbPDE"
-  
+
   # Run mode for the application
   # Options: Default: "prod"
   # "demo": Enables demo features and lower resource requirements
@@ -72,7 +86,7 @@ global:
     mysqlPath: /data/mcpcan/mysql
     # Directory for Redis data files
     redisPath: /data/mcpcan/redis
-  
+
   # Mount storage configuration
   # Defines how storage is mounted inside containers
   mountStorage:
@@ -89,8 +103,8 @@ global:
     # Redis data mount point
     redisPath: /data/redis
 
-  # The domain name path resolution rules can modify the apiPathRule and webPathRule path rules when there is no conflict. 
-  # However, the /mcp-gateway path resolution rule is fixed. 
+  # The domain name path resolution rules can modify the apiPathRule and webPathRule path rules when there is no conflict.
+  # However, the /mcp-gateway path resolution rule is fixed.
   # It is specially used for mcp traffic proxy forwarding, cannot be modified, and this path is occupied compulsorily.
   # web path rule
   webPathRule: /
@@ -100,7 +114,6 @@ global:
 
   # codeUploadMaxFileSize: 100MB (default)
   codeUploadMaxFileSize: 100
-  
 
 # =============================================================================
 # Kubernetes Access Configuration
@@ -122,7 +135,7 @@ infrastructure:
   mysql:
     # Enable/disable MySQL deployment
     enabled: true
-    
+
     # Database authentication settings
     auth:
       # Root user password for MySQL
@@ -134,10 +147,10 @@ infrastructure:
       username: mcp_user
       # Application database password
       password: dev-password
-    
+
     # MySQL service name (used for internal DNS resolution)
     name: mysql
-    
+
     # Kubernetes service configuration
     service:
       # Service name for MySQL
@@ -150,7 +163,7 @@ infrastructure:
       enabledNodePort: true
       # NodePort number for external access
       nodePort: 31306
-    
+
     # Host path volume configuration
     hostPath:
       # Enable host path volume for data persistence
@@ -159,7 +172,7 @@ infrastructure:
       name: mysql-hostpath
       # Directory creation type
       type: DirectoryOrCreate
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -171,7 +184,7 @@ infrastructure:
   redis:
     # Enable/disable Redis deployment
     enabled: true
-    
+
     # Redis authentication settings
     auth:
       # Redis password for authentication
@@ -179,11 +192,10 @@ infrastructure:
       password: dev-redis-password
       # Default Redis database number
       db: 0
-    
+
     # Redis service name (used for internal DNS resolution)
     name: redis
 
-    
     # Kubernetes service configuration
     service:
       # Service name for Redis
@@ -196,7 +208,7 @@ infrastructure:
       enabledNodePort: true
       # NodePort number for external access
       nodePort: 31379
-    
+
     # Host path volume configuration
     hostPath:
       # Enable host path volume for data persistence
@@ -205,7 +217,7 @@ infrastructure:
       name: redis-hostpath
       # Directory creation type
       type: DirectoryOrCreate
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -235,14 +247,13 @@ services:
       port: 80
       # Service type (ClusterIP for internal access)
       type: ClusterIP
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
       requests:
         memory: "64Mi"
         cpu: "64m"
-
 
   # Web Frontend Service
   web:
@@ -261,9 +272,9 @@ services:
       port: 3000
       # Service type (ClusterIP for internal access)
       type: ClusterIP
-    
+
     # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -279,7 +290,7 @@ services:
     name: mcp-market
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
@@ -288,17 +299,17 @@ services:
       port: 8080
       # Service type (ClusterIP for internal access)
       type: ClusterIP
-    
+
     # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
-    
+
     # ConfigMap configuration (currently disabled)
     config:
       enabled: false
-    
+
     # Persistent volume configuration (currently disabled)
     persistence:
       enabled: false
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -314,7 +325,7 @@ services:
     name: mcp-authz
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
@@ -323,9 +334,9 @@ services:
       port: 8081
       # Service type (ClusterIP for internal access)
       type: ClusterIP
-    
+
     # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -341,7 +352,7 @@ services:
     name: mcp-gateway
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
@@ -350,9 +361,9 @@ services:
       port: 8082
       # Service type (ClusterIP for internal access)
       type: ClusterIP
-    
+
     # Ingress configuration for external access (Removed, all ingress contracted to mcp-entry)
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -374,7 +385,7 @@ services:
 
     # Number of pod replicas
     replicas: 1
-    
+
     # Kubernetes service configuration
     service:
       # Service name for internal DNS resolution
@@ -383,7 +394,7 @@ services:
       port: 8083
       # Service type (ClusterIP for internal access)
       type: "ClusterIP"
-    
+
     # Resource limits and requests
     resources:
       # Minimum guaranteed resources
@@ -399,14 +410,14 @@ ingress:
   enabled: true
   # Ingress class name (nginx for NGINX Ingress Controller)
   className: nginx
-  
+
   # Global ingress annotations
   annotations:
     # Enable regex support for path matching
     nginx.ingress.kubernetes.io/use-regex: "true"
     # Force HTTPS redirect
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    
+
     # CORS (Cross-Origin Resource Sharing) configuration
     # Enable CORS support
     nginx.ingress.kubernetes.io/enable-cors: "true"
