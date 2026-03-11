@@ -1,33 +1,9 @@
 # Release Notes
+**Range**: `origin/main` ... `HEAD`
 
 ## 🚀 Features
+- **[Architecture Adaptation]**: Explicitly specified `linux/arm64` platform tags for all core services in `docker-compose-arm64.yml`, ensuring stable deployment on ARM-based hosts ([d45af27]).
 
-- **Initialization**: Added intelligent access, MCPCAN template, and OpenAPI document initialization. (c443abf, a0ef2df, 1578507)
-- **Protocol**: Added STREAMABLE_HTTP support. (e0f453b)
-- **Market**: Supported instance creation with market. (6b7a10a)
-- **Coze Integration**: Supported personal UUID validation for Coze sync. (2ef029d)
-- **Templates**: Updated template model. (80a306d, b024de1)
-
-## 🐛 Bug Fixes
-
-- **Instance**: Fixed access type check logic during restart/disable. (cb8feb2)
-- **Initialization**: Fixed repeated OpenAPI base package initialization. (4767296)
-- **General**: Fixed various operation issues. (75df227)
-
-## ♻️ Refactor
-
-- **Initialization**: Refactored MCP template initialization and standardized field values. (946784c, 2a786d0)
-- **Templates**: Simplified deployment templates and removed environment association logic. (03887df, 7f2064d)
-
-## 📝 Documentation & UI
-
-- **Copy & Guide**: Optimized interface copy, access type descriptions, and proxy header priority explanation. (8b5530e, f3c7787, bb45aad, c866dad)
-- **I18n**: Implemented and improved internationalization support. (c9aad7c, d8b8dcb, b494987, 5760964, 08d9280)
-- **SEO**: Optimized index.html for SEO. (fe45dc9)
-- **Config**: Added documentation for OpenAPI storage path. (ee4fe4e)
-
-## 🔧 Chore
-
-- **Versioning**: Bumped versions. (ea88eaf, fb5c126, 84c2980)
-- **UI Components**: Updated forms, buttons, and display logic. (aa2f6de, 7a974ec, 112d4ed, 7fb3a84, 23620b1, 74aa499)
-- **Config**: Updated .gitignore. (6902f46)
+## 🔧 Chore / Release
+- **[Version Update]**: Completed global version update from `v1.12-dev` to `v1.12`. Affected files include `VERSION`, `Helm Chart.yaml`, `values.yaml`, and related `README` documentation ([0acc381]).
+- **[Image Sync]**: Batched updates of image version references in Helm and Docker Compose configurations, ensuring all applications point to the latest image versions ([5e73473]).
