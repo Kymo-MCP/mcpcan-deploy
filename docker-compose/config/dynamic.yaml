@@ -123,13 +123,10 @@ http:
     market-service:
       loadBalancer:
         servers:
-          # - url: "http://mcp-market:8080"
-          - url: "http://host.docker.internal:8080"
+          - url: "http://mcp-market:8080"
 
     # Web Service Definition
     web-service:
       loadBalancer:
         servers:
           - url: "http://mcp-web:3000"
-          # - url: "http://host.docker.internal:3000"
-        # serversTransport: "https-skip-verify-transport"
