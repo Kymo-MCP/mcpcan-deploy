@@ -64,6 +64,8 @@ services:
       - ../../mcpcan/backend:/app:cached
       - ./air.market.toml:/app/.air.toml:ro
       - ./config/market.yaml:/app/config/market.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOST_DATA_PATH:-./data/mcpcan}:/data/mcpcan
       - go-pkg-cache:/go/pkg/mod # 持久化 Go 模块
       - go-build-cache:/root/.cache/go-build # 持久化编译缓存
     environment:
@@ -98,6 +100,7 @@ services:
       - ../../mcpcan/backend:/app:cached
       - ./air.authz.toml:/app/.air.toml:ro
       - ./config/authz.yaml:/app/config/authz.yaml:ro
+      - ${HOST_DATA_PATH:-./data/mcpcan}:/data/mcpcan
       - go-pkg-cache:/go/pkg/mod # 共享 Go 模块缓存
       - go-build-cache:/root/.cache/go-build # 共享编译缓存
     environment:
