@@ -1,0 +1,21 @@
+FROM golang:1.25.8-alpine
+
+# 设置国内代理并安装必要的构建工具
+ENV GOPROXY=https://goproxy.cn,direct
+RUN apk add --no-cache gcc musl-dev git make
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装热重载工具 Air (Go 1.25 下可安装最新版)
+RUN go install github.com/air-verse/air@latest
+
+# 安装调试工具 Delve (dlv)
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# 暴露业务端口和调试端口（实际端口由 docker-compose 映射）
+EXPOSE 8080
+EXPOSE 2345
+
+# 默认启动命令：使用 air 进行热重载
+CMD ["air", "-c", ".air.toml"]

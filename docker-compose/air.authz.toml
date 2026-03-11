@@ -1,0 +1,27 @@
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  # 监听 mcp-authz 服务的编译
+  cmd = "go build -gcflags='all=-N -l' -o ./tmp/authz ./cmd/authz/main.go"
+  bin = "./tmp/authz"
+  # 使用 dlv 启动调试服务，映射不同调试端口
+  full_bin = "dlv --listen=:2346 --headless=true --api-version=2 --accept-multiclient --continue exec ./tmp/authz"
+  include_ext = ["go", "tpl", "tmpl", "html", "yaml", "yml", "toml"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  delay = 1000
+  stop_on_error = true
+  log = "air-authz.log"
+
+[log]
+  time = true
+
+[color]
+  main = "green"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "magenta"
+
+[misc]
+  clean_on_exit = true

@@ -1,0 +1,34 @@
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  # 监听 mcp-market 服务的编译。
+  # 增加 -gcflags="all=-N -l" 关闭编译器优化，确保断点精准
+  cmd = "go build -gcflags='all=-N -l' -o ./tmp/market ./cmd/market/main.go"
+  # 编译后的二进制文件
+  bin = "./tmp/market"
+  # 使用 dlv 启动调试服务
+  full_bin = "dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient --continue exec ./tmp/market"
+  # 监听的文件后缀
+  include_ext = ["go", "tpl", "tmpl", "html", "yaml", "yml", "toml"]
+  # 排除的目录
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  # 监听间隔
+  delay = 1000
+  # 发生错误时停止运行旧的二进制文件
+  stop_on_error = true
+  # 进程日志路径
+  log = "air-market.log"
+
+[log]
+  time = true
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  clean_on_exit = true
