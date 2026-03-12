@@ -68,103 +68,103 @@ The following table lists the configurable parameters and their default values:
 
 ### Global Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `global.domain` | Domain name for the application | `""` |
-| `global.publicIP` | Public IP address for external access | `"192.168.1.100"` |
-| `global.version` | Application version tag | `v2.0-mcp-gateway-rebuild` |
-| `global.registry` | Container registry URL | `ccr.ccs.tencentyun.com/itqm-private` |
-| `global.imagePullPolicy` | Image pull policy | `Always` |
-| `global.appSecret` | Application secret key | `dev-app-secret` |
+| Parameter                | Description                           | Default                               |
+| ------------------------ | ------------------------------------- | ------------------------------------- |
+| `global.domain`          | Domain name for the application       | `""`                                  |
+| `global.publicIP`        | Public IP address for external access | `"192.168.1.100"`                     |
+| `global.version`         | Application version tag               | `v2.0-mcp-gateway-rebuild`            |
+| `global.registry`        | Container registry URL                | `ccr.ccs.tencentyun.com/itqm-private` |
+| `global.imagePullPolicy` | Image pull policy                     | `Always`                              |
+| `global.appSecret`       | Application secret key                | `dev-app-secret`                      |
 
 ### Infrastructure Configuration
 
 #### MySQL Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `infrastructure.mysql.enabled` | Enable MySQL deployment | `true` |
-| `infrastructure.mysql.auth.rootPassword` | MySQL root password | `dev-root-password` |
-| `infrastructure.mysql.auth.database` | Default database name | `mcp_dev` |
-| `infrastructure.mysql.auth.username` | Application database username | `mcp_user` |
-| `infrastructure.mysql.auth.password` | Application database password | `dev-password` |
-| `infrastructure.mysql.image.repository` | MySQL image repository | `mysql` |
-| `infrastructure.mysql.image.tag` | MySQL version tag | `"8.0.30"` |
-| `infrastructure.mysql.service.port` | MySQL service port | `3306` |
-| `infrastructure.mysql.service.nodePort` | MySQL NodePort | `31306` |
+| Parameter                                | Description                   | Default             |
+| ---------------------------------------- | ----------------------------- | ------------------- |
+| `infrastructure.mysql.enabled`           | Enable MySQL deployment       | `true`              |
+| `infrastructure.mysql.auth.rootPassword` | MySQL root password           | `dev-root-password` |
+| `infrastructure.mysql.auth.database`     | Default database name         | `mcp_dev`           |
+| `infrastructure.mysql.auth.username`     | Application database username | `mcp_user`          |
+| `infrastructure.mysql.auth.password`     | Application database password | `dev-password`      |
+| `infrastructure.mysql.image.repository`  | MySQL image repository        | `mysql`             |
+| `infrastructure.mysql.image.tag`         | MySQL version tag             | `"8.0.30"`          |
+| `infrastructure.mysql.service.port`      | MySQL service port            | `3306`              |
+| `infrastructure.mysql.service.nodePort`  | MySQL NodePort                | `31306`             |
 
 #### Redis Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `infrastructure.redis.enabled` | Enable Redis deployment | `true` |
-| `infrastructure.redis.auth.password` | Redis password | `dev-redis-password` |
-| `infrastructure.redis.auth.db` | Default Redis database | `0` |
-| `infrastructure.redis.image.repository` | Redis image repository | `redis` |
-| `infrastructure.redis.image.tag` | Redis version tag | `"6-alpine"` |
-| `infrastructure.redis.service.port` | Redis service port | `6379` |
-| `infrastructure.redis.service.nodePort` | Redis NodePort | `31379` |
+| Parameter                               | Description             | Default              |
+| --------------------------------------- | ----------------------- | -------------------- |
+| `infrastructure.redis.enabled`          | Enable Redis deployment | `true`               |
+| `infrastructure.redis.auth.password`    | Redis password          | `dev-redis-password` |
+| `infrastructure.redis.auth.db`          | Default Redis database  | `0`                  |
+| `infrastructure.redis.image.repository` | Redis image repository  | `redis`              |
+| `infrastructure.redis.image.tag`        | Redis version tag       | `"6-alpine"`         |
+| `infrastructure.redis.service.port`     | Redis service port      | `6379`               |
+| `infrastructure.redis.service.nodePort` | Redis NodePort          | `31379`              |
 
 ### Services Configuration
 
 #### Web Service
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `services.web.enabled` | Enable web service | `true` |
-| `services.web.replicas` | Number of replicas | `1` |
-| `services.web.service.port` | Service port | `3000` |
-| `services.web.ingress.enabled` | Enable ingress | `true` |
-| `services.web.ingress.path` | Ingress path | `/` |
+| Parameter                      | Description        | Default |
+| ------------------------------ | ------------------ | ------- |
+| `services.web.enabled`         | Enable web service | `true`  |
+| `services.web.replicas`        | Number of replicas | `1`     |
+| `services.web.service.port`    | Service port       | `3000`  |
+| `services.web.ingress.enabled` | Enable ingress     | `true`  |
+| `services.web.ingress.path`    | Ingress path       | `/`     |
 
 #### Market Service
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `services.market.enabled` | Enable market service | `true` |
-| `services.market.replicas` | Number of replicas | `1` |
-| `services.market.service.port` | Service port | `8080` |
-| `services.market.ingress.enabled` | Enable ingress | `true` |
-| `services.market.ingress.path` | Ingress path | `/api/market/(.*)` |
+| Parameter                         | Description           | Default            |
+| --------------------------------- | --------------------- | ------------------ |
+| `services.market.enabled`         | Enable market service | `true`             |
+| `services.market.replicas`        | Number of replicas    | `1`                |
+| `services.market.service.port`    | Service port          | `8080`             |
+| `services.market.ingress.enabled` | Enable ingress        | `true`             |
+| `services.market.ingress.path`    | Ingress path          | `/api/market/(.*)` |
 
 #### Authorization Service
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `services.authz.enabled` | Enable authorization service | `true` |
-| `services.authz.replicas` | Number of replicas | `1` |
-| `services.authz.service.port` | Service port | `8081` |
-| `services.authz.ingress.enabled` | Enable ingress | `true` |
-| `services.authz.ingress.path` | Ingress path | `/api/authz/(.*)` |
+| Parameter                        | Description                  | Default           |
+| -------------------------------- | ---------------------------- | ----------------- |
+| `services.authz.enabled`         | Enable authorization service | `true`            |
+| `services.authz.replicas`        | Number of replicas           | `1`               |
+| `services.authz.service.port`    | Service port                 | `8081`            |
+| `services.authz.ingress.enabled` | Enable ingress               | `true`            |
+| `services.authz.ingress.path`    | Ingress path                 | `/api/authz/(.*)` |
 
 #### Gateway Service
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `services.gateway.enabled` | Enable gateway service | `true` |
-| `services.gateway.replicas` | Number of replicas | `1` |
-| `services.gateway.service.port` | Service port | `8082` |
-| `services.gateway.ingress.enabled` | Enable ingress | `true` |
-| `services.gateway.ingress.path` | Ingress path | `/mcp-gateway` |
+| Parameter                          | Description            | Default        |
+| ---------------------------------- | ---------------------- | -------------- |
+| `services.gateway.enabled`         | Enable gateway service | `true`         |
+| `services.gateway.replicas`        | Number of replicas     | `1`            |
+| `services.gateway.service.port`    | Service port           | `8082`         |
+| `services.gateway.ingress.enabled` | Enable ingress         | `true`         |
+| `services.gateway.ingress.path`    | Ingress path           | `/mcp-gateway` |
 
 #### Initialization Service
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `services.init.enabled` | Enable initialization service | `true` |
-| `services.init.replicas` | Number of replicas | `1` |
-| `services.init.service.port` | Service port | `8083` |
-| `services.init.k8sHostPath.enabled` | Enable K8s host path | `true` |
-| `services.init.k8sHostPath.path` | K8s config path | `/etc/rancher/k3s` |
+| Parameter                           | Description                   | Default            |
+| ----------------------------------- | ----------------------------- | ------------------ |
+| `services.init.enabled`             | Enable initialization service | `true`             |
+| `services.init.replicas`            | Number of replicas            | `1`                |
+| `services.init.service.port`        | Service port                  | `8083`             |
+| `services.init.k8sHostPath.enabled` | Enable K8s host path          | `true`             |
+| `services.init.k8sHostPath.path`    | K8s config path               | `/etc/rancher/k3s` |
 
 ### Ingress Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `ingress.enabled` | Enable ingress | `true` |
-| `ingress.className` | Ingress class name | `nginx` |
-| `ingress.tls.enabled` | Enable TLS | `false` |
-| `ingress.tls.secretName` | TLS secret name | `domain-tls` |
+| Parameter                | Description        | Default      |
+| ------------------------ | ------------------ | ------------ |
+| `ingress.enabled`        | Enable ingress     | `true`       |
+| `ingress.className`      | Ingress class name | `nginx`      |
+| `ingress.tls.enabled`    | Enable TLS         | `false`      |
+| `ingress.tls.secretName` | TLS secret name    | `domain-tls` |
 
 ## Components
 
@@ -197,11 +197,13 @@ MCPCan consists of the following components:
 After installation, you can access MCPCan through:
 
 1. **Domain-based access** (if domain is configured):
+
    ```
    https://your-domain.com
    ```
 
 2. **IP-based access**:
+
    ```
    http://your-public-ip
    ```
@@ -295,7 +297,7 @@ infrastructure:
       limits:
         memory: "1Gi"
         cpu: "1000m"
-  
+
   redis:
     auth:
       password: "secure-redis-password"
@@ -378,6 +380,7 @@ infrastructure:
 **Problem**: Pods remain in `Pending` state.
 
 **Solution**:
+
 ```bash
 # Check node resources
 kubectl describe nodes
@@ -394,6 +397,7 @@ kubectl get storageclass
 **Problem**: Services cannot connect to MySQL/Redis.
 
 **Solution**:
+
 ```bash
 # Check service endpoints
 kubectl get endpoints
@@ -411,6 +415,7 @@ kubectl logs -l app=mcp-market
 **Problem**: Cannot access services through ingress.
 
 **Solution**:
+
 ```bash
 # Check ingress controller
 kubectl get pods -n ingress-nginx
@@ -427,6 +432,7 @@ kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
 **Problem**: Cannot pull container images.
 
 **Solution**:
+
 ```bash
 # Check image pull secrets
 kubectl get secrets
